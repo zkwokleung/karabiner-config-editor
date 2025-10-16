@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Plus, Trash2, AlertTriangle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,17 +20,49 @@ import type {
   Profile,
   Rule,
   FnFunctionKey,
+  Device,
+  SimpleModification,
+  KeyCode,
 } from '@/types/karabiner';
 import { useToast } from '@/hooks/use-toast';
 import { ComplexModificationsEditor } from '@/components/complex-modifications-editor';
 import { FnFunctionKeysEditor } from '@/components/fn-function-keys-editor';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { KeyInput } from '@/components/key-input';
-import { findDuplicateSimpleModifications } from '@/lib/validation';
+import {
+  findDuplicateSimpleModifications,
+  type SimpleModificationDuplicate,
+} from '@/lib/validation';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface ProfileEditorProps {
   config: KarabinerConfig;
   setConfig: (config: KarabinerConfig) => void;
+}
+
+type ModificationTarget =
+  | {
+      type: 'profile';
+    }
+  | {
+      type: 'device';
+      deviceIndex: number;
+    };
+
+type ModificationLocation = ModificationTarget & {
+  modIndex: number;
+};
+
+interface ModificationTargetOption {
+  label: string;
+  value: string;
+  target: ModificationTarget;
 }
 
 export function ProfileEditor({ config, setConfig }: ProfileEditorProps) {
@@ -39,7 +71,44 @@ export function ProfileEditor({ config, setConfig }: ProfileEditorProps) {
 
   const selectedProfile = config.profiles[selectedProfileIndex];
 
-  const duplicates = findDuplicateSimpleModifications(selectedProfile);
+  const duplicates: SimpleModificationDuplicate[] =
+    findDuplicateSimpleModifications(selectedProfile);
+
+  const deviceOptions = useMemo<ModificationTargetOption[]>(() => {
+    const options: ModificationTargetOption[] = [
+      {
+        label: 'All devices',
+        value: 'profile',
+        target: { type: 'profile' },
+      },
+    ];
+
+    selectedProfile.devices?.forEach((device, index) => {
+      options.push({
+        label: formatDeviceLabel(device, index),
+        value: `device-${index}`,
+        target: { type: 'device', deviceIndex: index },
+      });
+    });
+
+    return options;
+  }, [selectedProfile.devices]);
+
+  const deviceLabelLookup = useMemo(() => {
+    const map = new Map<number, string>();
+    selectedProfile.devices?.forEach((device, index) => {
+      map.set(index, formatDeviceLabel(device, index));
+    });
+    return map;
+  }, [selectedProfile.devices]);
+
+  const duplicateMessages = useMemo(() => {
+    return duplicates.map((duplicate) =>
+      duplicate.scope === 'profile'
+        ? `${duplicate.key} (All devices)`
+        : `${duplicate.key} (${deviceLabelLookup.get(duplicate.deviceIndex ?? -1) || 'Unknown device'})`,
+    );
+  }, [deviceLabelLookup, duplicates]);
 
   // Update profile name
   const updateProfileName = (name: string) => {
@@ -86,33 +155,82 @@ export function ProfileEditor({ config, setConfig }: ProfileEditorProps) {
   };
 
   // Add simple modification
-  const addSimpleModification = (from: string, to: string) => {
+  const addSimpleModification = (
+    from: string,
+    to: string,
+    target: ModificationTarget,
+  ) => {
     const newConfig = { ...config };
-    if (!newConfig.profiles[selectedProfileIndex].simple_modifications) {
-      newConfig.profiles[selectedProfileIndex].simple_modifications = [];
-    }
-    newConfig.profiles[selectedProfileIndex].simple_modifications!.push({
+    const profile = newConfig.profiles[selectedProfileIndex];
+
+    const modification = {
       from: { key_code: from },
       to: [{ key_code: to }],
-    });
+    };
+
+    if (target.type === 'profile') {
+      if (!profile.simple_modifications) {
+        profile.simple_modifications = [];
+      }
+      profile.simple_modifications.push(modification);
+    } else {
+      if (!profile.devices || !profile.devices[target.deviceIndex]) {
+        toast({
+          title: 'Unable to add',
+          description: 'The selected device could not be found.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      const device = profile.devices[target.deviceIndex];
+      if (!device.simple_modifications) {
+        device.simple_modifications = [];
+      }
+      device.simple_modifications.push(modification);
+    }
+
     setConfig(newConfig);
+    const targetLabel =
+      target.type === 'profile'
+        ? 'All devices'
+        : deviceLabelLookup.get(target.deviceIndex) ||
+          `Device ${target.deviceIndex + 1}`;
     toast({
       title: 'Modification added',
-      description: `${from} → ${to}`,
+      description: `${from} → ${to} (${targetLabel})`,
     });
   };
 
   // Delete simple modification
-  const deleteSimpleModification = (index: number) => {
+  const deleteSimpleModification = (location: ModificationLocation) => {
     const newConfig = { ...config };
-    newConfig.profiles[selectedProfileIndex].simple_modifications!.splice(
-      index,
-      1,
-    );
+    const profile = newConfig.profiles[selectedProfileIndex];
+
+    if (location.type === 'profile') {
+      profile.simple_modifications?.splice(location.modIndex, 1);
+    } else if (profile.devices?.[location.deviceIndex]) {
+      profile.devices[location.deviceIndex].simple_modifications?.splice(
+        location.modIndex,
+        1,
+      );
+    } else {
+      toast({
+        title: 'Unable to delete',
+        description: 'The selected device could not be found.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setConfig(newConfig);
+    const targetLabel =
+      location.type === 'profile'
+        ? 'All devices'
+        : deviceLabelLookup.get(location.deviceIndex) ||
+          `Device ${location.deviceIndex + 1}`;
     toast({
       title: 'Modification deleted',
-      description: 'Key mapping removed',
+      description: `Removed mapping for ${targetLabel}`,
     });
   };
 
@@ -211,55 +329,53 @@ export function ProfileEditor({ config, setConfig }: ProfileEditorProps) {
           <TabsContent value='simple' className='space-y-4'>
             <div className='flex items-center justify-between'>
               <h3 className='text-lg font-semibold'>Simple Modifications</h3>
-              <AddModificationDialog onAdd={addSimpleModification} />
+              <AddModificationDialog
+                onAdd={addSimpleModification}
+                options={deviceOptions}
+                defaultValue='profile'
+              />
             </div>
 
-            {duplicates.length > 0 && (
+            {duplicateMessages.length > 0 && (
               <Alert variant='destructive'>
                 <AlertTriangle className='h-4 w-4' />
                 <AlertDescription>
                   <p className='font-semibold'>
                     Duplicate key mappings detected:
                   </p>
-                  <p className='text-sm'>
-                    The following keys are mapped multiple times:{' '}
-                    {duplicates.join(', ')}
-                  </p>
+                  <p className='text-sm'>{duplicateMessages.join(', ')}</p>
                 </AlertDescription>
               </Alert>
             )}
 
             <ScrollArea className='h-[500px]'>
-              <div className='space-y-3'>
-                {selectedProfile.simple_modifications?.length === 0 && (
-                  <p className='text-sm text-muted-foreground text-center py-8'>
-                    No key mappings yet. Add one to get started.
-                  </p>
-                )}
-                {selectedProfile.simple_modifications?.map((mod, index) => (
-                  <div
-                    key={index}
-                    className='flex items-center justify-between p-4 rounded-lg border bg-card'
-                  >
-                    <div className='flex items-center gap-4'>
-                      <code className='px-3 py-1 rounded bg-muted text-sm font-mono'>
-                        {mod.from.key_code}
-                      </code>
-                      <span className='text-muted-foreground'>→</span>
-                      <code className='px-3 py-1 rounded bg-muted text-sm font-mono'>
-                        {Array.isArray(mod.to)
-                          ? mod.to[0]?.key_code
-                          : mod.to?.key_code}
-                      </code>
-                    </div>
-                    <Button
-                      size='icon'
-                      variant='ghost'
-                      onClick={() => deleteSimpleModification(index)}
-                    >
-                      <Trash2 className='h-4 w-4' />
-                    </Button>
-                  </div>
+              <div className='space-y-6'>
+                <SimpleModificationSection
+                  title='All devices'
+                  modifications={selectedProfile.simple_modifications}
+                  emptyMessage='No mappings for all devices yet.'
+                  onDelete={(modIndex) =>
+                    deleteSimpleModification({ type: 'profile', modIndex })
+                  }
+                />
+
+                {selectedProfile.devices?.map((device, deviceIndex) => (
+                  <SimpleModificationSection
+                    key={`device-${deviceIndex}`}
+                    title={
+                      deviceLabelLookup.get(deviceIndex) ||
+                      formatDeviceLabel(device, deviceIndex)
+                    }
+                    modifications={device.simple_modifications}
+                    emptyMessage='No mappings for this device yet.'
+                    onDelete={(modIndex) =>
+                      deleteSimpleModification({
+                        type: 'device',
+                        deviceIndex,
+                        modIndex,
+                      })
+                    }
+                  />
                 ))}
               </div>
             </ScrollArea>
@@ -284,18 +400,126 @@ export function ProfileEditor({ config, setConfig }: ProfileEditorProps) {
   );
 }
 
+function SimpleModificationSection({
+  title,
+  modifications,
+  onDelete,
+  emptyMessage,
+}: {
+  title: string;
+  modifications: SimpleModification[] | undefined;
+  onDelete: (index: number) => void;
+  emptyMessage: string;
+}) {
+  const items = modifications ?? [];
+  const hasModifications = items.length > 0;
+
+  return (
+    <div className='space-y-3'>
+      <div className='flex items-center justify-between'>
+        <h4 className='text-sm font-semibold text-muted-foreground uppercase tracking-wide'>
+          {title}
+        </h4>
+      </div>
+      {hasModifications ? (
+        items.map((mod, index) => {
+          const toValue = Array.isArray(mod.to) ? mod.to[0] : mod.to;
+          return (
+            <div
+              key={`${title}-${index}`}
+              className='flex items-center justify-between p-4 rounded-lg border bg-card'
+            >
+              <div className='flex items-center gap-4'>
+                <code className='px-3 py-1 rounded bg-muted text-sm font-mono'>
+                  {formatKeyLabel(mod.from)}
+                </code>
+                <span className='text-muted-foreground'>→</span>
+                <code className='px-3 py-1 rounded bg-muted text-sm font-mono'>
+                  {formatKeyLabel(toValue)}
+                </code>
+              </div>
+              <Button
+                size='icon'
+                variant='ghost'
+                onClick={() => onDelete(index)}
+              >
+                <Trash2 className='h-4 w-4' />
+              </Button>
+            </div>
+          );
+        })
+      ) : (
+        <p className='text-sm text-muted-foreground text-center py-8'>
+          {emptyMessage}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function formatKeyLabel(key: KeyCode | undefined): string {
+  if (!key) {
+    return 'unknown';
+  }
+  return (
+    key.key_code || key.consumer_key_code || key.pointing_button || 'unknown'
+  );
+}
+
+function formatDeviceLabel(device: Device, index: number): string {
+  const identifiers = device.identifiers || {};
+  const descriptorParts: string[] = [];
+
+  if (identifiers.vendor_id !== undefined) {
+    descriptorParts.push(`VID ${identifiers.vendor_id}`);
+  }
+  if (identifiers.product_id !== undefined) {
+    descriptorParts.push(`PID ${identifiers.product_id}`);
+  }
+  if (identifiers.is_keyboard) {
+    descriptorParts.push('Keyboard');
+  }
+  if (identifiers.is_pointing_device) {
+    descriptorParts.push('Pointing device');
+  }
+
+  if (descriptorParts.length === 0) {
+    return `Device ${index + 1}`;
+  }
+
+  return `Device ${index + 1} • ${descriptorParts.join(' • ')}`;
+}
+
 function AddModificationDialog({
   onAdd,
+  options,
+  defaultValue,
 }: {
-  onAdd: (from: string, to: string) => void;
+  onAdd: (from: string, to: string, target: ModificationTarget) => void;
+  options: ModificationTargetOption[];
+  defaultValue?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [fromKey, setFromKey] = useState('');
   const [toKey, setToKey] = useState('');
+  const [selectedTarget, setSelectedTarget] = useState(
+    defaultValue || options[0]?.value || '',
+  );
+
+  useEffect(() => {
+    if (open) {
+      const fallback = defaultValue || options[0]?.value || '';
+      setSelectedTarget(fallback);
+    }
+  }, [defaultValue, open, options]);
+
+  const selectedOption = options.find(
+    (option) => option.value === selectedTarget,
+  );
 
   const handleAdd = () => {
-    if (fromKey && toKey) {
-      onAdd(fromKey, toKey);
+    if (fromKey && toKey && selectedOption) {
+      onAdd(fromKey, toKey, selectedOption.target);
       setFromKey('');
       setToKey('');
       setOpen(false);
@@ -334,10 +558,34 @@ function AddModificationDialog({
             />
           </div>
 
+          <div className='space-y-2'>
+            <Label>Applies To</Label>
+            <Select
+              value={selectedTarget}
+              onValueChange={setSelectedTarget}
+              disabled={options.length === 0}
+            >
+              <SelectTrigger className='w-full cursor-pointer'>
+                <SelectValue placeholder='Select target device' />
+              </SelectTrigger>
+              <SelectContent>
+                {options.map((option) => (
+                  <SelectItem
+                    key={option.value}
+                    value={option.value}
+                    className='cursor-pointer'
+                  >
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <Button
             onClick={handleAdd}
             className='w-full'
-            disabled={!fromKey || !toKey}
+            disabled={!fromKey || !toKey || !selectedOption}
           >
             Add Mapping
           </Button>

@@ -69,6 +69,23 @@ function validateProfile(profile: Profile, index: number): ValidationError[] {
     });
   }
 
+  // Validate device-specific simple modifications
+  profile.devices?.forEach((device, deviceIndex) => {
+    device.simple_modifications?.forEach((mod, modIndex) => {
+      if (
+        !mod.from?.key_code &&
+        !mod.from?.consumer_key_code &&
+        !mod.from?.pointing_button
+      ) {
+        errors.push({
+          path: `${path}.devices[${deviceIndex}].simple_modifications[${modIndex}].from`,
+          message: 'From key must be specified',
+          severity: 'error',
+        });
+      }
+    });
+  });
+
   // Validate complex modifications
   if (profile.complex_modifications?.rules) {
     profile.complex_modifications.rules.forEach((rule, ruleIndex) => {
@@ -186,21 +203,47 @@ function validateManipulator(
 /**
  * Checks for duplicate key mappings in simple modifications
  */
-export function findDuplicateSimpleModifications(profile: Profile): string[] {
-  const duplicates: string[] = [];
-  const seen = new Set<string>();
+export interface SimpleModificationDuplicate {
+  key: string;
+  scope: 'profile' | 'device';
+  deviceIndex?: number;
+}
+
+export function findDuplicateSimpleModifications(
+  profile: Profile,
+): SimpleModificationDuplicate[] {
+  const duplicates: SimpleModificationDuplicate[] = [];
+  const seenProfileKeys = new Set<string>();
 
   profile.simple_modifications?.forEach((mod) => {
     const key =
       mod.from.key_code ||
       mod.from.consumer_key_code ||
       mod.from.pointing_button;
-    if (key) {
-      if (seen.has(key)) {
-        duplicates.push(key);
-      }
-      seen.add(key);
+    if (!key) {
+      return;
     }
+    if (seenProfileKeys.has(key)) {
+      duplicates.push({ key, scope: 'profile' });
+    }
+    seenProfileKeys.add(key);
+  });
+
+  profile.devices?.forEach((device, deviceIndex) => {
+    const seenDeviceKeys = new Set<string>();
+    device.simple_modifications?.forEach((mod) => {
+      const key =
+        mod.from.key_code ||
+        mod.from.consumer_key_code ||
+        mod.from.pointing_button;
+      if (!key) {
+        return;
+      }
+      if (seenDeviceKeys.has(key)) {
+        duplicates.push({ key, scope: 'device', deviceIndex });
+      }
+      seenDeviceKeys.add(key);
+    });
   });
 
   return duplicates;
