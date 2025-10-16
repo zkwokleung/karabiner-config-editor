@@ -6,6 +6,8 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "start": "next start",
     "prepare": "husky"
   },
@@ -78,6 +80,8 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.2.4",
     "postcss": "^8.5",
+    "prettier": "^3.6.2",
+    "prettier-plugin-tailwindcss": "^0.7.0",
     "tailwindcss": "^4.1.9",
     "tw-animate-css": "1.3.3",
     "typescript": "^5",
@@ -85,7 +89,11 @@
   },
   "lint-staged": {
     "*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}": [
+      "pnpm exec prettier --write",
       "pnpm exec eslint --max-warnings=0"
+    ],
+    "*.{json,md,mdx,css,scss,html,yml,yaml}": [
+      "pnpm exec prettier --write"
     ]
   }
 }
