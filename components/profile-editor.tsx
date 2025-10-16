@@ -136,9 +136,8 @@ export function ProfileEditor({ config, setConfig }: ProfileEditorProps) {
             {config.profiles.map((profile, index) => (
               <div
                 key={index}
-                className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
-                  selectedProfileIndex === index ? "bg-primary/10 border-primary" : "hover:bg-muted"
-                }`}
+                className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${selectedProfileIndex === index ? "bg-primary/10 border-primary" : "hover:bg-muted"
+                  }`}
                 onClick={() => setSelectedProfileIndex(index)}
               >
                 <span className="text-sm font-medium truncate">{profile.name}</span>
@@ -263,7 +262,7 @@ function AddModificationDialog({ onAdd }: { onAdd: (from: string, to: string) =>
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="cursor-pointer">
+        <Button size="sm">
           <Plus className="mr-2 h-4 w-4" />
           Add Mapping
         </Button>

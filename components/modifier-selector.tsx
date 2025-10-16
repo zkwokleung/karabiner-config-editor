@@ -39,7 +39,7 @@ export function ModifierSelector({ selected, onChange, label }: ModifierSelector
         ))}
         <Dialog>
           <DialogTrigger asChild>
-            <Button size="sm" variant="outline" className="cursor-pointer bg-transparent">
+            <Button size="sm" variant="outline" className="bg-transparent">
               {selected.length === 0 ? "Add Modifiers" : "Edit"}
             </Button>
           </DialogTrigger>

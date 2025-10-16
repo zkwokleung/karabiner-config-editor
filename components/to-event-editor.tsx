@@ -264,7 +264,7 @@ function ToEventItem({
 
         <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
           <CollapsibleTrigger asChild>
-            <Button variant="ghost" size="sm" className="w-full justify-between cursor-pointer">
+            <Button variant="ghost" size="sm" className="w-full justify-between">
               <span className="text-xs">Advanced Options</span>
               {showAdvanced ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
             </Button>

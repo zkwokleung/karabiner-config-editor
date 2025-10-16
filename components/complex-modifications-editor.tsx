@@ -116,7 +116,6 @@ export function ComplexModificationsEditor({ rules, onRulesChange }: ComplexModi
               })
             }}
             size="sm"
-            className="cursor-pointer"
           >
             <Plus className="mr-2 h-4 w-4" />
             Add Rule
@@ -321,7 +320,6 @@ function SortableRuleCard({
               e.stopPropagation()
               onDelete()
             }}
-            className="cursor-pointer"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -342,7 +340,7 @@ function SortableRuleCard({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Label>Manipulators</Label>
-              <Button size="sm" variant="outline" onClick={onAddManipulator} className="cursor-pointer bg-transparent">
+              <Button size="sm" variant="outline" onClick={onAddManipulator} className="bg-transparent">
                 <Plus className="mr-2 h-3 w-3" />
                 Add Manipulator
               </Button>
@@ -508,7 +506,7 @@ function ManipulatorEditor({
             </div>
           )}
           <Badge variant="outline">Type: {manipulator.type}</Badge>
-          <Button size="icon" variant="ghost" onClick={onDelete} className="cursor-pointer">
+          <Button size="icon" variant="ghost" onClick={onDelete}>
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
@@ -553,7 +551,7 @@ function ManipulatorEditor({
           variant="ghost"
           size="sm"
           onClick={() => setShowAdvanced(!showAdvanced)}
-          className="w-full cursor-pointer"
+          className="w-full"
         >
           <Settings className="mr-2 h-4 w-4" />
           {showAdvanced ? "Hide" : "Show"} Advanced Options
@@ -571,7 +569,6 @@ function ManipulatorEditor({
                     size="sm"
                     variant="ghost"
                     onClick={() => clearField("to_if_alone")}
-                    className="cursor-pointer"
                   >
                     Clear
                   </Button>
@@ -600,7 +597,6 @@ function ManipulatorEditor({
                     size="sm"
                     variant="ghost"
                     onClick={() => clearField("to_if_held_down")}
-                    className="cursor-pointer"
                   >
                     Clear
                   </Button>

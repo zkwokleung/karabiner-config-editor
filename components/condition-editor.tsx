@@ -42,7 +42,7 @@ export function ConditionEditor({ conditions, onChange }: ConditionEditorProps) 
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <Label className="text-sm font-semibold">Conditions</Label>
-        <Button size="sm" variant="outline" onClick={addCondition} className="cursor-pointer bg-transparent">
+        <Button size="sm" variant="outline" onClick={addCondition} className="bg-transparent">
           <Plus className="mr-2 h-3 w-3" />
           Add Condition
         </Button>
@@ -130,7 +130,7 @@ function ConditionItem({
               </ScrollArea>
             </SelectContent>
           </Select>
-          <Button size="icon" variant="ghost" onClick={onDelete} className="cursor-pointer">
+          <Button size="icon" variant="ghost" onClick={onDelete}>
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
@@ -140,7 +140,7 @@ function ConditionItem({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="text-xs">Bundle Identifiers (regex)</Label>
-              <Button size="sm" variant="ghost" onClick={addBundleIdentifier} className="cursor-pointer">
+              <Button size="sm" variant="ghost" onClick={addBundleIdentifier}>
                 <Plus className="h-3 w-3" />
               </Button>
             </div>
@@ -156,7 +156,6 @@ function ConditionItem({
                   size="icon"
                   variant="ghost"
                   onClick={() => deleteBundleIdentifier(index)}
-                  className="cursor-pointer"
                 >
                   <X className="h-3 w-3" />
                 </Button>
