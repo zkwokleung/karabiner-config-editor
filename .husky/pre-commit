@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+
+command -v pnpm >/dev/null 2>&1 || {
+  echo "husky (pre-commit): pnpm not found, please install pnpm to run lint-staged." >&2
+  exit 1
+}
+
+pnpm exec lint-staged

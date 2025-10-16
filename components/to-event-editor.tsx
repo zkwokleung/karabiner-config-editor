@@ -155,13 +155,13 @@ function ToEventItem({
             <Textarea
               value={event.shell_command || ""}
               onChange={(e) => onUpdate({ ...event, shell_command: e.target.value })}
-              placeholder="open -a 'Google Chrome'"
+              placeholder="open -a &apos;Google Chrome&apos;"
               className="font-mono text-xs"
               rows={3}
             />
             <p className="text-xs text-muted-foreground">
-              Example: open -a 'Application Name' or osascript -e 'tell application "System Events" to keystroke "c"
-              using command down'
+              Example: open -a &apos;Application Name&apos; or osascript -e &apos;tell application &quot;System Events&quot;
+              to keystroke &quot;c&quot; using command down&apos;
             </p>
           </div>
         )}

@@ -54,7 +54,7 @@ export function KeyInput({ value, onChange, placeholder = "Select or type key...
                       setSearchValue("")
                     }}
                   >
-                    Use "{searchValue}"
+                    Use &quot;{searchValue}&quot;
                   </Button>
                 )}
               </div>

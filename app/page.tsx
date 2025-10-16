@@ -52,7 +52,7 @@ export default function KarabinerEditor() {
           title: "Config loaded",
           description: "Successfully loaded Karabiner config file",
         })
-      } catch (error) {
+      } catch {
         toast({
           title: "Error",
           description: "Invalid JSON file",
@@ -82,7 +82,7 @@ export default function KarabinerEditor() {
         title: "Config loaded",
         description: "Successfully parsed JSON config",
       })
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Invalid JSON format. Please check your syntax.",

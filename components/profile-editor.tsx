@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import type { KarabinerConfig, Profile } from "@/types/karabiner"
+import type { KarabinerConfig, Profile, Rule, FnFunctionKey } from "@/types/karabiner"
 import { useToast } from "@/hooks/use-toast"
 import { ComplexModificationsEditor } from "@/components/complex-modifications-editor"
 import { FnFunctionKeysEditor } from "@/components/fn-function-keys-editor"
@@ -103,7 +103,7 @@ export function ProfileEditor({ config, setConfig }: ProfileEditorProps) {
   }
 
   // Update complex modifications
-  const updateComplexModifications = (rules: any[]) => {
+  const updateComplexModifications = (rules: Rule[]) => {
     const newConfig = { ...config }
     if (!newConfig.profiles[selectedProfileIndex].complex_modifications) {
       newConfig.profiles[selectedProfileIndex].complex_modifications = {
@@ -115,7 +115,7 @@ export function ProfileEditor({ config, setConfig }: ProfileEditorProps) {
   }
 
   // Update fn function keys
-  const updateFnFunctionKeys = (fnKeys: any[]) => {
+  const updateFnFunctionKeys = (fnKeys: FnFunctionKey[]) => {
     const newConfig = { ...config }
     newConfig.profiles[selectedProfileIndex].fn_function_keys = fnKeys
     setConfig(newConfig)

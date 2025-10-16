@@ -1,6 +1,4 @@
 "use client"
-
-import { useState } from "react"
 import { Plus, Trash2, X } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -17,15 +15,12 @@ interface ConditionEditorProps {
 }
 
 export function ConditionEditor({ conditions, onChange }: ConditionEditorProps) {
-  const [isAdding, setIsAdding] = useState(false)
-
   const addCondition = () => {
     const newCondition: Condition = {
       type: "frontmost_application_if",
       bundle_identifiers: ["^com\\.example\\.app$"],
     }
     onChange([...conditions, newCondition])
-    setIsAdding(false)
   }
 
   const deleteCondition = (index: number) => {

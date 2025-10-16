@@ -11,7 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import type { Rule, Manipulator, Modifiers } from "@/types/karabiner"
+import type { Rule, Manipulator, Modifiers, ToEvent, Condition } from "@/types/karabiner"
 import { useToast } from "@/hooks/use-toast"
 import { ConditionEditor } from "@/components/condition-editor"
 import { ToEventEditor } from "@/components/to-event-editor"
@@ -36,6 +36,8 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
+
+type SortableHandleProps = Pick<ReturnType<typeof useSortable>, "attributes" | "listeners">
 
 interface ComplexModificationsEditorProps {
   rules: Rule[]
@@ -412,7 +414,7 @@ function ManipulatorEditor({
   manipulator: Manipulator
   onUpdate: (manipulator: Manipulator) => void
   onDelete: () => void
-  dragHandleProps?: any
+  dragHandleProps?: SortableHandleProps
 }) {
   const [showAdvanced, setShowAdvanced] = useState(false)
 
@@ -432,47 +434,13 @@ function ManipulatorEditor({
     })
   }
 
-  const updateToKey = (key: string) => {
-    const newTo = [...(manipulator.to || [])]
-    if (newTo.length === 0) {
-      newTo.push({ key_code: key })
-    } else {
-      newTo[0] = { ...newTo[0], key_code: key }
-    }
-    onUpdate({ ...manipulator, to: newTo })
-  }
-
-  const addToEvent = () => {
-    const newTo = [...(manipulator.to || []), { key_code: "a" }]
-    onUpdate({ ...manipulator, to: newTo })
-  }
-
-  const deleteToEvent = (index: number) => {
-    const newTo = (manipulator.to || []).filter((_, i) => i !== index)
-    onUpdate({ ...manipulator, to: newTo })
-  }
-
-  const updateToIfAlone = (key: string) => {
-    onUpdate({
-      ...manipulator,
-      to_if_alone: [{ key_code: key }],
-    })
-  }
-
-  const updateToIfHeldDown = (key: string) => {
-    onUpdate({
-      ...manipulator,
-      to_if_held_down: [{ key_code: key }],
-    })
-  }
-
   const clearField = (field: "to_if_alone" | "to_if_held_down" | "to_after_key_up") => {
     const updated = { ...manipulator }
     delete updated[field]
     onUpdate(updated)
   }
 
-  const updateToAfterKeyUp = (events: any[]) => {
+  const updateToAfterKeyUp = (events: ToEvent[]) => {
     if (events.length === 0) {
       const updated = { ...manipulator }
       delete updated.to_after_key_up
@@ -482,7 +450,7 @@ function ManipulatorEditor({
     }
   }
 
-  const updateConditions = (conditions: any[]) => {
+  const updateConditions = (conditions: Condition[]) => {
     if (conditions.length === 0) {
       const updated = { ...manipulator }
       delete updated.conditions
