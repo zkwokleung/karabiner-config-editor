@@ -19,7 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
-import { ProfileEditor } from '@/components/profile-editor';
+import { ProfileManager } from '@/components/profile/profile-manager';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { KarabinerConfig } from '@/types/karabiner';
@@ -247,7 +247,7 @@ export default function KarabinerEditor() {
 
           <TabsContent value='edit'>
             {config && (
-              <ProfileEditor config={config} setConfig={updateConfig} />
+              <ProfileManager config={config} setConfig={updateConfig} />
             )}
           </TabsContent>
 
