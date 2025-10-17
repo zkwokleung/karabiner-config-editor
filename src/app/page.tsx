@@ -12,6 +12,7 @@ import {
   FileJson,
   CheckCircle2,
   AlertCircle,
+  FilePlus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -24,6 +25,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { KarabinerConfig } from '@/types/karabiner';
 import { validateConfig, type ValidationError } from '@/lib/validation';
+import { createMinimalKarabinerConfig } from '@/lib/default-config';
 
 export default function KarabinerEditor() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
@@ -72,6 +74,17 @@ export default function KarabinerEditor() {
       }
     };
     reader.readAsText(file);
+  };
+
+  const handleStartWithDefault = () => {
+    const minimalConfig = createMinimalKarabinerConfig();
+    updateConfig(minimalConfig);
+    setJsonInput(JSON.stringify(minimalConfig, null, 2));
+    setActiveTab('edit');
+    toast({
+      title: 'Default config ready',
+      description: 'Loaded a minimal Karabiner config to get you started.',
+    });
   };
 
   const handleJsonPaste = () => {
@@ -204,6 +217,20 @@ export default function KarabinerEditor() {
                 </div>
               </Card>
             )}
+
+            <Card className='p-6'>
+              <div className='flex items-start justify-between gap-4'>
+                <div className='space-y-2'>
+                  <h2 className='text-lg font-semibold flex items-center gap-2'>
+                    <FilePlus className='h-5 w-5 text-primary' />
+                    Start from a default config
+                  </h2>
+                </div>
+                <Button onClick={handleStartWithDefault} className='shrink-0'>
+                  Use Default Config
+                </Button>
+              </div>
+            </Card>
 
             <Card className='p-6'>
               <h2 className='text-lg font-semibold mb-4'>Upload Config File</h2>
