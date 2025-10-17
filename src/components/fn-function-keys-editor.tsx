@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area"
 import type { Profile, FnFunctionKey, Device } from "@/types/karabiner"
 import { useToast } from "@/hooks/use-toast"
-import { COMMON_KEYS } from "@/lib/constants"
+import { KeyCodeSelector } from "@/components/key-code-selector"
 
 interface FnFunctionKeysEditorProps {
   profile: Profile
@@ -278,23 +278,11 @@ export function FnFunctionKeysEditor({
 
                     <div className="space-y-2">
                       <Label className="text-xs">To Key</Label>
-                      <Select
+                      <KeyCodeSelector
                         value={(Array.isArray(fnKey.to) ? fnKey.to[0]?.key_code : fnKey.to?.key_code) || ""}
-                        onValueChange={(key) => updateFnKey(index, fnKey.from.key_code || "", key)}
-                      >
-                        <SelectTrigger className="cursor-pointer">
-                          <SelectValue placeholder="Select target key" />
-                        </SelectTrigger>
-                        <SelectContent position="popper" sideOffset={5} className="max-h-[300px]">
-                          <ScrollArea className="h-[200px]">
-                            {COMMON_KEYS.map((key) => (
-                              <SelectItem key={key} value={key}>
-                                {key}
-                              </SelectItem>
-                            ))}
-                          </ScrollArea>
-                        </SelectContent>
-                      </Select>
+                        onChange={(key) => updateFnKey(index, fnKey.from.key_code || "", key)}
+                        placeholder="Select target key"
+                      />
                     </div>
                   </div>
 
