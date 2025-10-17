@@ -1,11 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Plus,
   Trash2,
-  ChevronDown,
-  ChevronRight,
   Settings,
   Search,
   GripVertical,
@@ -17,11 +15,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import type {
@@ -38,6 +31,7 @@ import { ModifierSelector } from '@/components/modifier-selector';
 import { KeyInput } from '@/components/key-input';
 import { RuleTemplates } from '@/components/rule-templates';
 import { findConflictingManipulators } from '@/lib/validation';
+import { cn } from '@/lib/utils';
 import {
   DndContext,
   closestCenter,
@@ -71,7 +65,9 @@ export function ComplexModificationsEditor({
   onRulesChange,
 }: ComplexModificationsEditorProps) {
   const { toast } = useToast();
-  const [expandedRules, setExpandedRules] = useState<Set<number>>(new Set([0]));
+  const [selectedRuleIndex, setSelectedRuleIndex] = useState<number | null>(
+    rules.length > 0 ? 0 : null,
+  );
   const [searchQuery, setSearchQuery] = useState('');
 
   const sensors = useSensors(
@@ -91,8 +87,11 @@ export function ComplexModificationsEditor({
       .filter(({ rule }) => {
         if (rule.description.toLowerCase().includes(query)) return true;
 
-        return rule.manipulators.some((m) => {
-          const fromKey = m.from.key_code || m.from.consumer_key_code || '';
+        return rule.manipulators.some((manipulator) => {
+          const fromKey =
+            manipulator.from.key_code ||
+            manipulator.from.consumer_key_code ||
+            '';
           return fromKey.toLowerCase().includes(query);
         });
       });
@@ -100,21 +99,192 @@ export function ComplexModificationsEditor({
 
   const conflicts = useMemo(() => findConflictingManipulators(rules), [rules]);
 
+  useEffect(() => {
+    setSelectedRuleIndex((current) => {
+      if (rules.length === 0) {
+        return null;
+      }
+
+      if (current === null) {
+        return 0;
+      }
+
+      if (current >= rules.length) {
+        return rules.length - 1;
+      }
+
+      return current;
+    });
+  }, [rules]);
+
+  useEffect(() => {
+    if (filteredRules.length === 0) {
+      setSelectedRuleIndex(null);
+      return;
+    }
+
+    setSelectedRuleIndex((current) => {
+      if (
+        current !== null &&
+        filteredRules.some(({ originalIndex }) => originalIndex === current)
+      ) {
+        return current;
+      }
+
+      return filteredRules[0].originalIndex;
+    });
+  }, [filteredRules]);
+
+  const handleSelectRule = (ruleIndex: number) => {
+    setSelectedRuleIndex(ruleIndex);
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
-    if (over && active.id !== over.id) {
-      const oldIndex = rules.findIndex((_, i) => i === active.id);
-      const newIndex = rules.findIndex((_, i) => i === over.id);
-
-      const newRules = arrayMove(rules, oldIndex, newIndex);
-      onRulesChange(newRules);
-      toast({
-        title: 'Rule reordered',
-        description: 'Rule order has been updated',
-      });
+    if (!over || active.id === over.id) {
+      return;
     }
+
+    const oldIndex = active.id as number;
+    const newIndex = over.id as number;
+
+    const newRules = arrayMove(rules, oldIndex, newIndex);
+    onRulesChange(newRules);
+
+    setSelectedRuleIndex((current) => {
+      if (current === null) return current;
+      if (current === oldIndex) return newIndex;
+      if (oldIndex < newIndex && current > oldIndex && current <= newIndex) {
+        return current - 1;
+      }
+      if (oldIndex > newIndex && current < oldIndex && current >= newIndex) {
+        return current + 1;
+      }
+      return current;
+    });
+
+    toast({
+      title: 'Rule reordered',
+      description: 'Rule order has been updated',
+    });
   };
+
+  const handleAddRuleFromTemplate = (rule: Rule) => {
+    const nextIndex = rules.length;
+    onRulesChange([...rules, rule]);
+    setSelectedRuleIndex(nextIndex);
+  };
+
+  const handleAddRule = () => {
+    const newRule: Rule = {
+      description: 'New Rule',
+      manipulators: [],
+    };
+    const nextIndex = rules.length;
+    onRulesChange([...rules, newRule]);
+    setSelectedRuleIndex(nextIndex);
+    toast({
+      title: 'Rule added',
+      description: 'New complex modification rule created',
+    });
+  };
+
+  const handleDeleteRule = (ruleIndex: number) => {
+    const newRules = rules.filter((_, index) => index !== ruleIndex);
+    onRulesChange(newRules);
+    setSelectedRuleIndex((current) => {
+      if (newRules.length === 0) return null;
+      if (current === null) return null;
+      if (current === ruleIndex) {
+        return Math.min(ruleIndex, newRules.length - 1);
+      }
+      if (current > ruleIndex) {
+        return current - 1;
+      }
+      return current;
+    });
+    toast({
+      title: 'Rule deleted',
+      description: 'Complex modification rule removed',
+    });
+  };
+
+  const handleUpdateDescription = (ruleIndex: number, description: string) => {
+    const newRules = [...rules];
+    newRules[ruleIndex].description = description;
+    onRulesChange(newRules);
+  };
+
+  const handleAddManipulator = (ruleIndex: number) => {
+    const newManipulator: Manipulator = {
+      type: 'basic',
+      from: {
+        key_code: 'caps_lock',
+      },
+      to: [
+        {
+          key_code: 'left_control',
+        },
+      ],
+    };
+
+    const newRules = [...rules];
+    newRules[ruleIndex].manipulators = [
+      ...newRules[ruleIndex].manipulators,
+      newManipulator,
+    ];
+    onRulesChange(newRules);
+    toast({
+      title: 'Manipulator added',
+      description: 'New key manipulator created',
+    });
+  };
+
+  const handleDeleteManipulator = (ruleIndex: number, manipIndex: number) => {
+    const newRules = [...rules];
+    newRules[ruleIndex].manipulators = newRules[ruleIndex].manipulators.filter(
+      (_, index) => index !== manipIndex,
+    );
+    onRulesChange(newRules);
+    toast({
+      title: 'Manipulator deleted',
+      description: 'Key manipulator removed',
+    });
+  };
+
+  const handleUpdateManipulator = (
+    ruleIndex: number,
+    manipIndex: number,
+    manipulator: Manipulator,
+  ) => {
+    const newRules = [...rules];
+    newRules[ruleIndex].manipulators[manipIndex] = manipulator;
+    onRulesChange(newRules);
+  };
+
+  const handleReorderManipulators = (
+    ruleIndex: number,
+    newManipulators: Manipulator[],
+  ) => {
+    const newRules = [...rules];
+    newRules[ruleIndex].manipulators = newManipulators;
+    onRulesChange(newRules);
+  };
+
+  const selectedRule =
+    selectedRuleIndex !== null ? rules[selectedRuleIndex] : null;
+  const isFiltering = Boolean(searchQuery.trim());
+
+  let detailFallbackMessage = '';
+  if (rules.length === 0) {
+    detailFallbackMessage =
+      'No complex modification rules yet. Add one to create advanced key mappings.';
+  } else if (filteredRules.length === 0) {
+    detailFallbackMessage = 'No rules match your search query.';
+  } else {
+    detailFallbackMessage = 'Select a rule from the list to view its details.';
+  }
 
   return (
     <div className='space-y-4'>
@@ -126,27 +296,8 @@ export function ComplexModificationsEditor({
           </p>
         </div>
         <div className='flex items-center gap-2'>
-          <RuleTemplates
-            onAddRule={(rule) => {
-              onRulesChange([...rules, rule]);
-              setExpandedRules(new Set([...expandedRules, rules.length]));
-            }}
-          />
-          <Button
-            onClick={() => {
-              const newRule: Rule = {
-                description: 'New Rule',
-                manipulators: [],
-              };
-              onRulesChange([...rules, newRule]);
-              setExpandedRules(new Set([...expandedRules, rules.length]));
-              toast({
-                title: 'Rule added',
-                description: 'New complex modification rule created',
-              });
-            }}
-            size='sm'
-          >
+          <RuleTemplates onAddRule={handleAddRuleFromTemplate} />
+          <Button onClick={handleAddRule} size='sm'>
             <Plus className='mr-2 h-4 w-4' />
             Add Rule
           </Button>
@@ -154,7 +305,7 @@ export function ComplexModificationsEditor({
       </div>
 
       <div className='relative'>
-        <Search className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+        <Search className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
         <Input
           placeholder='Search rules by description or key...'
           value={searchQuery}
@@ -171,9 +322,9 @@ export function ComplexModificationsEditor({
               <p className='font-semibold'>
                 Conflicting key mappings detected:
               </p>
-              <ul className='list-disc list-inside text-sm'>
-                {conflicts.map((conflict, i) => (
-                  <li key={i}>{conflict}</li>
+              <ul className='list-inside list-disc text-sm'>
+                {conflicts.map((conflict, index) => (
+                  <li key={index}>{conflict}</li>
                 ))}
               </ul>
             </div>
@@ -181,137 +332,95 @@ export function ComplexModificationsEditor({
         </Alert>
       )}
 
-      <ScrollArea className='h-[600px]'>
-        <div className='space-y-3'>
-          {filteredRules.length === 0 && !searchQuery && (
-            <Card className='p-8'>
-              <p className='text-sm text-muted-foreground text-center'>
-                No complex modification rules yet. Add one to create advanced
-                key mappings.
-              </p>
-            </Card>
-          )}
+      <div className='grid gap-6 lg:grid-cols-[280px_1fr]'>
+        <Card className='p-3'>
+          <ScrollArea className='h-[600px] pr-2'>
+            <div className='space-y-2'>
+              {filteredRules.length === 0 ? (
+                <Card className='p-6 text-center text-sm text-muted-foreground'>
+                  {isFiltering
+                    ? 'No rules match your search query.'
+                    : 'No complex modification rules yet. Add one to create advanced key mappings.'}
+                </Card>
+              ) : (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext
+                    items={filteredRules.map(
+                      ({ originalIndex }) => originalIndex,
+                    )}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {filteredRules.map(({ rule, originalIndex }) => (
+                      <SortableRuleListItem
+                        key={originalIndex}
+                        rule={rule}
+                        ruleIndex={originalIndex}
+                        selected={selectedRuleIndex === originalIndex}
+                        onSelect={handleSelectRule}
+                        onDelete={() => handleDeleteRule(originalIndex)}
+                      />
+                    ))}
+                  </SortableContext>
+                </DndContext>
+              )}
+            </div>
+          </ScrollArea>
+        </Card>
 
-          {filteredRules.length === 0 && searchQuery && (
-            <Card className='p-8'>
-              <p className='text-sm text-muted-foreground text-center'>
-                No rules match your search query.
-              </p>
-            </Card>
-          )}
-
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={rules.map((_, i) => i)}
-              strategy={verticalListSortingStrategy}
-            >
-              {filteredRules.map(({ rule, originalIndex }) => (
-                <SortableRuleCard
-                  key={originalIndex}
-                  rule={rule}
-                  ruleIndex={originalIndex}
-                  isExpanded={expandedRules.has(originalIndex)}
-                  onToggle={() =>
-                    setExpandedRules((prev) => {
-                      const newSet = new Set(prev);
-                      if (newSet.has(originalIndex)) {
-                        newSet.delete(originalIndex);
-                      } else {
-                        newSet.add(originalIndex);
-                      }
-                      return newSet;
-                    })
-                  }
-                  onDelete={() => {
-                    const newRules = rules.filter(
-                      (_, i) => i !== originalIndex,
-                    );
-                    onRulesChange(newRules);
-                    toast({
-                      title: 'Rule deleted',
-                      description: 'Complex modification rule removed',
-                    });
-                  }}
-                  onUpdateDescription={(desc) => {
-                    const newRules = [...rules];
-                    newRules[originalIndex].description = desc;
-                    onRulesChange(newRules);
-                  }}
-                  onAddManipulator={() => {
-                    const newManipulator: Manipulator = {
-                      type: 'basic',
-                      from: {
-                        key_code: 'caps_lock',
-                      },
-                      to: [
-                        {
-                          key_code: 'left_control',
-                        },
-                      ],
-                    };
-                    const newRules = [...rules];
-                    newRules[originalIndex].manipulators.push(newManipulator);
-                    onRulesChange(newRules);
-                    toast({
-                      title: 'Manipulator added',
-                      description: 'New key manipulator created',
-                    });
-                  }}
-                  onDeleteManipulator={(mIndex) => {
-                    const newRules = [...rules];
-                    newRules[originalIndex].manipulators.splice(mIndex, 1);
-                    onRulesChange(newRules);
-                    toast({
-                      title: 'Manipulator deleted',
-                      description: 'Key manipulator removed',
-                    });
-                  }}
-                  onUpdateManipulator={(mIndex, m) => {
-                    const newRules = [...rules];
-                    newRules[originalIndex].manipulators[mIndex] = m;
-                    onRulesChange(newRules);
-                  }}
-                  onReorderManipulators={(newManipulators) => {
-                    const newRules = [...rules];
-                    newRules[originalIndex].manipulators = newManipulators;
-                    onRulesChange(newRules);
-                  }}
-                />
-              ))}
-            </SortableContext>
-          </DndContext>
-        </div>
-      </ScrollArea>
+        <ScrollArea className='h-[600px]'>
+          <div className='pr-2'>
+            {selectedRule ? (
+              <RuleDetailPanel
+                rule={selectedRule}
+                onDelete={() => handleDeleteRule(selectedRuleIndex)}
+                onUpdateDescription={(desc) =>
+                  handleUpdateDescription(selectedRuleIndex, desc)
+                }
+                onAddManipulator={() => handleAddManipulator(selectedRuleIndex)}
+                onDeleteManipulator={(manipIndex) =>
+                  handleDeleteManipulator(selectedRuleIndex, manipIndex)
+                }
+                onUpdateManipulator={(manipIndex, manipulator) =>
+                  handleUpdateManipulator(
+                    selectedRuleIndex,
+                    manipIndex,
+                    manipulator,
+                  )
+                }
+                onReorderManipulators={(newManipulators) =>
+                  handleReorderManipulators(selectedRuleIndex, newManipulators)
+                }
+              />
+            ) : (
+              <Card className='p-8 text-center'>
+                <p className='text-sm text-muted-foreground'>
+                  {detailFallbackMessage}
+                </p>
+              </Card>
+            )}
+          </div>
+        </ScrollArea>
+      </div>
     </div>
   );
 }
 
-function SortableRuleCard({
+function SortableRuleListItem({
   rule,
   ruleIndex,
-  isExpanded,
-  onToggle,
+  selected,
+  onSelect,
   onDelete,
-  onUpdateDescription,
-  onAddManipulator,
-  onDeleteManipulator,
-  onUpdateManipulator,
-  onReorderManipulators,
 }: {
   rule: Rule;
   ruleIndex: number;
-  isExpanded: boolean;
-  onToggle: () => void;
+  selected: boolean;
+  onSelect: (ruleIndex: number) => void;
   onDelete: () => void;
-  onUpdateDescription: (desc: string) => void;
-  onAddManipulator: () => void;
-  onDeleteManipulator: (index: number) => void;
-  onUpdateManipulator: (index: number, m: Manipulator) => void;
-  onReorderManipulators: (manipulators: Manipulator[]) => void;
 }) {
   const {
     attributes,
@@ -325,9 +434,66 @@ function SortableRuleCard({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.6 : 1,
   };
 
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      onClick={() => onSelect(ruleIndex)}
+      className={cn(
+        'flex items-center gap-3 rounded-md border bg-card p-2 text-left transition hover:bg-muted',
+        selected ? 'border-primary bg-muted' : 'border-border',
+      )}
+    >
+      <div
+        {...attributes}
+        {...listeners}
+        className='flex h-full cursor-grab items-center rounded-md px-2 text-muted-foreground transition hover:bg-muted active:cursor-grabbing'
+      >
+        <GripVertical className='h-4 w-4' />
+      </div>
+      <div className='flex flex-1 flex-col gap-1'>
+        <span className='text-sm font-medium'>
+          {rule.description || 'Untitled rule'}
+        </span>
+        <Badge variant='secondary' className='w-fit'>
+          {rule.manipulators.length} manipulator
+          {rule.manipulators.length === 1 ? '' : 's'}
+        </Badge>
+      </div>
+      <Button
+        size='icon'
+        variant='ghost'
+        onClick={(event) => {
+          event.stopPropagation();
+          onDelete();
+        }}
+      >
+        <Trash2 className='h-4 w-4' />
+      </Button>
+    </div>
+  );
+}
+
+function RuleDetailPanel({
+  rule,
+  onDelete,
+  onUpdateDescription,
+  onAddManipulator,
+  onDeleteManipulator,
+  onUpdateManipulator,
+  onReorderManipulators,
+}: {
+  rule: Rule;
+  onDelete: () => void;
+  onUpdateDescription: (desc: string) => void;
+  onAddManipulator: () => void;
+  onDeleteManipulator: (index: number) => void;
+  onUpdateManipulator: (index: number, manipulator: Manipulator) => void;
+  onReorderManipulators: (manipulators: Manipulator[]) => void;
+}) {
   const manipulatorSensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -338,88 +504,69 @@ function SortableRuleCard({
   const handleManipulatorDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
-    if (over && active.id !== over.id) {
-      const oldIndex = rule.manipulators.findIndex((_, i) => i === active.id);
-      const newIndex = rule.manipulators.findIndex((_, i) => i === over.id);
-
-      const newManipulators = arrayMove(rule.manipulators, oldIndex, newIndex);
-      onReorderManipulators(newManipulators);
+    if (!over || active.id === over.id) {
+      return;
     }
+
+    const oldIndex = active.id as number;
+    const newIndex = over.id as number;
+
+    const newManipulators = arrayMove(rule.manipulators, oldIndex, newIndex);
+    onReorderManipulators(newManipulators);
   };
 
   return (
-    <Card ref={setNodeRef} style={style} className='p-4'>
-      <Collapsible open={isExpanded} onOpenChange={onToggle}>
-        <div className='flex items-center justify-between gap-2'>
-          <div
-            {...attributes}
-            {...listeners}
-            className='cursor-grab active:cursor-grabbing'
-          >
-            <GripVertical className='h-5 w-5 text-muted-foreground' />
-          </div>
+    <Card className='space-y-4 p-6'>
+      <div className='flex items-start justify-between gap-4'>
+        <div className='flex-1 space-y-2'>
+          <Label>Rule Description</Label>
+          <Input
+            value={rule.description}
+            onChange={(event) => onUpdateDescription(event.target.value)}
+            placeholder='Describe what this rule does'
+          />
+        </div>
+        <Button
+          size='icon'
+          variant='ghost'
+          onClick={onDelete}
+          className='shrink-0'
+        >
+          <Trash2 className='h-4 w-4' />
+        </Button>
+      </div>
 
-          <CollapsibleTrigger className='flex items-center gap-2 flex-1 cursor-pointer'>
-            {isExpanded ? (
-              <ChevronDown className='h-4 w-4' />
-            ) : (
-              <ChevronRight className='h-4 w-4' />
-            )}
-            <div className='flex items-center gap-3 flex-1'>
-              <span className='font-medium'>{rule.description}</span>
-              <Badge variant='secondary'>
-                {rule.manipulators.length} manipulator
-                {rule.manipulators.length !== 1 ? 's' : ''}
-              </Badge>
-            </div>
-          </CollapsibleTrigger>
+      <Separator />
+
+      <div className='space-y-3'>
+        <div className='flex items-center justify-between'>
+          <Label>Manipulators</Label>
           <Button
-            size='icon'
-            variant='ghost'
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
+            size='sm'
+            variant='outline'
+            onClick={onAddManipulator}
+            className='bg-transparent'
           >
-            <Trash2 className='h-4 w-4' />
+            <Plus className='mr-2 h-3 w-3' />
+            Add Manipulator
           </Button>
         </div>
 
-        <CollapsibleContent className='pt-4 space-y-4'>
-          <div className='space-y-2'>
-            <Label>Rule Description</Label>
-            <Input
-              value={rule.description}
-              onChange={(e) => onUpdateDescription(e.target.value)}
-              placeholder='Describe what this rule does'
-            />
-          </div>
-
-          <Separator />
-
-          <div className='space-y-3'>
-            <div className='flex items-center justify-between'>
-              <Label>Manipulators</Label>
-              <Button
-                size='sm'
-                variant='outline'
-                onClick={onAddManipulator}
-                className='bg-transparent'
-              >
-                <Plus className='mr-2 h-3 w-3' />
-                Add Manipulator
-              </Button>
-            </div>
-
-            <DndContext
-              sensors={manipulatorSensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleManipulatorDragEnd}
+        {rule.manipulators.length === 0 ? (
+          <Card className='p-6 text-center text-sm text-muted-foreground'>
+            No manipulators yet. Add one to start remapping keys.
+          </Card>
+        ) : (
+          <DndContext
+            sensors={manipulatorSensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleManipulatorDragEnd}
+          >
+            <SortableContext
+              items={rule.manipulators.map((_, index) => index)}
+              strategy={verticalListSortingStrategy}
             >
-              <SortableContext
-                items={rule.manipulators.map((_, i) => i)}
-                strategy={verticalListSortingStrategy}
-              >
+              <div className='space-y-3'>
                 {rule.manipulators.map((manipulator, manipulatorIndex) => (
                   <SortableManipulatorEditor
                     key={manipulatorIndex}
@@ -431,11 +578,11 @@ function SortableRuleCard({
                     onDelete={() => onDeleteManipulator(manipulatorIndex)}
                   />
                 ))}
-              </SortableContext>
-            </DndContext>
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
+              </div>
+            </SortableContext>
+          </DndContext>
+        )}
+      </div>
     </Card>
   );
 }
@@ -541,24 +688,24 @@ function ManipulatorEditor({
   };
 
   return (
-    <Card className='p-4 bg-muted/50'>
-      <div className='space-y-4'>
-        <div className='flex items-center justify-between gap-2'>
-          {dragHandleProps && (
-            <div
-              {...dragHandleProps.attributes}
-              {...dragHandleProps.listeners}
-              className='cursor-grab active:cursor-grabbing'
-            >
-              <GripVertical className='h-4 w-4 text-muted-foreground' />
-            </div>
-          )}
-          <Badge variant='outline'>Type: {manipulator.type}</Badge>
-          <Button size='icon' variant='ghost' onClick={onDelete}>
-            <Trash2 className='h-4 w-4' />
-          </Button>
+    <Card className='p-4 space-y-4'>
+      <div className='flex items-start justify-between gap-3'>
+        <div className='flex items-center gap-2 text-sm font-medium'>
+          <div
+            {...dragHandleProps?.attributes}
+            {...dragHandleProps?.listeners}
+            className='cursor-grab text-muted-foreground active:cursor-grabbing'
+          >
+            <GripVertical className='h-4 w-4' />
+          </div>
+          Manipulator
         </div>
+        <Button size='icon' variant='ghost' onClick={onDelete}>
+          <Trash2 className='h-4 w-4' />
+        </Button>
+      </div>
 
+      <div className='space-y-3'>
         <div className='space-y-3'>
           <Label className='text-sm font-semibold'>From Key</Label>
           <KeyInput
