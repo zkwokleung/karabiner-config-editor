@@ -151,7 +151,7 @@ export function ProfileManager({ config, setConfig }: ProfileManagerProps) {
             <Plus className='h-4 w-4' />
           </Button>
         </div>
-        <ScrollArea className='h-[500px]'>
+        <ScrollArea className='lg:h-[500px]'>
           <div className='space-y-2'>
             {config.profiles.map((profile, index) => (
               <div

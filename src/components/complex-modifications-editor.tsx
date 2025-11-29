@@ -371,39 +371,37 @@ export function ComplexModificationsEditor({
           </ScrollArea>
         </Card>
 
-        <ScrollArea className='h-[600px]'>
-          <div className='pr-2'>
-            {selectedRule ? (
-              <RuleDetailPanel
-                rule={selectedRule}
-                onDelete={() => handleDeleteRule(selectedRuleIndex)}
-                onUpdateDescription={(desc) =>
-                  handleUpdateDescription(selectedRuleIndex, desc)
-                }
-                onAddManipulator={() => handleAddManipulator(selectedRuleIndex)}
-                onDeleteManipulator={(manipIndex) =>
-                  handleDeleteManipulator(selectedRuleIndex, manipIndex)
-                }
-                onUpdateManipulator={(manipIndex, manipulator) =>
-                  handleUpdateManipulator(
-                    selectedRuleIndex,
-                    manipIndex,
-                    manipulator,
-                  )
-                }
-                onReorderManipulators={(newManipulators) =>
-                  handleReorderManipulators(selectedRuleIndex, newManipulators)
-                }
-              />
-            ) : (
-              <Card className='p-8 text-center'>
-                <p className='text-sm text-muted-foreground'>
-                  {detailFallbackMessage}
-                </p>
-              </Card>
-            )}
-          </div>
-        </ScrollArea>
+        <div className='pr-2'>
+          {selectedRule ? (
+            <RuleDetailPanel
+              rule={selectedRule}
+              onDelete={() => handleDeleteRule(selectedRuleIndex)}
+              onUpdateDescription={(desc) =>
+                handleUpdateDescription(selectedRuleIndex, desc)
+              }
+              onAddManipulator={() => handleAddManipulator(selectedRuleIndex)}
+              onDeleteManipulator={(manipIndex) =>
+                handleDeleteManipulator(selectedRuleIndex, manipIndex)
+              }
+              onUpdateManipulator={(manipIndex, manipulator) =>
+                handleUpdateManipulator(
+                  selectedRuleIndex,
+                  manipIndex,
+                  manipulator,
+                )
+              }
+              onReorderManipulators={(newManipulators) =>
+                handleReorderManipulators(selectedRuleIndex, newManipulators)
+              }
+            />
+          ) : (
+            <Card className='p-8 text-center'>
+              <p className='text-sm text-muted-foreground'>
+                {detailFallbackMessage}
+              </p>
+            </Card>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -535,8 +533,6 @@ function RuleDetailPanel({
           <Trash2 className='h-4 w-4' />
         </Button>
       </div>
-
-      <Separator />
 
       <div className='space-y-3'>
         <div className='flex items-center justify-between'>
@@ -688,8 +684,8 @@ function ManipulatorEditor({
   };
 
   return (
-    <Card className='p-4 space-y-4'>
-      <div className='flex items-start justify-between gap-3'>
+    <Card className='p-4 space-y-2'>
+      <div className='flex items-center justify-between gap-3'>
         <div className='flex items-center gap-2 text-sm font-medium'>
           <div
             {...dragHandleProps?.attributes}
