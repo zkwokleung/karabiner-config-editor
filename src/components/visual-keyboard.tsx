@@ -83,6 +83,20 @@ export function VisualKeyboard({
       .join(' ');
   }, [mappingMap]);
 
+  // Create custom display that shows mapped-to key labels for mapped keys
+  const customDisplay = useMemo(() => {
+    const display: Record<string, string> = { ...KEYBOARD_DISPLAY };
+
+    // For each mapping, override the display of the "from" key to show the "to" key label
+    mappingMap.forEach((toKeyCode, fromKeyCode) => {
+      const simpleKeyboardButton = toSimpleKeyboardButton(fromKeyCode);
+      const toLabel = getKeyLabel(toKeyCode);
+      display[simpleKeyboardButton] = toLabel;
+    });
+
+    return display;
+  }, [mappingMap]);
+
   const conflictButtons = useMemo(() => {
     return Array.from(conflictingKeys)
       .map((k) => toSimpleKeyboardButton(k))
@@ -317,7 +331,7 @@ export function VisualKeyboard({
             (keyboardRef.current = r as typeof Keyboard | null)
           }
           layout={layout}
-          display={KEYBOARD_DISPLAY}
+          display={customDisplay}
           onKeyPress={handleKeyPress}
           buttonTheme={buttonTheme}
           physicalKeyboardHighlight={true}
