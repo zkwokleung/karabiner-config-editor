@@ -1,24 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import {
-  AlertTriangle,
-  ChevronDown,
-  ChevronUp,
-  Keyboard,
-  Plus,
-  Trash2,
-} from 'lucide-react';
+import { AlertTriangle, Plus, Trash2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import type { Device, KeyCode, Profile } from '@/types/karabiner';
 import type { DeviceTargetOption, DeviceScope } from '@/types/profile';
@@ -35,7 +24,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import {
@@ -65,10 +53,11 @@ export function SimpleModificationsEditor({
   deviceLabelLookup,
 }: SimpleModificationsEditorProps) {
   const [selectedTarget, setSelectedTarget] = useState<string>('profile');
-  const [keyboardOpen, setKeyboardOpen] = useState(false);
-  const [selectedKeyboardKey, setSelectedKeyboardKey] = useState<string | null>(
-    null,
-  );
+  const [editorMode, setEditorMode] = useState<'visual' | 'list'>('visual');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create');
+  const [editFromKey, setEditFromKey] = useState<string>('');
+  const [editToKey, setEditToKey] = useState<string>('');
   const { toast } = useToast();
 
   const duplicates = useMemo<SimpleModificationDuplicate[]>(() => {
@@ -178,14 +167,12 @@ export function SimpleModificationsEditor({
     });
   };
 
-  const addSimpleModification = (
-    from: string,
-    to: string,
-    target: DeviceScope,
-  ) => {
+  const addSimpleModification = (from: string, to: string) => {
     if (!from || !to) {
       return;
     }
+
+    const target = selectedOption?.target || { type: 'profile' as const };
 
     const modification = {
       from: { key_code: from },
@@ -225,14 +212,87 @@ export function SimpleModificationsEditor({
       return;
     }
 
-    const targetLabel =
-      target.type === 'profile'
-        ? 'All devices'
-        : deviceLabelLookup.get(target.deviceIndex) || 'Selected device';
+    toast({
+      title: 'Mapping created',
+      description: `${getKeyLabel(from)} → ${getKeyLabel(to)}`,
+    });
+  };
+
+  const updateSimpleModification = (fromKey: string, newToKey: string) => {
+    if (!fromKey || !newToKey) {
+      return;
+    }
+
+    const target = selectedOption?.target || { type: 'profile' as const };
+
+    const updated = applyProfileUpdate(profile, onProfileChange, (draft) => {
+      if (target.type === 'profile') {
+        draft.simple_modifications = draft.simple_modifications?.map((mod) => {
+          if (mod.from.key_code === fromKey) {
+            return { ...mod, to: [{ key_code: newToKey }] };
+          }
+          return mod;
+        });
+      } else {
+        if (!draft.devices || !draft.devices[target.deviceIndex]) {
+          return false;
+        }
+
+        const devices = [...draft.devices];
+        const device = { ...devices[target.deviceIndex] };
+        device.simple_modifications = device.simple_modifications?.map(
+          (mod) => {
+            if (mod.from.key_code === fromKey) {
+              return { ...mod, to: [{ key_code: newToKey }] };
+            }
+            return mod;
+          },
+        );
+        devices[target.deviceIndex] = device;
+        draft.devices = devices;
+      }
+    });
+
+    if (!updated) {
+      return;
+    }
 
     toast({
-      title: 'Modification added',
-      description: `${from} → ${to} (${targetLabel})`,
+      title: 'Mapping updated',
+      description: `${getKeyLabel(fromKey)} → ${getKeyLabel(newToKey)}`,
+    });
+  };
+
+  const deleteSimpleModificationByFromKey = (fromKey: string) => {
+    const target = selectedOption?.target || { type: 'profile' as const };
+
+    const deleted = applyProfileUpdate(profile, onProfileChange, (draft) => {
+      if (target.type === 'profile') {
+        draft.simple_modifications = draft.simple_modifications?.filter(
+          (mod) => mod.from.key_code !== fromKey,
+        );
+      } else {
+        if (!draft.devices || !draft.devices[target.deviceIndex]) {
+          return false;
+        }
+
+        const devices = [...draft.devices];
+        const device = { ...devices[target.deviceIndex] };
+        device.simple_modifications = device.simple_modifications?.filter(
+          (mod) => mod.from.key_code !== fromKey,
+        );
+        devices[target.deviceIndex] = device;
+        draft.devices = devices;
+      }
+    });
+
+    if (!deleted) {
+      return;
+    }
+
+    toast({
+      title: 'Mapping removed',
+      description: `Removed mapping for ${getKeyLabel(fromKey)}`,
     });
   };
 
@@ -271,19 +331,48 @@ export function SimpleModificationsEditor({
       return;
     }
 
-    const targetLabel =
-      location.type === 'profile'
-        ? 'All devices'
-        : deviceLabelLookup.get(location.deviceIndex) ||
-          `Device ${location.deviceIndex + 1}`;
     toast({
-      title: 'Modification deleted',
-      description: `Removed mapping for ${targetLabel}`,
+      title: 'Mapping removed',
     });
   };
 
-  const handleKeyboardKeySelect = (keyCode: string) => {
-    setSelectedKeyboardKey(keyCode);
+  // Handlers for visual keyboard context menu
+  const handleCreateMapping = (fromKey: string) => {
+    setDialogMode('create');
+    setEditFromKey(fromKey);
+    setEditToKey('');
+    setDialogOpen(true);
+  };
+
+  const handleEditMapping = (fromKey: string, currentToKey: string) => {
+    setDialogMode('edit');
+    setEditFromKey(fromKey);
+    setEditToKey(currentToKey);
+    setDialogOpen(true);
+  };
+
+  const handleDeleteMapping = (fromKey: string) => {
+    deleteSimpleModificationByFromKey(fromKey);
+  };
+
+  const handleDialogSubmit = () => {
+    if (!editFromKey || !editToKey) return;
+
+    if (dialogMode === 'create') {
+      addSimpleModification(editFromKey, editToKey);
+    } else {
+      updateSimpleModification(editFromKey, editToKey);
+    }
+
+    setDialogOpen(false);
+    setEditFromKey('');
+    setEditToKey('');
+  };
+
+  const handleDialogClose = () => {
+    setDialogOpen(false);
+    setEditFromKey('');
+    setEditToKey('');
   };
 
   return (
@@ -302,68 +391,20 @@ export function SimpleModificationsEditor({
           <h3 className='text-lg font-semibold'>
             {selectedOption?.label || 'Modifications'}
           </h3>
-          <AddModificationDialog
-            onAdd={addSimpleModification}
-            currentTarget={selectedOption?.target || { type: 'profile' }}
-            currentLabel={selectedOption?.label || 'All devices'}
-            initialFromKey={selectedKeyboardKey}
-            onDialogOpen={() => setSelectedKeyboardKey(null)}
-          />
+          <Tabs
+            value={editorMode}
+            onValueChange={(v) => setEditorMode(v as 'visual' | 'list')}
+          >
+            <TabsList className='h-8'>
+              <TabsTrigger value='visual' className='text-xs px-3 h-7'>
+                Visual
+              </TabsTrigger>
+              <TabsTrigger value='list' className='text-xs px-3 h-7'>
+                List
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
-
-        <Collapsible open={keyboardOpen} onOpenChange={setKeyboardOpen}>
-          <CollapsibleTrigger asChild>
-            <Button
-              variant='outline'
-              className='w-full justify-between bg-transparent'
-            >
-              <span className='flex items-center gap-2'>
-                <Keyboard className='h-4 w-4' />
-                Visual Keyboard
-              </span>
-              {keyboardOpen ? (
-                <ChevronUp className='h-4 w-4' />
-              ) : (
-                <ChevronDown className='h-4 w-4' />
-              )}
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className='pt-3'>
-            <Card className='p-4'>
-              <VisualKeyboard
-                mappings={currentModifications}
-                selectedKey={selectedKeyboardKey}
-                onKeySelect={handleKeyboardKeySelect}
-                conflictingKeys={conflictingKeysSet}
-              />
-              {selectedKeyboardKey && (
-                <div className='mt-4 flex items-center justify-between p-3 bg-muted rounded-lg'>
-                  <div className='flex items-center gap-2'>
-                    <span className='text-sm text-muted-foreground'>
-                      Selected:
-                    </span>
-                    <code className='px-2 py-1 rounded bg-background text-sm font-mono'>
-                      {getKeyLabel(selectedKeyboardKey)}
-                    </code>
-                    <span className='text-xs text-muted-foreground'>
-                      ({selectedKeyboardKey})
-                    </span>
-                  </div>
-                  <AddModificationDialog
-                    onAdd={addSimpleModification}
-                    currentTarget={
-                      selectedOption?.target || { type: 'profile' }
-                    }
-                    currentLabel={selectedOption?.label || 'All devices'}
-                    initialFromKey={selectedKeyboardKey}
-                    onDialogOpen={() => setSelectedKeyboardKey(null)}
-                    triggerLabel='Create Mapping'
-                  />
-                </div>
-              )}
-            </Card>
-          </CollapsibleContent>
-        </Collapsible>
 
         {duplicateMessages.length > 0 && (
           <Alert variant='destructive'>
@@ -375,151 +416,140 @@ export function SimpleModificationsEditor({
           </Alert>
         )}
 
-        <ScrollArea className='h-[500px]'>
-          <div className='space-y-3'>
-            {currentModifications.length > 0 ? (
-              currentModifications.map((mod, index) => {
-                const toRaw = Array.isArray(mod.to) ? mod.to[0] : mod.to;
-                const toValue =
-                  typeof toRaw === 'string' ? { key_code: toRaw } : toRaw;
-                const location: ModificationLocation =
-                  selectedOption?.target.type === 'profile'
-                    ? { type: 'profile', modIndex: index }
-                    : {
-                        type: 'device',
-                        deviceIndex:
-                          selectedOption?.target.type === 'device'
-                            ? selectedOption.target.deviceIndex
-                            : 0,
-                        modIndex: index,
-                      };
+        {editorMode === 'visual' ? (
+          <Card className='p-4'>
+            <VisualKeyboard
+              mappings={currentModifications}
+              conflictingKeys={conflictingKeysSet}
+              onCreateMapping={handleCreateMapping}
+              onEditMapping={handleEditMapping}
+              onDeleteMapping={handleDeleteMapping}
+            />
+          </Card>
+        ) : (
+          <div className='space-y-4'>
+            <div className='flex justify-end'>
+              <Button
+                size='sm'
+                onClick={() => {
+                  setDialogMode('create');
+                  setEditFromKey('');
+                  setEditToKey('');
+                  setDialogOpen(true);
+                }}
+              >
+                <Plus className='mr-2 h-4 w-4' />
+                Add Mapping
+              </Button>
+            </div>
+            <ScrollArea className='h-[500px]'>
+              <div className='space-y-3'>
+                {currentModifications.length > 0 ? (
+                  currentModifications.map((mod, index) => {
+                    const toRaw = Array.isArray(mod.to) ? mod.to[0] : mod.to;
+                    const toValue =
+                      typeof toRaw === 'string' ? { key_code: toRaw } : toRaw;
+                    const location: ModificationLocation =
+                      selectedOption?.target.type === 'profile'
+                        ? { type: 'profile', modIndex: index }
+                        : {
+                            type: 'device',
+                            deviceIndex:
+                              selectedOption?.target.type === 'device'
+                                ? selectedOption.target.deviceIndex
+                                : 0,
+                            modIndex: index,
+                          };
 
-                return (
-                  <Card
-                    key={`${selectedOption?.value}-${index}`}
-                    className='p-4'
-                  >
-                    <div className='flex items-center justify-between gap-4'>
-                      <div className='flex items-center gap-3'>
-                        <code className='px-3 py-1 rounded bg-muted text-sm font-mono'>
-                          {formatKeyLabel(mod.from)}
-                        </code>
-                        <span className='text-muted-foreground'>→</span>
-                        <code className='px-3 py-1 rounded bg-muted text-sm font-mono'>
-                          {formatKeyLabel(toValue)}
-                        </code>
-                      </div>
-                      <Button
-                        size='icon'
-                        variant='ghost'
-                        onClick={() => deleteSimpleModification(location)}
+                    return (
+                      <Card
+                        key={`${selectedOption?.value}-${index}`}
+                        className='p-4'
                       >
-                        <Trash2 className='h-4 w-4' />
-                      </Button>
-                    </div>
-                  </Card>
-                );
-              })
-            ) : (
-              <p className='text-sm text-muted-foreground text-center py-8'>
-                No mappings for this device yet.
-              </p>
-            )}
+                        <div className='flex items-center justify-between gap-4'>
+                          <div className='flex items-center gap-3'>
+                            <code className='px-3 py-1 rounded bg-muted text-sm font-mono'>
+                              {formatKeyLabel(mod.from)}
+                            </code>
+                            <span className='text-muted-foreground'>→</span>
+                            <code className='px-3 py-1 rounded bg-muted text-sm font-mono'>
+                              {formatKeyLabel(toValue)}
+                            </code>
+                          </div>
+                          <Button
+                            size='icon'
+                            variant='ghost'
+                            onClick={() => deleteSimpleModification(location)}
+                          >
+                            <Trash2 className='h-4 w-4' />
+                          </Button>
+                        </div>
+                      </Card>
+                    );
+                  })
+                ) : (
+                  <p className='text-sm text-muted-foreground text-center py-8'>
+                    No mappings for this device yet.
+                  </p>
+                )}
+              </div>
+            </ScrollArea>
           </div>
-        </ScrollArea>
+        )}
       </div>
+
+      {/* Shared Dialog for Create/Edit */}
+      <Dialog
+        open={dialogOpen}
+        onOpenChange={(open) => !open && handleDialogClose()}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {dialogMode === 'create'
+                ? 'Create Key Mapping'
+                : 'Edit Key Mapping'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className='space-y-4 pt-4'>
+            <div className='space-y-2'>
+              <Label>From Key</Label>
+              <KeyInput
+                value={editFromKey}
+                onChange={setEditFromKey}
+                placeholder='Select or type key to remap'
+              />
+            </div>
+
+            <div className='space-y-2'>
+              <Label>To Key</Label>
+              <KeyInput
+                value={editToKey}
+                onChange={setEditToKey}
+                placeholder='Select or type target key'
+              />
+            </div>
+
+            <div className='space-y-2'>
+              <Label>Target Device</Label>
+              <Input
+                value={selectedOption?.label || 'All devices'}
+                readOnly
+                aria-label='Target device'
+              />
+            </div>
+
+            <Button
+              onClick={handleDialogSubmit}
+              className='w-full'
+              disabled={!editFromKey || !editToKey}
+            >
+              {dialogMode === 'create' ? 'Create Mapping' : 'Update Mapping'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
-  );
-}
-
-function AddModificationDialog({
-  onAdd,
-  currentTarget,
-  currentLabel,
-  initialFromKey,
-  onDialogOpen,
-  triggerLabel = 'Add Mapping',
-}: {
-  onAdd: (from: string, to: string, target: DeviceScope) => void;
-  currentTarget: DeviceScope;
-  currentLabel: string;
-  initialFromKey?: string | null;
-  onDialogOpen?: () => void;
-  triggerLabel?: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const [fromKey, setFromKey] = useState('');
-  const [toKey, setToKey] = useState('');
-
-  const handleOpenChange = (isOpen: boolean) => {
-    setOpen(isOpen);
-    if (isOpen) {
-      if (initialFromKey) {
-        setFromKey(initialFromKey);
-      }
-      onDialogOpen?.();
-    } else {
-      setFromKey('');
-      setToKey('');
-    }
-  };
-
-  const handleAdd = () => {
-    if (fromKey && toKey) {
-      onAdd(fromKey, toKey, currentTarget);
-      setFromKey('');
-      setToKey('');
-      setOpen(false);
-    }
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button size='sm' className='cursor-pointer'>
-          <Plus className='mr-2 h-4 w-4' />
-          {triggerLabel}
-        </Button>
-      </DialogTrigger>
-
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Add Key Mapping</DialogTitle>
-        </DialogHeader>
-        <div className='space-y-4 pt-4'>
-          <div className='space-y-2'>
-            <Label>From Key</Label>
-            <KeyInput
-              value={fromKey}
-              onChange={setFromKey}
-              placeholder='Select or type key to remap'
-            />
-          </div>
-
-          <div className='space-y-2'>
-            <Label>To Key</Label>
-            <KeyInput
-              value={toKey}
-              onChange={setToKey}
-              placeholder='Select or type target key'
-            />
-          </div>
-
-          <div className='space-y-2'>
-            <Label>Target Device</Label>
-            <Input value={currentLabel} readOnly aria-label='Target device' />
-          </div>
-
-          <Button
-            onClick={handleAdd}
-            className='w-full'
-            disabled={!fromKey || !toKey}
-          >
-            Add Mapping
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
   );
 }
 
