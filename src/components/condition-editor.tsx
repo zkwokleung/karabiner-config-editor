@@ -44,13 +44,13 @@ export function ConditionEditor({
 
   return (
     <div className='space-y-3'>
-      <div className='flex items-center justify-between'>
+      <div className='flex items-center justify-between gap-2'>
         <Label className='text-sm font-semibold'>Conditions</Label>
         <Button
           size='sm'
           variant='outline'
           onClick={addCondition}
-          className='bg-transparent'
+          className='bg-transparent shrink-0'
         >
           <Plus className='mr-2 h-3 w-3' />
           Add Condition
@@ -59,7 +59,7 @@ export function ConditionEditor({
 
       {conditions.length === 0 && (
         <p className='text-xs text-muted-foreground'>
-          No conditions. This manipulator will apply in all contexts.
+          No conditions. This mapping will apply in all contexts.
         </p>
       )}
 

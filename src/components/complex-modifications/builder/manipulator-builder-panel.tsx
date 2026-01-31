@@ -1,0 +1,430 @@
+'use client';
+
+import { useState, useCallback, useMemo } from 'react';
+import { X, Plus, Trash2, Settings, ArrowRight } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import type {
+  Manipulator,
+  ToEvent,
+  Condition,
+  Modifiers,
+} from '@/types/karabiner';
+import { getKeyLabel } from '@/lib/keyboard-layout';
+import { ConditionEditor } from '@/components/condition-editor';
+import { ToEventEditor } from '@/components/to-event-editor';
+import { ModifierSelector as FormModifierSelector } from '@/components/modifier-selector';
+import { ComplexModificationKeyboard } from '../keyboard/complex-modification-keyboard';
+
+interface ManipulatorBuilderPanelProps {
+  fromKey: string;
+  existingManipulators?: Manipulator[];
+  onSave: (manipulators: Manipulator[]) => void;
+  onCancel: () => void;
+  onDelete?: () => void;
+}
+
+export function ManipulatorBuilderPanel({
+  fromKey,
+  existingManipulators = [],
+  onSave,
+  onCancel,
+  onDelete,
+}: ManipulatorBuilderPanelProps) {
+  const isEditing = existingManipulators.length > 0;
+
+  // Initialize state from existing manipulators or create new
+  const [manipulators, setManipulators] = useState<Manipulator[]>(() => {
+    if (existingManipulators.length > 0) {
+      return existingManipulators;
+    }
+    return [
+      {
+        type: 'basic',
+        from: {
+          key_code: fromKey,
+        },
+        to: [],
+      },
+    ];
+  });
+
+  const [selectedManipulatorIndex, setSelectedManipulatorIndex] = useState(0);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [selectingToKeys, setSelectingToKeys] = useState(false);
+
+  const currentManipulator = manipulators[selectedManipulatorIndex];
+
+  // Get current "to" key codes for keyboard highlighting
+  const currentToKeys = useMemo(() => {
+    return (currentManipulator?.to || [])
+      .map((t) => t.key_code || t.consumer_key_code || '')
+      .filter(Boolean);
+  }, [currentManipulator]);
+
+  const updateCurrentManipulator = useCallback(
+    (updates: Partial<Manipulator>) => {
+      setManipulators((prev) => {
+        const newList = [...prev];
+        newList[selectedManipulatorIndex] = {
+          ...newList[selectedManipulatorIndex],
+          ...updates,
+        };
+        return newList;
+      });
+    },
+    [selectedManipulatorIndex],
+  );
+
+  const updateFromModifiers = (
+    type: 'mandatory' | 'optional',
+    modifiers: string[],
+  ) => {
+    const newModifiers: Modifiers = { ...currentManipulator.from.modifiers };
+    if (modifiers.length === 0) {
+      delete newModifiers[type];
+    } else {
+      newModifiers[type] = modifiers;
+    }
+
+    updateCurrentManipulator({
+      from: {
+        ...currentManipulator.from,
+        modifiers:
+          Object.keys(newModifiers).length > 0 ? newModifiers : undefined,
+      },
+    });
+  };
+
+  const handleToKeyToggle = useCallback(
+    (keyCode: string) => {
+      const currentTo = currentManipulator.to || [];
+      const existingIndex = currentTo.findIndex(
+        (t) => t.key_code === keyCode || t.consumer_key_code === keyCode,
+      );
+
+      if (existingIndex >= 0) {
+        // Remove
+        updateCurrentManipulator({
+          to: currentTo.filter((_, i) => i !== existingIndex),
+        });
+      } else {
+        // Add
+        updateCurrentManipulator({
+          to: [...currentTo, { key_code: keyCode }],
+        });
+      }
+    },
+    [currentManipulator, updateCurrentManipulator],
+  );
+
+  const updateToEvents = (events: ToEvent[]) => {
+    updateCurrentManipulator({ to: events });
+  };
+
+  const updateConditions = (conditions: Condition[]) => {
+    if (conditions.length === 0) {
+      const updated = { ...currentManipulator };
+      delete updated.conditions;
+      updateCurrentManipulator(updated);
+    } else {
+      updateCurrentManipulator({ conditions });
+    }
+  };
+
+  const addManipulator = () => {
+    const newManipulator: Manipulator = {
+      type: 'basic',
+      from: {
+        key_code: fromKey,
+        modifiers: currentManipulator.from.modifiers
+          ? { ...currentManipulator.from.modifiers }
+          : undefined,
+      },
+      to: [],
+    };
+    setManipulators([...manipulators, newManipulator]);
+    setSelectedManipulatorIndex(manipulators.length);
+  };
+
+  const deleteManipulator = (index: number) => {
+    if (manipulators.length <= 1) return;
+    const newList = manipulators.filter((_, i) => i !== index);
+    setManipulators(newList);
+    setSelectedManipulatorIndex(Math.min(index, newList.length - 1));
+  };
+
+  const handleSave = () => {
+    // Filter out manipulators with no "to" events
+    const validManipulators = manipulators.filter(
+      (m) => m.to && m.to.length > 0,
+    );
+    if (validManipulators.length === 0) {
+      // If no valid manipulators, treat as delete
+      onDelete?.();
+      return;
+    }
+    onSave(validManipulators);
+  };
+
+  const getMandatoryModifiers = () =>
+    currentManipulator.from.modifiers?.mandatory || [];
+  const getOptionalModifiers = () =>
+    currentManipulator.from.modifiers?.optional || [];
+
+  return (
+    <Card className='p-4 space-y-4 relative'>
+      {/* Header */}
+      <div className='flex items-center justify-between'>
+        <div className='flex items-center gap-2'>
+          <h3 className='text-lg font-semibold'>
+            {isEditing ? 'Edit' : 'Create'} Mapping
+          </h3>
+          <Badge variant='outline' className='font-mono'>
+            {getKeyLabel(fromKey)}
+          </Badge>
+          {getMandatoryModifiers().length > 0 && (
+            <span className='text-sm text-muted-foreground'>
+              +{' '}
+              {getMandatoryModifiers()
+                .map((m) => getModifierSymbol(m))
+                .join('')}
+            </span>
+          )}
+        </div>
+        <Button size='icon' variant='ghost' onClick={onCancel}>
+          <X className='h-4 w-4' />
+        </Button>
+      </div>
+
+      <Separator />
+
+      {/* Manipulator tabs if multiple */}
+      {manipulators.length > 1 && (
+        <div className='flex items-center gap-2 flex-wrap'>
+          {manipulators.map((_, index) => (
+            <Button
+              key={index}
+              size='sm'
+              variant={
+                index === selectedManipulatorIndex ? 'default' : 'outline'
+              }
+              onClick={() => setSelectedManipulatorIndex(index)}
+              className='relative pr-6'
+            >
+              Mapping {index + 1}
+              {manipulators.length > 1 && (
+                <button
+                  className='absolute right-1 top-1/2 -translate-y-1/2 hover:text-destructive'
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteManipulator(index);
+                  }}
+                >
+                  <X className='h-3 w-3' />
+                </button>
+              )}
+            </Button>
+          ))}
+          <Button size='sm' variant='outline' onClick={addManipulator}>
+            <Plus className='h-3 w-3 mr-1' />
+            Add Variant
+          </Button>
+        </div>
+      )}
+
+      <div className='max-h-[500px] overflow-y-auto pr-2'>
+        <div className='space-y-4'>
+          {/* From section */}
+          <div className='space-y-3'>
+            <Label className='text-sm font-semibold'>From Key</Label>
+            <div className='flex items-center gap-2 p-3 bg-muted rounded-lg'>
+              <Badge variant='secondary' className='font-mono text-base'>
+                {getKeyLabel(fromKey)}
+              </Badge>
+              <ArrowRight className='h-4 w-4 text-muted-foreground' />
+              <span className='text-sm text-muted-foreground'>
+                {currentToKeys.length > 0
+                  ? currentToKeys.map((k) => getKeyLabel(k)).join(', ')
+                  : 'No target keys selected'}
+              </span>
+            </div>
+
+            <div className='grid grid-cols-2 gap-3'>
+              <div className='space-y-2'>
+                <Label className='text-xs'>Mandatory Modifiers</Label>
+                <FormModifierSelector
+                  selected={getMandatoryModifiers()}
+                  onChange={(mods) => updateFromModifiers('mandatory', mods)}
+                  label='Required with key'
+                />
+              </div>
+              <div className='space-y-2'>
+                <Label className='text-xs'>Optional Modifiers</Label>
+                <FormModifierSelector
+                  selected={getOptionalModifiers()}
+                  onChange={(mods) => updateFromModifiers('optional', mods)}
+                  label='Allowed but not required'
+                />
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* To section with keyboard */}
+          <div className='space-y-3'>
+            <div className='flex items-center justify-between'>
+              <Label className='text-sm font-semibold'>To Events</Label>
+              <Button
+                size='sm'
+                variant={selectingToKeys ? 'default' : 'outline'}
+                onClick={() => setSelectingToKeys(!selectingToKeys)}
+              >
+                {selectingToKeys ? 'Done Selecting' : 'Select from Keyboard'}
+              </Button>
+            </div>
+
+            {selectingToKeys ? (
+              <ComplexModificationKeyboard
+                manipulators={[]}
+                mode='select-to'
+                selectedToKeys={currentToKeys}
+                onToKeyToggle={handleToKeyToggle}
+              />
+            ) : (
+              <ToEventEditor
+                events={currentManipulator.to || []}
+                onChange={updateToEvents}
+                label=''
+              />
+            )}
+          </div>
+
+          <Separator />
+
+          {/* Conditions */}
+          <ConditionEditor
+            conditions={currentManipulator.conditions || []}
+            onChange={updateConditions}
+          />
+
+          <Separator />
+
+          {/* Advanced options toggle */}
+          <Button
+            variant='ghost'
+            size='sm'
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className='w-full'
+          >
+            <Settings className='mr-2 h-4 w-4' />
+            {showAdvanced ? 'Hide' : 'Show'} Advanced Options
+          </Button>
+
+          {showAdvanced && (
+            <div className='space-y-4 pt-2'>
+              <div className='space-y-2'>
+                <Label className='text-xs'>
+                  To If Alone (when pressed alone)
+                </Label>
+                <ToEventEditor
+                  events={currentManipulator.to_if_alone || []}
+                  onChange={(events) => {
+                    if (events.length === 0) {
+                      const updated = { ...currentManipulator };
+                      delete updated.to_if_alone;
+                      updateCurrentManipulator(updated);
+                    } else {
+                      updateCurrentManipulator({ to_if_alone: events });
+                    }
+                  }}
+                  label=''
+                />
+              </div>
+
+              <div className='space-y-2'>
+                <Label className='text-xs'>To If Held Down (when held)</Label>
+                <ToEventEditor
+                  events={currentManipulator.to_if_held_down || []}
+                  onChange={(events) => {
+                    if (events.length === 0) {
+                      const updated = { ...currentManipulator };
+                      delete updated.to_if_held_down;
+                      updateCurrentManipulator(updated);
+                    } else {
+                      updateCurrentManipulator({ to_if_held_down: events });
+                    }
+                  }}
+                  label=''
+                />
+              </div>
+
+              <div className='space-y-2'>
+                <Label className='text-xs'>
+                  To After Key Up (after key released)
+                </Label>
+                <ToEventEditor
+                  events={currentManipulator.to_after_key_up || []}
+                  onChange={(events) => {
+                    if (events.length === 0) {
+                      const updated = { ...currentManipulator };
+                      delete updated.to_after_key_up;
+                      updateCurrentManipulator(updated);
+                    } else {
+                      updateCurrentManipulator({ to_after_key_up: events });
+                    }
+                  }}
+                  label=''
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Actions */}
+      <div className='flex items-center justify-between pt-2'>
+        <div>
+          {isEditing && onDelete && (
+            <Button variant='destructive' size='sm' onClick={onDelete}>
+              <Trash2 className='h-4 w-4 mr-2' />
+              Delete All Mappings
+            </Button>
+          )}
+        </div>
+        <div className='flex items-center gap-2'>
+          <Button variant='outline' onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave}>
+            {isEditing ? 'Update' : 'Create'} Mapping
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function getModifierSymbol(modifier: string): string {
+  const symbols: Record<string, string> = {
+    command: '⌘',
+    left_command: '⌘',
+    right_command: '⌘',
+    option: '⌥',
+    left_option: '⌥',
+    right_option: '⌥',
+    control: '⌃',
+    left_control: '⌃',
+    right_control: '⌃',
+    shift: '⇧',
+    left_shift: '⇧',
+    right_shift: '⇧',
+  };
+  return symbols[modifier] || modifier;
+}

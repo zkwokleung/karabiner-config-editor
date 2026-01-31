@@ -201,7 +201,7 @@ export function RuleTemplates({ onAddRule }: RuleTemplatesProps) {
                             <div className='flex items-center gap-2'>
                               <h4 className='font-semibold'>{template.name}</h4>
                               <Badge variant='secondary' className='text-xs'>
-                                {template.rule.manipulators.length} manipulator
+                                {template.rule.manipulators.length} mapping
                                 {template.rule.manipulators.length !== 1
                                   ? 's'
                                   : ''}

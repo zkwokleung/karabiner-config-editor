@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ComplexModificationsEditor } from '@/components/complex-modifications-editor';
+import { ComplexModificationsEditor } from '@/components/complex-modifications/complex-modifications-editor';
 import type { KarabinerConfig, Profile, Rule } from '@/types/karabiner';
 import type { DeviceTargetOption } from '@/types/profile';
 import { SimpleModificationsEditor } from '@/components/profile/simple-modifications-editor';
