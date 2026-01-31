@@ -25,7 +25,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import {
   findDuplicateSimpleModifications,
   type SimpleModificationDuplicate,
@@ -527,15 +526,6 @@ export function SimpleModificationsEditor({
                 value={editToKey}
                 onChange={setEditToKey}
                 placeholder='Select or type target key'
-              />
-            </div>
-
-            <div className='space-y-2'>
-              <Label>Target Device</Label>
-              <Input
-                value={selectedOption?.label || 'All devices'}
-                readOnly
-                aria-label='Target device'
               />
             </div>
 
