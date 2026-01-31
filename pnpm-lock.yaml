@@ -152,9 +152,15 @@ importers:
       react-resizable-panels:
         specifier: ^2.1.7
         version: 2.1.7(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      react-simple-keyboard:
+        specifier: ^3.8.141
+        version: 3.8.141(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       recharts:
         specifier: 2.15.4
         version: 2.15.4(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      simple-keyboard-layouts:
+        specifier: ^3.4.147
+        version: 3.4.147
       sonner:
         specifier: ^1.7.4
         version: 1.7.4(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -2812,6 +2818,12 @@ packages:
       react: ^16.14.0 || ^17.0.0 || ^18.0.0 || ^19.0.0 || ^19.0.0-rc
       react-dom: ^16.14.0 || ^17.0.0 || ^18.0.0 || ^19.0.0 || ^19.0.0-rc
 
+  react-simple-keyboard@3.8.141:
+    resolution: {integrity: sha512-r8KPlfvacxYTRWnw5J0yRQ/LmLtbExfPslRjYVFRRvXBBFFhyoWVq0CozEd3qfW1vcEdO+uNu/OnooGuTqgCBQ==}
+    peerDependencies:
+      react: ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+      react-dom: ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
   react-smooth@4.0.4:
     resolution: {integrity: sha512-gnGKTpYwqL0Iii09gHobNolvX4Kiq4PKx6eWBCYYix+8cdw+cGo3do906l1NBPKkSWx1DghC1dlWG9L2uGd61Q==}
     peerDependencies:
@@ -2945,6 +2957,9 @@ packages:
   signal-exit@4.1.0:
     resolution: {integrity: sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw==}
     engines: {node: '>=14'}
+
+  simple-keyboard-layouts@3.4.147:
+    resolution: {integrity: sha512-a77nBHHul4PNyZcepuBCg4l34CcczGTfDuVXzulyWVkeddTnMmpdE8VR6dprrj71xoUZi/achg8FOMwX0B4wNw==}
 
   simple-swizzle@0.2.4:
     resolution: {integrity: sha512-nAu1WFPQSMNr2Zn9PGSZK9AGn4t/y97lEm+MXTtUDwfP0ksAIX4nO+6ruD9Jwut4C49SB1Ws+fbXsm/yScWOHw==}
@@ -5787,6 +5802,11 @@ snapshots:
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
 
+  react-simple-keyboard@3.8.141(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
+    dependencies:
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
+
   react-smooth@4.0.4(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
     dependencies:
       fast-equals: 5.3.2
@@ -5981,6 +6001,8 @@ snapshots:
       side-channel-weakmap: 1.0.2
 
   signal-exit@4.1.0: {}
+
+  simple-keyboard-layouts@3.4.147: {}
 
   simple-swizzle@0.2.4:
     dependencies:

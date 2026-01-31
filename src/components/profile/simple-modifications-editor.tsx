@@ -1,12 +1,24 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Plus, Trash2 } from 'lucide-react';
+import {
+  AlertTriangle,
+  ChevronDown,
+  ChevronUp,
+  Keyboard,
+  Plus,
+  Trash2,
+} from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { useToast } from '@/hooks/use-toast';
 import type { Device, KeyCode, Profile } from '@/types/karabiner';
 import type { DeviceTargetOption, DeviceScope } from '@/types/profile';
@@ -30,6 +42,8 @@ import {
   findDuplicateSimpleModifications,
   type SimpleModificationDuplicate,
 } from '@/lib/validation';
+import { VisualKeyboard } from '@/components/visual-keyboard';
+import { getKeyLabel } from '@/lib/keyboard-layout';
 
 interface SimpleModificationsEditorProps {
   profile: Profile;
@@ -51,6 +65,10 @@ export function SimpleModificationsEditor({
   deviceLabelLookup,
 }: SimpleModificationsEditorProps) {
   const [selectedTarget, setSelectedTarget] = useState<string>('profile');
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const [selectedKeyboardKey, setSelectedKeyboardKey] = useState<string | null>(
+    null,
+  );
   const { toast } = useToast();
 
   const duplicates = useMemo<SimpleModificationDuplicate[]>(() => {
@@ -71,6 +89,22 @@ export function SimpleModificationsEditor({
       deviceOptions[0]
     );
   }, [deviceOptions, selectedTarget]);
+
+  const conflictingKeysSet = useMemo(() => {
+    const set = new Set<string>();
+    duplicates.forEach((dup) => {
+      if (
+        (dup.scope === 'profile' &&
+          selectedOption?.target.type === 'profile') ||
+        (dup.scope === 'device' &&
+          selectedOption?.target.type === 'device' &&
+          dup.deviceIndex === selectedOption.target.deviceIndex)
+      ) {
+        set.add(dup.key);
+      }
+    });
+    return set;
+  }, [duplicates, selectedOption]);
 
   const currentModifications = useMemo(() => {
     if (!selectedOption) {
@@ -248,6 +282,10 @@ export function SimpleModificationsEditor({
     });
   };
 
+  const handleKeyboardKeySelect = (keyCode: string) => {
+    setSelectedKeyboardKey(keyCode);
+  };
+
   return (
     <div className='grid gap-6 lg:grid-cols-[250px_1fr]'>
       <DeviceTargetPanel
@@ -268,8 +306,64 @@ export function SimpleModificationsEditor({
             onAdd={addSimpleModification}
             currentTarget={selectedOption?.target || { type: 'profile' }}
             currentLabel={selectedOption?.label || 'All devices'}
+            initialFromKey={selectedKeyboardKey}
+            onDialogOpen={() => setSelectedKeyboardKey(null)}
           />
         </div>
+
+        <Collapsible open={keyboardOpen} onOpenChange={setKeyboardOpen}>
+          <CollapsibleTrigger asChild>
+            <Button
+              variant='outline'
+              className='w-full justify-between bg-transparent'
+            >
+              <span className='flex items-center gap-2'>
+                <Keyboard className='h-4 w-4' />
+                Visual Keyboard
+              </span>
+              {keyboardOpen ? (
+                <ChevronUp className='h-4 w-4' />
+              ) : (
+                <ChevronDown className='h-4 w-4' />
+              )}
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className='pt-3'>
+            <Card className='p-4'>
+              <VisualKeyboard
+                mappings={currentModifications}
+                selectedKey={selectedKeyboardKey}
+                onKeySelect={handleKeyboardKeySelect}
+                conflictingKeys={conflictingKeysSet}
+              />
+              {selectedKeyboardKey && (
+                <div className='mt-4 flex items-center justify-between p-3 bg-muted rounded-lg'>
+                  <div className='flex items-center gap-2'>
+                    <span className='text-sm text-muted-foreground'>
+                      Selected:
+                    </span>
+                    <code className='px-2 py-1 rounded bg-background text-sm font-mono'>
+                      {getKeyLabel(selectedKeyboardKey)}
+                    </code>
+                    <span className='text-xs text-muted-foreground'>
+                      ({selectedKeyboardKey})
+                    </span>
+                  </div>
+                  <AddModificationDialog
+                    onAdd={addSimpleModification}
+                    currentTarget={
+                      selectedOption?.target || { type: 'profile' }
+                    }
+                    currentLabel={selectedOption?.label || 'All devices'}
+                    initialFromKey={selectedKeyboardKey}
+                    onDialogOpen={() => setSelectedKeyboardKey(null)}
+                    triggerLabel='Create Mapping'
+                  />
+                </div>
+              )}
+            </Card>
+          </CollapsibleContent>
+        </Collapsible>
 
         {duplicateMessages.length > 0 && (
           <Alert variant='destructive'>
@@ -342,14 +436,33 @@ function AddModificationDialog({
   onAdd,
   currentTarget,
   currentLabel,
+  initialFromKey,
+  onDialogOpen,
+  triggerLabel = 'Add Mapping',
 }: {
   onAdd: (from: string, to: string, target: DeviceScope) => void;
   currentTarget: DeviceScope;
   currentLabel: string;
+  initialFromKey?: string | null;
+  onDialogOpen?: () => void;
+  triggerLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [fromKey, setFromKey] = useState('');
   const [toKey, setToKey] = useState('');
+
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (isOpen) {
+      if (initialFromKey) {
+        setFromKey(initialFromKey);
+      }
+      onDialogOpen?.();
+    } else {
+      setFromKey('');
+      setToKey('');
+    }
+  };
 
   const handleAdd = () => {
     if (fromKey && toKey) {
@@ -361,11 +474,11 @@ function AddModificationDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button size='sm' className='cursor-pointer'>
           <Plus className='mr-2 h-4 w-4' />
-          Add Mapping
+          {triggerLabel}
         </Button>
       </DialogTrigger>
 
