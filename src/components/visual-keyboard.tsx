@@ -165,7 +165,7 @@ export function VisualKeyboard({
       .join('\n');
   }, [buttonWidths]);
 
-  // Force re-render when layout changes
+  // Force re-render when layout or buttonTheme changes
   useEffect(() => {
     if (keyboardRef.current) {
       (
@@ -174,9 +174,10 @@ export function VisualKeyboard({
         }
       )?.setOptions?.({
         layout: layout,
+        buttonTheme: buttonTheme,
       });
     }
-  }, [layout]);
+  }, [layout, buttonTheme]);
 
   // Close popover when clicking outside
   useEffect(() => {
@@ -245,53 +246,72 @@ export function VisualKeyboard({
         </div>
       </div>
 
-      <style>{`
-        .visual-kb.simple-keyboard {
-          background: transparent;
-          padding: 8px;
-          border-radius: 8px;
-          font-family: inherit;
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+        .visual-kb.simple-keyboard.hg-theme-default {
+          background: var(--color-muted) !important;
+          padding: 10px !important;
+          border-radius: 10px !important;
+          font-family: inherit !important;
         }
-        .visual-kb .hg-row {
-          gap: 4px;
+        .visual-kb.simple-keyboard .hg-row {
+          gap: 4px !important;
+          margin-bottom: 4px !important;
         }
-        .visual-kb .hg-button {
-          height: 36px;
-          min-width: 36px;
-          border-radius: 6px;
-          background: hsl(var(--background));
-          border: 1px solid hsl(var(--border));
-          color: hsl(var(--foreground));
-          font-size: 11px;
-          font-weight: 500;
-          box-shadow: none;
-          transition: all 0.15s ease;
-          position: relative;
+        .visual-kb.simple-keyboard .hg-row:last-child {
+          margin-bottom: 0 !important;
         }
-        .visual-kb .hg-button:hover {
-          background: hsl(var(--accent));
-          border-color: hsl(var(--primary) / 0.5);
+        .visual-kb.simple-keyboard .hg-button {
+          height: 38px !important;
+          min-width: 38px !important;
+          border-radius: 6px !important;
+          background: var(--color-background) !important;
+          border: 1px solid var(--color-border) !important;
+          color: var(--color-foreground) !important;
+          font-size: 12px !important;
+          font-weight: 500 !important;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+          transition: all 0.1s ease !important;
         }
-        .visual-kb .hg-button:active {
-          transform: scale(0.98);
+        .visual-kb.simple-keyboard .hg-button:hover {
+          background: var(--color-accent) !important;
+          border-color: var(--color-primary) !important;
+        }
+        .visual-kb.simple-keyboard .hg-button:active {
+          transform: translateY(1px) !important;
+          box-shadow: none !important;
         }
         /* Keys that have mappings */
-        .visual-kb .hg-button.kb-mapped {
-          background: hsl(var(--primary) / 0.15);
-          border-color: hsl(var(--primary));
-          color: hsl(var(--primary));
+        .visual-kb.simple-keyboard .hg-button.kb-mapped {
+          background: color-mix(in srgb, var(--color-primary) 15%, var(--color-background)) !important;
+          border-color: var(--color-primary) !important;
+          border-width: 2px !important;
+          color: var(--color-primary) !important;
+          font-weight: 600 !important;
+        }
+        .visual-kb.simple-keyboard .hg-button.kb-mapped:hover {
+          background: color-mix(in srgb, var(--color-primary) 25%, var(--color-background)) !important;
         }
         /* Conflict */
-        .visual-kb .hg-button.kb-conflict {
-          background: hsl(var(--destructive) / 0.15);
-          border-color: hsl(var(--destructive));
-          color: hsl(var(--destructive));
+        .visual-kb.simple-keyboard .hg-button.kb-conflict {
+          background: color-mix(in srgb, var(--color-destructive) 15%, var(--color-background)) !important;
+          border-color: var(--color-destructive) !important;
+          border-width: 2px !important;
+          color: var(--color-destructive) !important;
+          font-weight: 600 !important;
+        }
+        .visual-kb.simple-keyboard .hg-button.kb-conflict:hover {
+          background: color-mix(in srgb, var(--color-destructive) 25%, var(--color-background)) !important;
         }
         ${buttonWidthStyles}
-      `}</style>
+      `,
+        }}
+      />
 
       <div className='bg-muted/50 rounded-lg border p-2'>
         <Keyboard
+          key={mappedButtons}
           baseClass='visual-kb'
           keyboardRef={(r) =>
             (keyboardRef.current = r as typeof Keyboard | null)
