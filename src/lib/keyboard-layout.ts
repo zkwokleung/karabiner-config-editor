@@ -80,7 +80,7 @@ const SIMPLE_KEYBOARD_TO_KARABINER: Record<string, string> = {
   ';': 'semicolon',
   "'": 'quote',
   '{enter}': 'return_or_enter',
-  '#': 'backslash', // ISO layout has # here
+  '#': 'non_us_pound', // ISO layout key between L and Enter
 
   // ZXCV row
   '{shift}': 'left_shift',
@@ -117,6 +117,7 @@ const SIMPLE_KEYBOARD_TO_KARABINER: Record<string, string> = {
   // JIS specific keys
   '{kana}': 'japanese_kana',
   '{eisu}': 'japanese_eisuu',
+  '{ro}': 'international1',
   '¥': 'international3', // Yen key
 
   // Additional keys
@@ -184,6 +185,8 @@ const KEY_DISPLAY_LABELS: Record<string, string> = {
   slash: '/',
   fn: 'fn',
   non_us_backslash: '§',
+  non_us_pound: '#',
+  international1: 'ろ',
   international3: '¥',
   japanese_kana: 'かな',
   japanese_eisuu: '英数',
@@ -234,11 +237,11 @@ const MAC_ISO_LAYOUT = {
 const MAC_JIS_LAYOUT = {
   default: [
     '{escape} {f1} {f2} {f3} {f4} {f5} {f6} {f7} {f8} {f9} {f10} {f11} {f12}',
-    '` 1 2 3 4 5 6 7 8 9 0 - = ¥ {backspace}',
-    '{tab} q w e r t y u i o p [ ] {enter}',
-    "{capslock} a s d f g h j k l ; ' ] {enter}",
-    '{shiftleft} z x c v b n m , . / \\ {shiftright}',
-    '{fn} {controlleft} {altleft} {metaleft} {eisu} {space} {kana} {metaright} {altright} {arrowleft} {arrowup} {arrowdown} {arrowright}',
+    '1 2 3 4 5 6 7 8 9 0 - = ¥ {backspace}',
+    '{tab} q w e r t y u i o p [ ]',
+    "{controlleft} a s d f g h j k l ; ' \\ {enter}",
+    '{shiftleft} z x c v b n m , . / {ro} {shiftright}',
+    '{capslock} {altleft} {metaleft} {eisu} {space} {kana} {metaright} {fn} {arrowleft} {arrowup} {arrowdown} {arrowright}',
   ],
 };
 
@@ -292,7 +295,34 @@ export const KEYBOARD_DISPLAY: Record<string, string> = {
   '{arrowright}': '→',
   '{kana}': 'かな',
   '{eisu}': '英数',
+  '{ro}': 'ろ',
 };
+
+const JIS_DISPLAY_OVERRIDES: Record<string, string> = {
+  '=': '^',
+  '[': '@',
+  ']': '[',
+  '\\': ']',
+  "'": ':',
+};
+
+const ISO_DISPLAY_OVERRIDES: Record<string, string> = {
+  '`': '§',
+  '§': '\\',
+  '#': '|',
+};
+
+export function getKeyboardDisplay(
+  layoutType: KeyboardLayoutType,
+): Record<string, string> {
+  if (layoutType === 'jis') {
+    return { ...KEYBOARD_DISPLAY, ...JIS_DISPLAY_OVERRIDES };
+  }
+  if (layoutType === 'iso') {
+    return { ...KEYBOARD_DISPLAY, ...ISO_DISPLAY_OVERRIDES };
+  }
+  return KEYBOARD_DISPLAY;
+}
 
 // Button widths for proper key sizing
 export const BUTTON_WIDTHS: Record<
@@ -336,20 +366,20 @@ export const BUTTON_WIDTHS: Record<
     '{backspace}': '58px',
     '¥': '42px',
     '{tab}': '58px',
-    '{capslock}': '72px',
+    '{controlleft}': '72px',
+    '{capslock}': '42px',
     '{enter}': '68px',
     ']': '42px',
-    '{shiftleft}': '72px',
     '\\': '42px',
+    '{shiftleft}': '72px',
+    '{ro}': '42px',
     '{shiftright}': '72px',
     '{fn}': '38px',
-    '{controlleft}': '38px',
     '{altleft}': '38px',
     '{metaleft}': '48px',
     '{eisu}': '48px',
     '{space}': '160px',
     '{kana}': '48px',
     '{metaright}': '48px',
-    '{altright}': '38px',
   },
 };

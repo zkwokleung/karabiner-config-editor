@@ -7,8 +7,8 @@ import { Plus, Pencil, Trash2, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   getLayoutForType,
+  getKeyboardDisplay,
   getKeyLabel,
-  KEYBOARD_DISPLAY,
   BUTTON_WIDTHS,
   toKarabinerKeyCode,
   toSimpleKeyboardButton,
@@ -85,7 +85,9 @@ export function VisualKeyboard({
 
   // Create custom display that shows mapped-to key labels for mapped keys
   const customDisplay = useMemo(() => {
-    const display: Record<string, string> = { ...KEYBOARD_DISPLAY };
+    const display: Record<string, string> = {
+      ...getKeyboardDisplay(layoutType),
+    };
 
     // For each mapping, override the display of the "from" key to show the "to" key label
     mappingMap.forEach((toKeyCode, fromKeyCode) => {
@@ -95,7 +97,7 @@ export function VisualKeyboard({
     });
 
     return display;
-  }, [mappingMap]);
+  }, [layoutType, mappingMap]);
 
   const conflictButtons = useMemo(() => {
     return Array.from(conflictingKeys)
@@ -259,6 +261,10 @@ export function VisualKeyboard({
           </div>
         </div>
       </div>
+
+      <p className='text-xs text-muted-foreground mb-3'>
+        Some physical keys map to different key codes depending on the layout.
+      </p>
 
       <style
         dangerouslySetInnerHTML={{

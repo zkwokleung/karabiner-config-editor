@@ -6,7 +6,7 @@ import 'react-simple-keyboard/build/css/index.css';
 import { cn } from '@/lib/utils';
 import {
   getLayoutForType,
-  KEYBOARD_DISPLAY,
+  getKeyboardDisplay,
   BUTTON_WIDTHS,
   toKarabinerKeyCode,
   toSimpleKeyboardButton,
@@ -169,6 +169,7 @@ export function ComplexModificationKeyboard({
 
   const layout = getLayoutForType(layoutType);
   const buttonWidths = BUTTON_WIDTHS[layoutType];
+  const display = useMemo(() => getKeyboardDisplay(layoutType), [layoutType]);
 
   // Generate CSS for button widths
   const buttonWidthStyles = useMemo(() => {
@@ -227,6 +228,10 @@ export function ComplexModificationKeyboard({
           )}
         </div>
       </div>
+
+      <p className='text-xs text-muted-foreground mb-3'>
+        Some physical keys map to different key codes depending on the layout.
+      </p>
 
       {/* Modifier State Bar */}
       <ModifierStateBar
@@ -315,7 +320,7 @@ export function ComplexModificationKeyboard({
           }
           baseClass='complex-kb'
           layout={layout}
-          display={KEYBOARD_DISPLAY}
+          display={display}
           onKeyPress={handleKeyPress}
           buttonTheme={buttonTheme}
           physicalKeyboardHighlight={false}
