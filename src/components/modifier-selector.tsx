@@ -38,31 +38,23 @@ const MODIFIER_DISPLAY: Record<
 const LEFT_RIGHT_GROUPS = [
   {
     label: 'Command',
-    modifiers: ['left_command', 'right_command'],
+    modifiers: ['left_command', 'right_command', 'command'],
   },
   {
     label: 'Option',
-    modifiers: ['left_option', 'right_option'],
+    modifiers: ['left_option', 'right_option', 'option'],
   },
   {
     label: 'Control',
-    modifiers: ['left_control', 'right_control'],
+    modifiers: ['left_control', 'right_control', 'control'],
   },
   {
     label: 'Shift',
-    modifiers: ['left_shift', 'right_shift'],
+    modifiers: ['left_shift', 'right_shift', 'shift'],
   },
 ];
 
-const ANY_AND_OTHER = [
-  'command',
-  'option',
-  'control',
-  'shift',
-  'caps_lock',
-  'fn',
-  'any',
-];
+const ANY_AND_OTHER = ['caps_lock', 'fn', 'any'];
 
 const ORDERED_MODIFIERS = [
   'left_command',
@@ -146,19 +138,26 @@ export function ModifierSelector({
           </DialogTrigger>
           <DialogContent className='max-w-md'>
             <DialogHeader>
-              <DialogTitle>{label}</DialogTitle>
+              <div className='flex items-center justify-between gap-2'>
+                <DialogTitle>{label}</DialogTitle>
+                <Button
+                  size='sm'
+                  variant='ghost'
+                  onClick={() => onChange([])}
+                  disabled={selected.length === 0}
+                >
+                  Clear All
+                </Button>
+              </div>
             </DialogHeader>
             <div className='grid grid-cols-2 gap-4 max-h-[400px] overflow-y-auto'>
               <div className='space-y-3'>
-                <Label className='text-xs text-muted-foreground'>
-                  Left / Right
-                </Label>
                 {LEFT_RIGHT_GROUPS.map((group) => (
                   <div key={group.label} className='space-y-2'>
                     <div className='text-[11px] font-medium text-muted-foreground'>
                       {group.label}
                     </div>
-                    <div className='grid grid-cols-2 gap-2'>
+                    <div className='grid grid-cols-3 gap-2'>
                       {group.modifiers.map((modifier) => (
                         <Button
                           key={modifier}
@@ -185,9 +184,7 @@ export function ModifierSelector({
               </div>
 
               <div className='space-y-3'>
-                <Label className='text-xs text-muted-foreground'>
-                  Any / Other
-                </Label>
+                <Label className='text-xs text-muted-foreground'>Other</Label>
                 <div className='grid grid-cols-2 gap-2'>
                   {ANY_AND_OTHER.map((modifier) => (
                     <Button

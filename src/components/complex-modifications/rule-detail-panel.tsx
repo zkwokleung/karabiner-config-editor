@@ -246,11 +246,11 @@ export function RuleDetailPanel({
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className='flex items-center justify-between mb-4'>
             <TabsList>
-              <TabsTrigger value='keyboard' className='gap-2'>
+              <TabsTrigger value='keyboard' className='gap-2 cursor-pointer'>
                 <Keyboard className='h-4 w-4' />
                 Keyboard
               </TabsTrigger>
-              <TabsTrigger value='list' className='gap-2'>
+              <TabsTrigger value='list' className='gap-2 cursor-pointer'>
                 <List className='h-4 w-4' />
                 List
               </TabsTrigger>

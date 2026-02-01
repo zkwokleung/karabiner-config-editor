@@ -161,7 +161,7 @@ export function ProfileManager({ config, setConfig }: ProfileManagerProps) {
               value={String(selectedProfileIndex)}
               onValueChange={handleProfileSelect}
             >
-              <SelectTrigger className='w-[200px]'>
+              <SelectTrigger className='w-[200px] cursor-pointer'>
                 <SelectValue placeholder='Select profile' />
               </SelectTrigger>
               <SelectContent>

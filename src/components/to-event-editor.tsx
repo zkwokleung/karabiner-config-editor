@@ -23,13 +23,15 @@ import { ModifierSelector } from '@/components/modifier-selector';
 import { KeyCodeSelector } from '@/components/key-code-selector';
 import type { ToEvent } from '@/types/karabiner';
 import { TO_EVENT_TYPES } from '@/lib/constants';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 
 interface ToEventEditorProps {
   events: ToEvent[];
   onChange: (events: ToEvent[]) => void;
   label: string;
   showHeader?: boolean;
+  keyCodeAction?: (index: number) => ReactNode;
+  keyCodeActionIndex?: number;
 }
 
 export function ToEventEditor({
@@ -37,6 +39,7 @@ export function ToEventEditor({
   onChange,
   label,
   showHeader = true,
+  keyCodeAction,
 }: ToEventEditorProps) {
   const addEvent = () => {
     onChange([...events, { key_code: 'a' }]);
@@ -72,6 +75,7 @@ export function ToEventEditor({
             onUpdate={(updated) => updateEvent(index, updated)}
             onDelete={() => deleteEvent(index)}
             showDelete={events.length > 1}
+            keyCodeAction={keyCodeAction ? keyCodeAction(index) : null}
           />
         ))}
       </div>
@@ -84,11 +88,14 @@ function ToEventItem({
   onUpdate,
   onDelete,
   showDelete,
+  keyCodeAction,
 }: {
   event: ToEvent;
   onUpdate: (event: ToEvent) => void;
   onDelete: () => void;
+  keyCodeAction?: React.ReactNode;
   showDelete: boolean;
+  keyCodeAction?: React.ReactNode;
 }) {
   // Determine current event type
   const getEventType = (): string => {
@@ -149,11 +156,16 @@ function ToEventItem({
         {eventType === 'key_code' && (
           <div className='space-y-2'>
             <Label className='text-xs'>Key Code</Label>
-            <KeyCodeSelector
-              value={event.key_code || ''}
-              onChange={(key) => onUpdate({ ...event, key_code: key })}
-              placeholder='Select key'
-            />
+            <div className='flex items-center gap-2'>
+              <div className='flex-1'>
+                <KeyCodeSelector
+                  value={event.key_code || ''}
+                  onChange={(key) => onUpdate({ ...event, key_code: key })}
+                  placeholder='Select key'
+                />
+              </div>
+              {keyCodeAction}
+            </div>
           </div>
         )}
 

@@ -24,7 +24,7 @@ import { getKeyLabel } from '@/lib/keyboard-layout';
 import { ConditionEditor } from '@/components/condition-editor';
 import { ToEventEditor } from '@/components/to-event-editor';
 import { ModifierSelector as FormModifierSelector } from '@/components/modifier-selector';
-import { ComplexModificationKeyboard } from '../keyboard/complex-modification-keyboard';
+import { ToEventKeyboardDialog } from './to-event-keyboard-dialog';
 import { useToast } from '@/hooks/use-toast';
 
 interface ManipulatorBuilderPanelProps {
@@ -64,7 +64,10 @@ export function ManipulatorBuilderPanel({
 
   const [selectedManipulatorIndex, setSelectedManipulatorIndex] = useState(0);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [selectingToKeys, setSelectingToKeys] = useState(false);
+  const [selectingToEventIndex, setSelectingToEventIndex] = useState<
+    number | null
+  >(null);
+  const [pendingToKey, setPendingToKey] = useState<string | null>(null);
 
   const currentManipulator = manipulators[selectedManipulatorIndex];
 
@@ -110,27 +113,44 @@ export function ManipulatorBuilderPanel({
     });
   };
 
-  const handleToKeyToggle = useCallback(
-    (keyCode: string) => {
-      const currentTo = currentManipulator.to || [];
-      const existingIndex = currentTo.findIndex(
-        (t) => t.key_code === keyCode || t.consumer_key_code === keyCode,
-      );
+  const handleSelectToKey = useCallback((keyCode: string) => {
+    setPendingToKey(keyCode);
+  }, []);
 
-      if (existingIndex >= 0) {
-        // Remove
-        updateCurrentManipulator({
-          to: currentTo.filter((_, i) => i !== existingIndex),
-        });
-      } else {
-        // Add
-        updateCurrentManipulator({
-          to: [...currentTo, { key_code: keyCode }],
-        });
-      }
+  const openToKeyDialog = useCallback(
+    (index: number) => {
+      const event = currentManipulator.to?.[index];
+      const currentKey = event?.key_code || event?.consumer_key_code || null;
+      setPendingToKey(currentKey);
+      setSelectingToEventIndex(index);
     },
-    [currentManipulator, updateCurrentManipulator],
+    [currentManipulator.to],
   );
+
+  const handleConfirmToKeySelect = useCallback(() => {
+    if (selectingToEventIndex === null || !pendingToKey) {
+      setSelectingToEventIndex(null);
+      setPendingToKey(null);
+      return;
+    }
+
+    const currentTo = currentManipulator.to || [];
+    const nextTo = currentTo.map((event, index) => {
+      if (index !== selectingToEventIndex) return event;
+      const { consumer_key_code, ...rest } = event;
+      void consumer_key_code;
+      return { ...rest, key_code: pendingToKey };
+    });
+
+    updateCurrentManipulator({ to: nextTo });
+    setSelectingToEventIndex(null);
+    setPendingToKey(null);
+  }, [
+    currentManipulator.to,
+    pendingToKey,
+    selectingToEventIndex,
+    updateCurrentManipulator,
+  ]);
 
   const updateToEvents = (events: ToEvent[]) => {
     updateCurrentManipulator({ to: events });
@@ -319,36 +339,43 @@ export function ManipulatorBuilderPanel({
           <div className='space-y-3'>
             <div className='flex items-center justify-between gap-2'>
               <Label className='text-sm font-semibold'>To Events</Label>
-              <div className='flex items-center gap-2'>
-                <Button size='sm' variant='outline' onClick={addToEvent}>
-                  <Plus className='mr-2 h-3 w-3' />
-                  Add Event
-                </Button>
-                <Button
-                  size='sm'
-                  variant={selectingToKeys ? 'default' : 'outline'}
-                  onClick={() => setSelectingToKeys(!selectingToKeys)}
-                >
-                  {selectingToKeys ? 'Done Selecting' : 'Select from Keyboard'}
-                </Button>
-              </div>
+              <Button size='sm' variant='outline' onClick={addToEvent}>
+                <Plus className='mr-2 h-3 w-3' />
+                Add Event
+              </Button>
             </div>
 
-            {selectingToKeys ? (
-              <ComplexModificationKeyboard
-                manipulators={[]}
-                mode='select-to'
-                selectedToKeys={currentToKeys}
-                onToKeyToggle={handleToKeyToggle}
-              />
-            ) : (
-              <ToEventEditor
-                events={currentManipulator.to || []}
-                onChange={updateToEvents}
-                label=''
-                showHeader={false}
-              />
-            )}
+            <ToEventEditor
+              events={currentManipulator.to || []}
+              onChange={updateToEvents}
+              label=''
+              showHeader={false}
+              keyCodeAction={(index) => (
+                <Button
+                  size='sm'
+                  variant={
+                    selectingToEventIndex === index ? 'default' : 'outline'
+                  }
+                  className='shrink-0'
+                  onClick={() => openToKeyDialog(index)}
+                >
+                  Select from Keyboard
+                </Button>
+              )}
+            />
+
+            <ToEventKeyboardDialog
+              open={selectingToEventIndex !== null}
+              selectedKey={pendingToKey}
+              onSelectKey={handleSelectToKey}
+              onConfirm={handleConfirmToKeySelect}
+              onOpenChange={(open) => {
+                if (!open) {
+                  setSelectingToEventIndex(null);
+                  setPendingToKey(null);
+                }
+              }}
+            />
           </div>
 
           <Separator />
