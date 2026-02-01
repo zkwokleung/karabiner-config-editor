@@ -8,11 +8,79 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { X } from 'lucide-react';
-import { MODIFIERS } from '@/lib/constants';
+
+const MODIFIER_DISPLAY: Record<
+  string,
+  {
+    symbol: string;
+    label: string;
+  }
+> = {
+  left_command: { symbol: '⌘', label: 'Left ⌘' },
+  right_command: { symbol: '⌘', label: 'Right ⌘' },
+  command: { symbol: '⌘', label: 'Any ⌘' },
+  left_control: { symbol: '⌃', label: 'Left ⌃' },
+  right_control: { symbol: '⌃', label: 'Right ⌃' },
+  control: { symbol: '⌃', label: 'Any ⌃' },
+  left_option: { symbol: '⌥', label: 'Left ⌥' },
+  right_option: { symbol: '⌥', label: 'Right ⌥' },
+  option: { symbol: '⌥', label: 'Any ⌥' },
+  left_shift: { symbol: '⇧', label: 'Left ⇧' },
+  right_shift: { symbol: '⇧', label: 'Right ⇧' },
+  shift: { symbol: '⇧', label: 'Any ⇧' },
+  caps_lock: { symbol: '⇪', label: 'Caps Lock' },
+  fn: { symbol: 'fn', label: 'Fn' },
+  any: { symbol: '✶', label: 'Any' },
+};
+
+const LEFT_RIGHT_GROUPS = [
+  {
+    label: 'Command',
+    modifiers: ['left_command', 'right_command'],
+  },
+  {
+    label: 'Option',
+    modifiers: ['left_option', 'right_option'],
+  },
+  {
+    label: 'Control',
+    modifiers: ['left_control', 'right_control'],
+  },
+  {
+    label: 'Shift',
+    modifiers: ['left_shift', 'right_shift'],
+  },
+];
+
+const ANY_AND_OTHER = [
+  'command',
+  'option',
+  'control',
+  'shift',
+  'caps_lock',
+  'fn',
+  'any',
+];
+
+const ORDERED_MODIFIERS = [
+  'left_command',
+  'right_command',
+  'left_option',
+  'right_option',
+  'left_control',
+  'right_control',
+  'left_shift',
+  'right_shift',
+  'command',
+  'option',
+  'control',
+  'shift',
+  'caps_lock',
+  'fn',
+  'any',
+];
 
 interface ModifierSelectorProps {
   selected: string[];
@@ -40,16 +108,36 @@ export function ModifierSelector({
   return (
     <div className='space-y-2'>
       <Label className='text-xs'>{label}</Label>
-      <div className='flex flex-wrap gap-2 items-center'>
-        {selected.map((modifier) => (
-          <Badge key={modifier} variant='secondary' className='gap-1'>
-            {modifier}
-            <X
-              className='h-3 w-3 cursor-pointer'
-              onClick={() => removeModifier(modifier)}
-            />
-          </Badge>
-        ))}
+      <div className='space-y-2'>
+        {selected.length > 0 && (
+          <div className='grid grid-cols-4 gap-2'>
+            {ORDERED_MODIFIERS.filter((modifier) =>
+              selected.includes(modifier),
+            ).map((modifier) => (
+              <div
+                key={modifier}
+                className='relative rounded-md border border-primary bg-muted/40 px-2 py-1'
+              >
+                <div className='flex flex-col items-start gap-1'>
+                  <span className='font-mono text-sm leading-none'>
+                    {MODIFIER_DISPLAY[modifier]?.symbol ?? modifier}
+                  </span>
+                  <span className='text-[10px] leading-none'>
+                    {MODIFIER_DISPLAY[modifier]?.label ?? modifier}
+                  </span>
+                </div>
+                <Button
+                  size='icon-sm'
+                  variant='ghost'
+                  className='absolute -top-2 -right-2 h-5 w-5 bg-background'
+                  onClick={() => removeModifier(modifier)}
+                >
+                  <X className='h-3 w-3' />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
         <Dialog>
           <DialogTrigger asChild>
             <Button size='sm' variant='outline' className='bg-transparent'>
@@ -60,22 +148,67 @@ export function ModifierSelector({
             <DialogHeader>
               <DialogTitle>{label}</DialogTitle>
             </DialogHeader>
-            <div className='grid grid-cols-2 gap-3 max-h-[400px] overflow-y-auto'>
-              {MODIFIERS.map((modifier) => (
-                <div key={modifier} className='flex items-center space-x-2'>
-                  <Checkbox
-                    id={`${label}-${modifier}`}
-                    checked={selected.includes(modifier)}
-                    onCheckedChange={() => toggleModifier(modifier)}
-                  />
-                  <Label
-                    htmlFor={`${label}-${modifier}`}
-                    className='text-sm cursor-pointer'
-                  >
-                    {modifier}
-                  </Label>
+            <div className='grid grid-cols-2 gap-4 max-h-[400px] overflow-y-auto'>
+              <div className='space-y-3'>
+                <Label className='text-xs text-muted-foreground'>
+                  Left / Right
+                </Label>
+                {LEFT_RIGHT_GROUPS.map((group) => (
+                  <div key={group.label} className='space-y-2'>
+                    <div className='text-[11px] font-medium text-muted-foreground'>
+                      {group.label}
+                    </div>
+                    <div className='grid grid-cols-2 gap-2'>
+                      {group.modifiers.map((modifier) => (
+                        <Button
+                          key={modifier}
+                          type='button'
+                          variant={
+                            selected.includes(modifier)
+                              ? 'secondary'
+                              : 'outline'
+                          }
+                          className='h-auto px-3 py-2 flex flex-col items-center gap-1'
+                          onClick={() => toggleModifier(modifier)}
+                        >
+                          <span className='font-mono text-base leading-none'>
+                            {MODIFIER_DISPLAY[modifier]?.symbol ?? modifier}
+                          </span>
+                          <span className='text-[10px] text-muted-foreground leading-none'>
+                            {MODIFIER_DISPLAY[modifier]?.label ?? modifier}
+                          </span>
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className='space-y-3'>
+                <Label className='text-xs text-muted-foreground'>
+                  Any / Other
+                </Label>
+                <div className='grid grid-cols-2 gap-2'>
+                  {ANY_AND_OTHER.map((modifier) => (
+                    <Button
+                      key={modifier}
+                      type='button'
+                      variant={
+                        selected.includes(modifier) ? 'secondary' : 'outline'
+                      }
+                      className='h-auto px-3 py-2 flex flex-col items-center gap-1'
+                      onClick={() => toggleModifier(modifier)}
+                    >
+                      <span className='font-mono text-base leading-none'>
+                        {MODIFIER_DISPLAY[modifier]?.symbol ?? modifier}
+                      </span>
+                      <span className='text-[10px] text-muted-foreground leading-none'>
+                        {MODIFIER_DISPLAY[modifier]?.label ?? modifier}
+                      </span>
+                    </Button>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
           </DialogContent>
         </Dialog>

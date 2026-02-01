@@ -136,6 +136,11 @@ export function ManipulatorBuilderPanel({
     updateCurrentManipulator({ to: events });
   };
 
+  const addToEvent = () => {
+    const currentTo = currentManipulator.to || [];
+    updateCurrentManipulator({ to: [...currentTo, { key_code: 'a' }] });
+  };
+
   const updateConditions = (conditions: Condition[]) => {
     if (conditions.length === 0) {
       updateCurrentManipulator({ conditions: undefined });
@@ -312,15 +317,21 @@ export function ManipulatorBuilderPanel({
 
           {/* To section with keyboard */}
           <div className='space-y-3'>
-            <div className='flex items-center justify-between'>
+            <div className='flex items-center justify-between gap-2'>
               <Label className='text-sm font-semibold'>To Events</Label>
-              <Button
-                size='sm'
-                variant={selectingToKeys ? 'default' : 'outline'}
-                onClick={() => setSelectingToKeys(!selectingToKeys)}
-              >
-                {selectingToKeys ? 'Done Selecting' : 'Select from Keyboard'}
-              </Button>
+              <div className='flex items-center gap-2'>
+                <Button size='sm' variant='outline' onClick={addToEvent}>
+                  <Plus className='mr-2 h-3 w-3' />
+                  Add Event
+                </Button>
+                <Button
+                  size='sm'
+                  variant={selectingToKeys ? 'default' : 'outline'}
+                  onClick={() => setSelectingToKeys(!selectingToKeys)}
+                >
+                  {selectingToKeys ? 'Done Selecting' : 'Select from Keyboard'}
+                </Button>
+              </div>
             </div>
 
             {selectingToKeys ? (
@@ -335,6 +346,7 @@ export function ManipulatorBuilderPanel({
                 events={currentManipulator.to || []}
                 onChange={updateToEvents}
                 label=''
+                showHeader={false}
               />
             )}
           </div>
