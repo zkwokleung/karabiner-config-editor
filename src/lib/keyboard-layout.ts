@@ -148,7 +148,22 @@ export function toKarabinerKeyCode(simpleKeyboardButton: string): string {
 
 // Convert Karabiner key code to simple-keyboard button
 export function toSimpleKeyboardButton(karabinerKeyCode: string): string {
-  return KARABINER_TO_SIMPLE_KEYBOARD[karabinerKeyCode] || karabinerKeyCode;
+  const overrides: Record<string, string> = {
+    left_shift: '{shiftleft}',
+    right_shift: '{shiftright}',
+    left_control: '{controlleft}',
+    right_control: '{controlright}',
+    left_option: '{altleft}',
+    right_option: '{altright}',
+    left_command: '{metaleft}',
+    right_command: '{metaright}',
+  };
+
+  return (
+    overrides[karabinerKeyCode] ||
+    KARABINER_TO_SIMPLE_KEYBOARD[karabinerKeyCode] ||
+    karabinerKeyCode
+  );
 }
 
 // Display labels for Karabiner key codes

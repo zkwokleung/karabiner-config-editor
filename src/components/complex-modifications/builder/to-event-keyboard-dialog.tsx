@@ -36,6 +36,8 @@ export function ToEventKeyboardDialog({
           mode='select-to'
           selectedToKeys={selectedKey ? [selectedKey] : []}
           onToKeyToggle={onSelectKey}
+          showMappedKeys={false}
+          selectedKeys={selectedKey ? [selectedKey] : []}
         />
         <DialogFooter>
           <Button onClick={onConfirm}>Confirm</Button>

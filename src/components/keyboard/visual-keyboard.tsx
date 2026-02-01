@@ -1,9 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Pencil, Trash2, ArrowRight } from 'lucide-react';
 import {
-  getKeyboardDisplay,
   getKeyLabel,
   toKarabinerKeyCode,
   toSimpleKeyboardButton,
@@ -14,10 +13,13 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { KeyboardShell } from '@/components/keyboard/keyboard-shell';
 
+const EMPTY_CONFLICT_SET: ReadonlySet<string> = new Set();
+
 interface VisualKeyboardProps {
   mappings?: SimpleModification[];
-  conflictingKeys?: Set<string>;
+  conflictingKeys?: ReadonlySet<string>;
   className?: string;
+  selectedKeys?: string[];
   onCreateMapping?: (fromKey: string) => void;
   onEditMapping?: (fromKey: string, currentToKey: string) => void;
   onDeleteMapping?: (fromKey: string) => void;
@@ -25,8 +27,9 @@ interface VisualKeyboardProps {
 
 export function VisualKeyboard({
   mappings = [],
-  conflictingKeys = new Set(),
+  conflictingKeys = EMPTY_CONFLICT_SET,
   className,
+  selectedKeys = [],
   onCreateMapping,
   onEditMapping,
   onDeleteMapping,
@@ -36,6 +39,12 @@ export function VisualKeyboard({
   const [popoverPosition, setPopoverPosition] = useState<{
     x: number;
     y: number;
+  } | null>(null);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const lastPressedButtonRef = useRef<string | null>(null);
+  const keyboardInstanceRef = useRef<{
+    getButtonElement?: (button: string) => HTMLElement | undefined;
+    keyboardDOM?: HTMLElement;
   } | null>(null);
 
   // Build a map of from -> to for quick lookup (Karabiner key codes)
@@ -63,76 +72,90 @@ export function VisualKeyboard({
     return map;
   }, [mappingMap]);
 
-  // Convert Karabiner key codes to simple-keyboard buttons for styling
-  const mappedButtons = useMemo(() => {
-    return Array.from(mappingMap.keys())
-      .map((k) => toSimpleKeyboardButton(k))
-      .join(' ');
-  }, [mappingMap]);
-
-  // Create custom display that shows mapped-to key labels for mapped keys
-  const customDisplay = useMemo(() => {
-    const display: Record<string, string> = {
-      ...getKeyboardDisplay(layoutType),
-    };
-
-    // For each mapping, override the display of the "from" key to show the "to" key label
+  // Only the label overrides are needed; KeyboardShell merges base display
+  const displayOverrides = useMemo(() => {
+    const overrides: Record<string, string> = {};
     mappingMap.forEach((toKeyCode, fromKeyCode) => {
       const simpleKeyboardButton = toSimpleKeyboardButton(fromKeyCode);
       const toLabel = getKeyLabel(toKeyCode);
-      display[simpleKeyboardButton] = toLabel;
+      overrides[simpleKeyboardButton] = toLabel;
     });
+    return overrides;
+  }, [mappingMap]);
 
-    return display;
-  }, [layoutType, mappingMap]);
+  const highlightLayers = useMemo(() => {
+    const selectedHighlightKeys = Array.from(
+      new Set([...selectedKeys, ...(selectedKey ? [selectedKey] : [])]),
+    );
 
-  const conflictButtons = useMemo(() => {
-    return Array.from(conflictingKeys)
-      .map((k) => toSimpleKeyboardButton(k))
-      .join(' ');
-  }, [conflictingKeys]);
+    return [
+      { className: 'kb-mapped', keys: Array.from(mappingMap.keys()) },
+      { className: 'kb-conflict', keys: Array.from(conflictingKeys) },
+      { className: 'kb-selected', keys: selectedHighlightKeys },
+    ];
+  }, [mappingMap, conflictingKeys, selectedKey, selectedKeys]);
 
-  // Build button theme for highlighting
-  const buttonTheme = useMemo(() => {
-    const themes: Array<{ class: string; buttons: string }> = [];
+  const updatePopoverPosition = useCallback((button: string, e?: Event) => {
+    let targetElement: HTMLElement | null = null;
 
-    // Keys that have mappings
-    if (mappedButtons) {
-      themes.push({
-        class: 'kb-mapped',
-        buttons: mappedButtons,
-      });
+    // Prefer the keyboard API to avoid DOM queries
+    const buttonElement =
+      keyboardInstanceRef.current?.getButtonElement?.(button);
+    if (buttonElement instanceof HTMLElement) {
+      targetElement = buttonElement;
     }
 
-    // Conflict keys (overrides mapped style)
-    if (conflictButtons) {
-      themes.push({
-        class: 'kb-conflict',
-        buttons: conflictButtons,
-      });
+    if (!targetElement && e && e.target instanceof HTMLElement) {
+      targetElement = e.target;
     }
 
-    return themes.length > 0 ? themes : undefined;
-  }, [mappedButtons, conflictButtons]);
-
-  const handleKeyPress = useCallback((button: string, e?: MouseEvent) => {
-    const karabinerKey = toKarabinerKeyCode(button);
-
-    // Get position for popover
-    if (e?.target) {
-      const rect = (e.target as HTMLElement).getBoundingClientRect();
-      setPopoverPosition({
-        x: rect.left + rect.width / 2,
-        y: rect.bottom + 4,
-      });
+    if (!targetElement) {
+      const escapedButton =
+        typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(button) : button;
+      const fallback = document.querySelector(
+        `.visual-kb .hg-button[data-skbtn="${escapedButton}"]`,
+      );
+      if (fallback instanceof HTMLElement) {
+        targetElement = fallback;
+      }
     }
 
-    setPopoverKey(karabinerKey);
+    if (!targetElement) {
+      const keyboardDom = keyboardInstanceRef.current?.keyboardDOM;
+      if (keyboardDom) {
+        const rect = keyboardDom.getBoundingClientRect();
+        setPopoverPosition({
+          x: rect.left + rect.width / 2,
+          y: rect.top + rect.height / 2,
+        });
+      } else {
+        setPopoverPosition(null);
+      }
+      return;
+    }
+
+    const rect = targetElement.getBoundingClientRect();
+    setPopoverPosition({
+      x: rect.left + rect.width / 2,
+      y: rect.bottom + 4,
+    });
   }, []);
+
+  const handleKeyPress = useCallback(
+    (button: string, e?: MouseEvent | KeyboardEvent) => {
+      const karabinerKey = toKarabinerKeyCode(button);
+      setSelectedKey(karabinerKey);
+      lastPressedButtonRef.current = button;
+      updatePopoverPosition(button, e);
+      setPopoverKey(karabinerKey);
+    },
+    [updatePopoverPosition],
+  );
 
   const closePopover = useCallback(() => {
     setPopoverKey(null);
     setPopoverPosition(null);
+    setSelectedKey(null);
   }, []);
 
   const handleCreateMapping = useCallback(() => {
@@ -156,9 +179,9 @@ export function VisualKeyboard({
     }
   }, [popoverKey, onDeleteMapping, closePopover]);
 
-  // Close popover when clicking outside
+  // Close popover when clicking/tapping outside
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
+    const handlePointerDown = (e: Event) => {
       const target = e.target as HTMLElement;
       if (!target.closest('.key-popover') && !target.closest('.hg-button')) {
         closePopover();
@@ -166,11 +189,36 @@ export function VisualKeyboard({
     };
 
     if (popoverKey) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('pointerdown', handlePointerDown);
       return () =>
-        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('pointerdown', handlePointerDown);
     }
   }, [popoverKey, closePopover]);
+
+  // Keep popover anchored when the viewport changes (scroll/resize)
+  useEffect(() => {
+    if (!popoverKey || !lastPressedButtonRef.current) return;
+
+    const reposition = () => {
+      const button = lastPressedButtonRef.current;
+      if (button) {
+        updatePopoverPosition(button);
+      }
+    };
+
+    window.addEventListener('resize', reposition, { passive: true });
+    window.addEventListener('scroll', reposition, {
+      passive: true,
+      capture: true,
+    });
+
+    return () => {
+      window.removeEventListener('resize', reposition);
+      window.removeEventListener('scroll', reposition, {
+        capture: true,
+      } as EventListenerOptions);
+    };
+  }, [popoverKey, updatePopoverPosition]);
 
   // Get context info for the popover
   const popoverInfo = useMemo(() => {
@@ -210,13 +258,13 @@ export function VisualKeyboard({
       onLayoutChange={(value) => setLayoutType(value)}
       legend={legend}
       keyboardBaseClass='visual-kb'
-      keyboardKey={mappedButtons}
-      buttonTheme={buttonTheme}
-      display={customDisplay}
+      highlightLayers={highlightLayers}
+      display={displayOverrides}
       onKeyPress={handleKeyPress}
-      physicalKeyboardHighlight
-      physicalKeyboardHighlightBgColor='hsl(var(--accent))'
-      physicalKeyboardHighlightTextColor='hsl(var(--foreground))'
+      keyboardRef={(instance) => {
+        keyboardInstanceRef.current = instance;
+      }}
+      physicalKeyboardHighlight={false}
       afterKeyboard={
         <p className='text-xs text-muted-foreground mt-3 text-center'>
           Click on any key to view details or create/edit mappings
@@ -242,6 +290,17 @@ export function VisualKeyboard({
         }
         .visual-kb.simple-keyboard .hg-button.kb-conflict:hover {
           background: color-mix(in srgb, var(--color-destructive) 25%, var(--color-background)) !important;
+        }
+        .visual-kb.simple-keyboard .hg-button.kb-selected {
+          background: color-mix(in srgb, var(--color-primary) 30%, var(--color-background)) !important;
+          border-color: var(--color-primary) !important;
+          border-width: 2px !important;
+          color: var(--color-primary) !important;
+          font-weight: 700 !important;
+          box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 25%, transparent) !important;
+        }
+        .visual-kb.simple-keyboard .hg-button.kb-selected:hover {
+          background: color-mix(in srgb, var(--color-primary) 35%, var(--color-background)) !important;
         }
       `}
     >

@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useEffect, useMemo, useRef } from 'react';
+import { type ReactNode, useEffect, useId, useMemo, useRef } from 'react';
 import Keyboard from 'react-simple-keyboard';
 import 'react-simple-keyboard/build/css/index.css';
 import { cn } from '@/lib/utils';
@@ -9,6 +9,7 @@ import {
   KEYBOARD_LAYOUT_OPTIONS,
   getKeyboardDisplay,
   getLayoutForType,
+  toSimpleKeyboardButton,
   type KeyboardLayoutType,
 } from '@/lib/keyboard-layout';
 import {
@@ -21,6 +22,11 @@ import {
 
 type ButtonTheme = Array<{ class: string; buttons: string }>;
 
+export interface KeyboardHighlightLayer {
+  className: string;
+  keys: string[];
+}
+
 export interface KeyboardShellProps {
   layoutType: KeyboardLayoutType;
   onLayoutChange: (layout: KeyboardLayoutType) => void;
@@ -32,10 +38,9 @@ export interface KeyboardShellProps {
   children?: ReactNode;
   keyboardBaseClass?: string;
   keyboardWrapperClassName?: string;
-  keyboardKey?: string;
-  buttonTheme?: ButtonTheme;
+  highlightLayers?: KeyboardHighlightLayer[];
   display?: Record<string, string>;
-  onKeyPress?: (button: string, e?: MouseEvent) => void;
+  onKeyPress?: (button: string, e?: MouseEvent | KeyboardEvent) => void;
   keyboardRef?: (instance: typeof Keyboard | null) => void;
   physicalKeyboardHighlight?: boolean;
   physicalKeyboardHighlightBgColor?: string;
@@ -56,8 +61,7 @@ export function KeyboardShell({
   children,
   keyboardBaseClass = 'shared-kb',
   keyboardWrapperClassName,
-  keyboardKey,
-  buttonTheme,
+  highlightLayers,
   display,
   onKeyPress,
   keyboardRef,
@@ -69,6 +73,7 @@ export function KeyboardShell({
   extraStyles,
 }: KeyboardShellProps) {
   const internalKeyboardRef = useRef<typeof Keyboard | null>(null);
+  const keyboardName = useId();
 
   const layout = useMemo(() => getLayoutForType(layoutType), [layoutType]);
   const baseDisplay = useMemo(
@@ -79,6 +84,26 @@ export function KeyboardShell({
     return display ? { ...baseDisplay, ...display } : baseDisplay;
   }, [baseDisplay, display]);
   const buttonWidths = useMemo(() => BUTTON_WIDTHS[layoutType], [layoutType]);
+  const buttonTheme = useMemo<ButtonTheme | undefined>(() => {
+    if (!highlightLayers || highlightLayers.length === 0) {
+      return undefined;
+    }
+
+    const themes = highlightLayers
+      .map((layer) => {
+        const buttons = layer.keys
+          .map((key) => toSimpleKeyboardButton(key))
+          .filter(Boolean)
+          .join(' ');
+        if (!buttons) {
+          return null;
+        }
+        return { class: layer.className, buttons };
+      })
+      .filter(Boolean) as ButtonTheme;
+
+    return themes.length > 0 ? themes : undefined;
+  }, [highlightLayers]);
 
   const buttonWidthStyles = useMemo(() => {
     return Object.entries(buttonWidths)
@@ -179,8 +204,8 @@ export function KeyboardShell({
         )}
       >
         <Keyboard
-          key={keyboardKey ?? layoutType}
           baseClass={keyboardBaseClass}
+          keyboardName={keyboardName}
           keyboardRef={(instance) => {
             internalKeyboardRef.current = instance;
             keyboardRef?.(instance);

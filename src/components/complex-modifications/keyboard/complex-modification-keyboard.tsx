@@ -1,9 +1,8 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   toKarabinerKeyCode,
-  toSimpleKeyboardButton,
   type KeyboardLayoutType,
 } from '@/lib/keyboard-layout';
 import type { Manipulator } from '@/types/karabiner';
@@ -18,6 +17,8 @@ export interface ComplexModificationKeyboardProps {
   mode?: 'view' | 'select-from' | 'select-to';
   selectedToKeys?: string[];
   onToKeyToggle?: (keyCode: string) => void;
+  showMappedKeys?: boolean;
+  selectedKeys?: string[];
 }
 
 export function ComplexModificationKeyboard({
@@ -28,14 +29,46 @@ export function ComplexModificationKeyboard({
   mode = 'view',
   selectedToKeys = [],
   onToKeyToggle,
+  showMappedKeys = true,
+  selectedKeys = [],
 }: ComplexModificationKeyboardProps) {
   const [layoutType, setLayoutType] = useState<KeyboardLayoutType>('ansi');
+  const [transientSelectedKeys, setTransientSelectedKeys] = useState<string[]>(
+    [],
+  );
   const [modifierState, setModifierState] = useState<ModifierState>({
     command: false,
     option: false,
     control: false,
     shift: false,
   });
+
+  const areArraysEqual = useCallback((a: string[], b: string[]) => {
+    if (a === b) return true;
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i += 1) {
+      if (a[i] !== b[i]) return false;
+    }
+    return true;
+  }, []);
+
+  const externalSelectedKeys = useMemo(() => {
+    return Array.from(
+      new Set([
+        ...selectedKeys,
+        ...selectedToKeys,
+        ...(selectedFromKey ? [selectedFromKey] : []),
+      ]),
+    );
+  }, [selectedFromKey, selectedKeys, selectedToKeys]);
+
+  // Keep a local selection in sync so highlights react immediately to clicks
+  useEffect(() => {
+    const next = Array.from(new Set(externalSelectedKeys));
+    setTransientSelectedKeys((prev) =>
+      areArraysEqual(prev, next) ? prev : next,
+    );
+  }, [externalSelectedKeys, areArraysEqual]);
 
   // Filter manipulators based on modifier state
   const filteredManipulators = useMemo(() => {
@@ -82,6 +115,9 @@ export function ComplexModificationKeyboard({
 
   // Build set of keys that have mappings (from keys only)
   const mappedKeys = useMemo(() => {
+    if (!showMappedKeys) {
+      return [];
+    }
     const keySet = new Set<string>();
     filteredManipulators.forEach((m) => {
       const fromKey = m.from.key_code || m.from.consumer_key_code || '';
@@ -89,62 +125,39 @@ export function ComplexModificationKeyboard({
         keySet.add(fromKey);
       }
     });
-    return keySet;
-  }, [filteredManipulators]);
+    return Array.from(keySet);
+  }, [filteredManipulators, showMappedKeys]);
 
-  // Convert to simple-keyboard buttons for styling
-  const mappedButtons = useMemo(() => {
-    return Array.from(mappedKeys)
-      .map((k) => toSimpleKeyboardButton(k))
-      .join(' ');
-  }, [mappedKeys]);
-
-  const selectedFromButton = useMemo(() => {
-    return selectedFromKey ? toSimpleKeyboardButton(selectedFromKey) : '';
-  }, [selectedFromKey]);
-
-  const selectedToButtons = useMemo(() => {
-    return selectedToKeys.map((k) => toSimpleKeyboardButton(k)).join(' ');
-  }, [selectedToKeys]);
-
-  // Build button theme for highlighting
-  const buttonTheme = useMemo(() => {
-    const themes: Array<{ class: string; buttons: string }> = [];
+  const highlightLayers = useMemo(() => {
+    const dedupedSelectedKeys = Array.from(
+      new Set([...externalSelectedKeys, ...transientSelectedKeys]),
+    );
 
     if (mode === 'select-to') {
-      // In select-to mode, highlight selected to keys
-      if (selectedToButtons) {
-        themes.push({
-          class: 'kb-selected-to',
-          buttons: selectedToButtons,
-        });
-      }
-    } else {
-      // Normal view mode - show mapped keys
-      if (mappedButtons) {
-        themes.push({
-          class: 'kb-mapped',
-          buttons: mappedButtons,
-        });
-      }
-
-      // Selected key (overrides mapped styling)
-      if (selectedFromButton) {
-        themes.push({
-          class: 'kb-selected',
-          buttons: selectedFromButton,
-        });
-      }
+      return [{ className: 'kb-selected-to', keys: dedupedSelectedKeys }];
     }
 
-    return themes.length > 0 ? themes : undefined;
-  }, [mappedButtons, selectedFromButton, selectedToButtons, mode]);
+    return [
+      { className: 'kb-mapped', keys: mappedKeys },
+      {
+        className: 'kb-selected',
+        keys: dedupedSelectedKeys,
+      },
+    ];
+  }, [mappedKeys, mode, externalSelectedKeys, transientSelectedKeys]);
 
   const handleKeyPress = useCallback(
     (button: string) => {
       const karabinerKey = toKarabinerKeyCode(button);
 
       if (mode === 'select-to') {
+        setTransientSelectedKeys((prev) => {
+          const hasKey = prev.includes(karabinerKey);
+          if (hasKey) {
+            return prev.filter((k) => k !== karabinerKey);
+          }
+          return [karabinerKey]; // single-select behavior matches dialog expectation
+        });
         onToKeyToggle?.(karabinerKey);
       } else {
         onKeyClick?.(karabinerKey);
@@ -155,10 +168,12 @@ export function ComplexModificationKeyboard({
 
   const legend = (
     <div className='flex items-center gap-3 text-xs text-muted-foreground'>
-      <div className='flex items-center gap-1'>
-        <div className='w-2.5 h-2.5 rounded-sm bg-primary/20 border border-primary' />
-        <span>Mapped</span>
-      </div>
+      {showMappedKeys && mode !== 'select-to' && (
+        <div className='flex items-center gap-1'>
+          <div className='w-2.5 h-2.5 rounded-sm bg-primary/20 border border-primary' />
+          <span>Mapped</span>
+        </div>
+      )}
       {mode === 'select-to' && (
         <div className='flex items-center gap-1'>
           <div className='w-2.5 h-2.5 rounded-sm bg-purple-500/20 border border-purple-500' />
@@ -185,8 +200,7 @@ export function ComplexModificationKeyboard({
       legend={legend}
       beforeKeyboard={modifierControls}
       keyboardBaseClass='complex-kb'
-      keyboardKey={`${mappedButtons}-${selectedToButtons}-${mode}`}
-      buttonTheme={buttonTheme}
+      highlightLayers={highlightLayers}
       onKeyPress={handleKeyPress}
       physicalKeyboardHighlight={false}
       afterKeyboard={
