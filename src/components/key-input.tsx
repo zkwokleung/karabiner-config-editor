@@ -1,12 +1,12 @@
-"use client"
+'use client';
 
-import { KeyCodeSelector } from "@/components/key-code-selector"
+import { KeyCodeSelector } from '@/components/mapping/selectors/key-code-selector';
 
 interface KeyInputProps {
-  value: string
-  onChange: (value: string) => void
-  placeholder?: string
-  excludeNotFrom?: boolean
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  excludeNotFrom?: boolean;
 }
 
 /**
@@ -16,8 +16,15 @@ interface KeyInputProps {
 export function KeyInput({
   value,
   onChange,
-  placeholder = "Select or type key...",
+  placeholder = 'Select or type key...',
   excludeNotFrom = false,
 }: KeyInputProps) {
-  return <KeyCodeSelector value={value} onChange={onChange} placeholder={placeholder} excludeNotFrom={excludeNotFrom} />
+  return (
+    <KeyCodeSelector
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      excludeNotFrom={excludeNotFrom}
+    />
+  );
 }

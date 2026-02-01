@@ -1,6 +1,7 @@
 'use client';
 
-import { Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
+import { Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,85 +20,26 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { ModifierSelector } from '@/components/modifier-selector';
-import { KeyCodeSelector } from '@/components/key-code-selector';
+import { ModifierSelector } from '@/components/mapping/selectors/modifier-selector';
+import { KeyCodeSelector } from '@/components/mapping/selectors/key-code-selector';
 import type { ToEvent } from '@/types/karabiner';
 import { TO_EVENT_TYPES } from '@/lib/constants';
-import { useState, type ReactNode } from 'react';
 
-interface ToEventEditorProps {
-  events: ToEvent[];
-  onChange: (events: ToEvent[]) => void;
-  label: string;
-  showHeader?: boolean;
-  keyCodeAction?: (index: number) => ReactNode;
-  keyCodeActionIndex?: number;
+interface ToEventItemProps {
+  event: ToEvent;
+  onUpdate: (event: ToEvent) => void;
+  onDelete: () => void;
+  showDelete: boolean;
+  keyCodeAction?: ReactNode;
 }
 
-export function ToEventEditor({
-  events,
-  onChange,
-  label,
-  showHeader = true,
-  keyCodeAction,
-}: ToEventEditorProps) {
-  const addEvent = () => {
-    onChange([...events, { key_code: 'a' }]);
-  };
-
-  const deleteEvent = (index: number) => {
-    onChange(events.filter((_, i) => i !== index));
-  };
-
-  const updateEvent = (index: number, event: ToEvent) => {
-    const newEvents = [...events];
-    newEvents[index] = event;
-    onChange(newEvents);
-  };
-
-  return (
-    <div className='space-y-3'>
-      {showHeader && (
-        <div className='flex items-center justify-between'>
-          <Label className='text-sm font-semibold'>{label}</Label>
-          <Button size='sm' variant='outline' onClick={addEvent}>
-            <Plus className='mr-2 h-3 w-3' />
-            Add Event
-          </Button>
-        </div>
-      )}
-
-      <div className='space-y-2'>
-        {events.map((event, index) => (
-          <ToEventItem
-            key={index}
-            event={event}
-            onUpdate={(updated) => updateEvent(index, updated)}
-            onDelete={() => deleteEvent(index)}
-            showDelete={events.length > 1}
-            keyCodeAction={keyCodeAction ? keyCodeAction(index) : null}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ToEventItem({
+export function ToEventItem({
   event,
   onUpdate,
   onDelete,
   showDelete,
   keyCodeAction,
-}: {
-  event: ToEvent;
-  onUpdate: (event: ToEvent) => void;
-  onDelete: () => void;
-  keyCodeAction?: React.ReactNode;
-  showDelete: boolean;
-  keyCodeAction?: React.ReactNode;
-}) {
-  // Determine current event type
+}: ToEventItemProps) {
   const getEventType = (): string => {
     if (event.shell_command) return 'shell_command';
     if (event.set_variable) return 'set_variable';
@@ -109,7 +51,6 @@ function ToEventItem({
   const eventType = getEventType();
 
   const updateEventType = (type: string) => {
-    // Reset event when type changes
     const newEvent: ToEvent = {};
 
     if (type === 'key_code') {
@@ -152,7 +93,6 @@ function ToEventItem({
           )}
         </div>
 
-        {/* Key Code Event */}
         {eventType === 'key_code' && (
           <div className='space-y-2'>
             <Label className='text-xs'>Key Code</Label>
@@ -169,7 +109,6 @@ function ToEventItem({
           </div>
         )}
 
-        {/* Shell Command Event */}
         {eventType === 'shell_command' && (
           <div className='space-y-2'>
             <Label className='text-xs'>Shell Command</Label>
@@ -190,7 +129,6 @@ function ToEventItem({
           </div>
         )}
 
-        {/* Set Variable Event */}
         {eventType === 'set_variable' && (
           <div className='grid grid-cols-2 gap-2'>
             <div className='space-y-1'>
@@ -230,7 +168,6 @@ function ToEventItem({
           </div>
         )}
 
-        {/* Select Input Source Event */}
         {eventType === 'select_input_source' && (
           <div className='space-y-2'>
             <Label className='text-xs'>Language Code</Label>
@@ -251,7 +188,6 @@ function ToEventItem({
           </div>
         )}
 
-        {/* Mouse Key Event */}
         {eventType === 'mouse_key' && (
           <div className='grid grid-cols-2 gap-2'>
             <div className='space-y-1'>
@@ -318,7 +254,6 @@ function ToEventItem({
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent className='space-y-3 pt-2'>
-            {/* Lazy flag */}
             <div className='flex items-center space-x-2'>
               <Checkbox
                 id={`lazy-${event.key_code}`}
@@ -338,7 +273,6 @@ function ToEventItem({
               </Label>
             </div>
 
-            {/* Repeat flag */}
             <div className='flex items-center space-x-2'>
               <Checkbox
                 id={`repeat-${event.key_code}`}
@@ -358,7 +292,6 @@ function ToEventItem({
               </Label>
             </div>
 
-            {/* Halt flag */}
             <div className='flex items-center space-x-2'>
               <Checkbox
                 id={`halt-${event.key_code}`}
@@ -378,7 +311,6 @@ function ToEventItem({
               </Label>
             </div>
 
-            {/* Hold down milliseconds */}
             <div className='space-y-1'>
               <Label className='text-xs'>Hold Down Milliseconds</Label>
               <Input

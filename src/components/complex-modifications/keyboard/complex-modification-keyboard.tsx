@@ -1,26 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Keyboard from 'react-simple-keyboard';
-import 'react-simple-keyboard/build/css/index.css';
-import { cn } from '@/lib/utils';
+import { useCallback, useMemo, useState } from 'react';
 import {
-  getLayoutForType,
-  getKeyboardDisplay,
-  BUTTON_WIDTHS,
   toKarabinerKeyCode,
   toSimpleKeyboardButton,
-  KEYBOARD_LAYOUT_OPTIONS,
   type KeyboardLayoutType,
 } from '@/lib/keyboard-layout';
 import type { Manipulator } from '@/types/karabiner';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { KeyboardShell } from '@/components/keyboard/keyboard-shell';
 import { ModifierStateBar, type ModifierState } from './modifier-state-bar';
 
 export interface ComplexModificationKeyboardProps {
@@ -42,7 +29,6 @@ export function ComplexModificationKeyboard({
   selectedToKeys = [],
   onToKeyToggle,
 }: ComplexModificationKeyboardProps) {
-  const keyboardRef = useRef<typeof Keyboard | null>(null);
   const [layoutType, setLayoutType] = useState<KeyboardLayoutType>('ansi');
   const [modifierState, setModifierState] = useState<ModifierState>({
     command: false,
@@ -167,117 +153,50 @@ export function ComplexModificationKeyboard({
     [mode, onKeyClick, onToKeyToggle],
   );
 
-  const layout = getLayoutForType(layoutType);
-  const buttonWidths = BUTTON_WIDTHS[layoutType];
-  const display = useMemo(() => getKeyboardDisplay(layoutType), [layoutType]);
+  const legend = (
+    <div className='flex items-center gap-3 text-xs text-muted-foreground'>
+      <div className='flex items-center gap-1'>
+        <div className='w-2.5 h-2.5 rounded-sm bg-primary/20 border border-primary' />
+        <span>Mapped</span>
+      </div>
+      {mode === 'select-to' && (
+        <div className='flex items-center gap-1'>
+          <div className='w-2.5 h-2.5 rounded-sm bg-purple-500/20 border border-purple-500' />
+          <span>Selected</span>
+        </div>
+      )}
+    </div>
+  );
 
-  // Generate CSS for button widths
-  const buttonWidthStyles = useMemo(() => {
-    return Object.entries(buttonWidths)
-      .map(([button, width]) => {
-        return `.complex-kb .hg-button[data-skbtn="${button}"] { width: ${width}; min-width: ${width}; max-width: ${width}; }`;
-      })
-      .join('\n');
-  }, [buttonWidths]);
-
-  // Force re-render when layout or buttonTheme changes
-  useEffect(() => {
-    if (keyboardRef.current) {
-      (
-        keyboardRef.current as {
-          setOptions?: (opts: Record<string, unknown>) => void;
-        }
-      )?.setOptions?.({
-        layout: layout,
-        buttonTheme: buttonTheme,
-      });
-    }
-  }, [layout, buttonTheme]);
+  const modifierControls = (
+    <ModifierStateBar
+      state={modifierState}
+      onChange={setModifierState}
+      className='mb-3'
+      disabled={mode === 'select-to'}
+    />
+  );
 
   return (
-    <div className={cn('select-none relative', className)}>
-      {/* Header: Layout selector + Legend */}
-      <div className='flex items-center justify-between mb-3 flex-wrap gap-2'>
-        <Select
-          value={layoutType}
-          onValueChange={(v) => setLayoutType(v as KeyboardLayoutType)}
-        >
-          <SelectTrigger className='w-[130px] h-8 bg-transparent text-xs'>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {KEYBOARD_LAYOUT_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label} ({opt.description})
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* Inline Legend */}
-        <div className='flex items-center gap-3 text-xs text-muted-foreground'>
-          <div className='flex items-center gap-1'>
-            <div className='w-2.5 h-2.5 rounded-sm bg-primary/20 border border-primary' />
-            <span>Mapped</span>
-          </div>
-          {mode === 'select-to' && (
-            <div className='flex items-center gap-1'>
-              <div className='w-2.5 h-2.5 rounded-sm bg-purple-500/20 border border-purple-500' />
-              <span>Selected</span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <p className='text-xs text-muted-foreground mb-3'>
-        Some physical keys map to different key codes depending on the layout.
-      </p>
-
-      {/* Modifier State Bar */}
-      <ModifierStateBar
-        state={modifierState}
-        onChange={setModifierState}
-        className='mb-3'
-        disabled={mode === 'select-to'}
-      />
-
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-        .complex-kb.simple-keyboard.hg-theme-default {
-          background: var(--color-muted) !important;
-          padding: 10px !important;
-          border-radius: 10px !important;
-          font-family: inherit !important;
-        }
-        .complex-kb.simple-keyboard .hg-row {
-          gap: 4px !important;
-          margin-bottom: 4px !important;
-        }
-        .complex-kb.simple-keyboard .hg-row:last-child {
-          margin-bottom: 0 !important;
-        }
-        .complex-kb.simple-keyboard .hg-button {
-          height: 38px !important;
-          min-width: 38px !important;
-          border-radius: 6px !important;
-          background: var(--color-background) !important;
-          border: 1px solid var(--color-border) !important;
-          color: var(--color-foreground) !important;
-          font-size: 12px !important;
-          font-weight: 500 !important;
-          box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
-          transition: all 0.1s ease !important;
-        }
-        .complex-kb.simple-keyboard .hg-button:hover {
-          background: var(--color-accent) !important;
-          border-color: var(--color-primary) !important;
-        }
-        .complex-kb.simple-keyboard .hg-button:active {
-          transform: translateY(1px) !important;
-          box-shadow: none !important;
-        }
-        /* Keys with mappings */
+    <KeyboardShell
+      className={className}
+      layoutType={layoutType}
+      onLayoutChange={(value) => setLayoutType(value)}
+      legend={legend}
+      beforeKeyboard={modifierControls}
+      keyboardBaseClass='complex-kb'
+      keyboardKey={`${mappedButtons}-${selectedToButtons}-${mode}`}
+      buttonTheme={buttonTheme}
+      onKeyPress={handleKeyPress}
+      physicalKeyboardHighlight={false}
+      afterKeyboard={
+        <p className='text-xs text-muted-foreground mt-3 text-center'>
+          {mode === 'select-to'
+            ? 'Click keys to select/deselect them as "to" targets'
+            : 'Click on any key to create or edit a mapping. Use modifier buttons above to filter.'}
+        </p>
+      }
+      extraStyles={`
         .complex-kb.simple-keyboard .hg-button.kb-mapped {
           background: color-mix(in srgb, var(--color-primary) 15%, var(--color-background)) !important;
           border-color: var(--color-primary) !important;
@@ -288,7 +207,6 @@ export function ComplexModificationKeyboard({
         .complex-kb.simple-keyboard .hg-button.kb-mapped:hover {
           background: color-mix(in srgb, var(--color-primary) 25%, var(--color-background)) !important;
         }
-        /* Selected key */
         .complex-kb.simple-keyboard .hg-button.kb-selected {
           background: color-mix(in srgb, var(--color-primary) 30%, var(--color-background)) !important;
           border-color: var(--color-primary) !important;
@@ -297,7 +215,6 @@ export function ComplexModificationKeyboard({
           font-weight: 700 !important;
           box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 30%, transparent) !important;
         }
-        /* Selected "to" keys in select mode - purple */
         .complex-kb.simple-keyboard .hg-button.kb-selected-to {
           background: color-mix(in srgb, #a855f7 25%, var(--color-background)) !important;
           border-color: #a855f7 !important;
@@ -308,33 +225,7 @@ export function ComplexModificationKeyboard({
         .complex-kb.simple-keyboard .hg-button.kb-selected-to:hover {
           background: color-mix(in srgb, #a855f7 35%, var(--color-background)) !important;
         }
-        ${buttonWidthStyles}
-      `,
-        }}
-      />
-
-      <div className='bg-muted/50 rounded-lg border p-2'>
-        <Keyboard
-          keyboardRef={(r) =>
-            (keyboardRef.current = r as typeof Keyboard | null)
-          }
-          baseClass='complex-kb'
-          layout={layout}
-          display={display}
-          onKeyPress={handleKeyPress}
-          buttonTheme={buttonTheme}
-          physicalKeyboardHighlight={false}
-          mergeDisplay={true}
-          useButtonTag={true}
-        />
-      </div>
-
-      {/* Help text */}
-      <p className='text-xs text-muted-foreground mt-3 text-center'>
-        {mode === 'select-to'
-          ? 'Click keys to select/deselect them as "to" targets'
-          : 'Click on any key to create or edit a mapping. Use modifier buttons above to filter.'}
-      </p>
-    </div>
+      `}
+    />
   );
 }

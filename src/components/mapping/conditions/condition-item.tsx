@@ -1,4 +1,5 @@
 'use client';
+
 import { Plus, Trash2, X } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,82 +16,20 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import type { Condition } from '@/types/karabiner';
 import { CONDITION_TYPES, KEYBOARD_TYPES } from '@/lib/constants';
 
-interface ConditionEditorProps {
-  conditions: Condition[];
-  onChange: (conditions: Condition[]) => void;
-}
-
-export function ConditionEditor({
-  conditions,
-  onChange,
-}: ConditionEditorProps) {
-  const addCondition = () => {
-    const newCondition: Condition = {
-      type: 'frontmost_application_if',
-      bundle_identifiers: ['^com\\.example\\.app$'],
-    };
-    onChange([...conditions, newCondition]);
-  };
-
-  const deleteCondition = (index: number) => {
-    onChange(conditions.filter((_, i) => i !== index));
-  };
-
-  const updateCondition = (index: number, updated: Condition) => {
-    const newConditions = [...conditions];
-    newConditions[index] = updated;
-    onChange(newConditions);
-  };
-
-  return (
-    <div className='space-y-3'>
-      <div className='flex items-center justify-between gap-2'>
-        <Label className='text-sm font-semibold'>Conditions</Label>
-        <Button
-          size='sm'
-          variant='outline'
-          onClick={addCondition}
-          className='bg-transparent shrink-0'
-        >
-          <Plus className='mr-2 h-3 w-3' />
-          Add Condition
-        </Button>
-      </div>
-
-      {conditions.length === 0 && (
-        <p className='text-xs text-muted-foreground'>
-          No conditions. This mapping will apply in all contexts.
-        </p>
-      )}
-
-      <div className='space-y-2'>
-        {conditions.map((condition, index) => (
-          <ConditionItem
-            key={index}
-            condition={condition}
-            onUpdate={(updated) => updateCondition(index, updated)}
-            onDelete={() => deleteCondition(index)}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ConditionItem({
-  condition,
-  onUpdate,
-  onDelete,
-}: {
+interface ConditionItemProps {
   condition: Condition;
   onUpdate: (condition: Condition) => void;
   onDelete: () => void;
-}) {
+}
+
+export function ConditionItem({
+  condition,
+  onUpdate,
+  onDelete,
+}: ConditionItemProps) {
   const updateType = (type: string) => {
-    // Reset condition fields when type changes
     const newCondition: Condition = { type };
 
-    // Set default values based on type
     if (type.includes('frontmost_application')) {
       newCondition.bundle_identifiers = ['^com\\.example\\.app$'];
     } else if (type.includes('device')) {
@@ -151,7 +90,6 @@ function ConditionItem({
           </Button>
         </div>
 
-        {/* Frontmost Application Condition */}
         {condition.type.includes('frontmost_application') && (
           <div className='space-y-2'>
             <div className='flex items-center justify-between'>
@@ -167,7 +105,7 @@ function ConditionItem({
                   onChange={(e) =>
                     updateBundleIdentifier(index, e.target.value)
                   }
-                  placeholder='^com\.example\.app$'
+                  placeholder='^com\\.example\\.app$'
                   className='font-mono text-xs'
                 />
                 <Button
@@ -180,12 +118,11 @@ function ConditionItem({
               </div>
             ))}
             <p className='text-xs text-muted-foreground'>
-              Example: ^com\.google\.Chrome$ for Chrome browser
+              Example: ^com\\.google\\.Chrome$ for Chrome browser
             </p>
           </div>
         )}
 
-        {/* Variable Condition */}
         {condition.type.includes('variable') && (
           <div className='grid grid-cols-2 gap-2'>
             <div className='space-y-1'>
@@ -216,7 +153,6 @@ function ConditionItem({
           </div>
         )}
 
-        {/* Keyboard Type Condition */}
         {condition.type.includes('keyboard_type') && (
           <div className='space-y-1'>
             <Label className='text-xs'>Keyboard Type</Label>
@@ -240,7 +176,6 @@ function ConditionItem({
           </div>
         )}
 
-        {/* Input Source Condition */}
         {condition.type.includes('input_source') && (
           <div className='space-y-1'>
             <Label className='text-xs'>Input Source ID (regex)</Label>
@@ -249,13 +184,12 @@ function ConditionItem({
               onChange={(e) =>
                 onUpdate({ ...condition, input_source_id: [e.target.value] })
               }
-              placeholder='^com\.apple\.keylayout\.US$'
+              placeholder='^com\\.apple\\.keylayout\\.US$'
               className='font-mono text-xs'
             />
           </div>
         )}
 
-        {/* Device Condition */}
         {condition.type.includes('device') && (
           <div className='space-y-2'>
             <Label className='text-xs'>Device Identifiers</Label>

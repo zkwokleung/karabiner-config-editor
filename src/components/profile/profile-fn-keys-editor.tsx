@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import { KeyCodeSelector } from '@/components/key-code-selector';
+import { KeyCodeSelector } from '@/components/mapping/selectors/key-code-selector';
 import { DeviceTargetPanel } from '@/components/profile/device-target-panel';
 import type { Device, FnFunctionKey, Profile } from '@/types/karabiner';
 import type { DeviceTargetOption } from '@/types/profile';

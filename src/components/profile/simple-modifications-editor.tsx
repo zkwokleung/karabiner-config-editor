@@ -29,7 +29,7 @@ import {
   findDuplicateSimpleModifications,
   type SimpleModificationDuplicate,
 } from '@/lib/validation';
-import { VisualKeyboard } from '@/components/visual-keyboard';
+import { VisualKeyboard } from '@/components/keyboard/visual-keyboard';
 import { getKeyLabel } from '@/lib/keyboard-layout';
 
 interface SimpleModificationsEditorProps {

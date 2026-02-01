@@ -21,9 +21,9 @@ import type {
   Modifiers,
 } from '@/types/karabiner';
 import { getKeyLabel } from '@/lib/keyboard-layout';
-import { ConditionEditor } from '@/components/condition-editor';
-import { ToEventEditor } from '@/components/to-event-editor';
-import { ModifierSelector as FormModifierSelector } from '@/components/modifier-selector';
+import { ConditionEditor } from '@/components/mapping/conditions/condition-editor';
+import { ToEventEditor } from '@/components/mapping/to-events/to-event-editor';
+import { ModifierSelector as FormModifierSelector } from '@/components/mapping/selectors/modifier-selector';
 import { ToEventKeyboardDialog } from './to-event-keyboard-dialog';
 import { useToast } from '@/hooks/use-toast';
 
