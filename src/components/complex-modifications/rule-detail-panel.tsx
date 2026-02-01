@@ -106,12 +106,39 @@ export function RuleDetailPanel({
     setIsCreatingNew(false);
   }, []);
 
+  const handleDeleteManipulatorByIndex = useCallback(
+    (index: number) => {
+      const manipulator = rule.manipulators[index];
+      const fromKey =
+        manipulator?.from.key_code || manipulator?.from.consumer_key_code || '';
+      const remainingForKey = fromKey
+        ? rule.manipulators.filter(
+            (m, i) =>
+              i !== index &&
+              (m.from.key_code === fromKey ||
+                m.from.consumer_key_code === fromKey),
+          ).length
+        : 0;
+
+      onDeleteManipulator(index);
+
+      if (
+        selectedFromKey &&
+        fromKey === selectedFromKey &&
+        remainingForKey === 0
+      ) {
+        setSelectedFromKey(null);
+      }
+    },
+    [onDeleteManipulator, rule.manipulators, selectedFromKey],
+  );
+
   const handleBuilderDelete = useCallback(() => {
     if (editingManipulatorIndex !== null) {
-      onDeleteManipulator(editingManipulatorIndex);
+      handleDeleteManipulatorByIndex(editingManipulatorIndex);
       setEditingManipulatorIndex(null);
     }
-  }, [editingManipulatorIndex, onDeleteManipulator]);
+  }, [editingManipulatorIndex, handleDeleteManipulatorByIndex]);
 
   const handleManipulatorDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -143,6 +170,12 @@ export function RuleDetailPanel({
 
   const handleBuilderSave = useCallback(
     (newManipulators: Manipulator[]) => {
+      const nextSelectedKey =
+        newManipulators[0]?.from.key_code ||
+        newManipulators[0]?.from.consumer_key_code ||
+        selectedFromKey ||
+        null;
+
       if (editingManipulatorIndex !== null) {
         if (newManipulators.length > 0) {
           onUpdateManipulator(editingManipulatorIndex, newManipulators[0]);
@@ -153,7 +186,7 @@ export function RuleDetailPanel({
       }
       setEditingManipulatorIndex(null);
       setIsCreatingNew(false);
-      setSelectedFromKey(null);
+      setSelectedFromKey(nextSelectedKey);
     },
     [
       editingManipulatorIndex,
@@ -161,6 +194,7 @@ export function RuleDetailPanel({
       rule.manipulators,
       onUpdateManipulator,
       onReorderManipulators,
+      selectedFromKey,
     ],
   );
 
@@ -241,7 +275,7 @@ export function RuleDetailPanel({
                 manipulatorIndices={selectedKeyIndices}
                 onAddManipulator={handleAddManipulatorForKey}
                 onEditManipulator={handleEditManipulator}
-                onDeleteManipulator={onDeleteManipulator}
+                onDeleteManipulator={handleDeleteManipulatorByIndex}
                 onClearSelection={handleClearSelection}
               />
             )}
@@ -288,7 +322,7 @@ export function RuleDetailPanel({
                                 handleEditFromList(manipulatorIndex)
                               }
                               onDelete={() =>
-                                onDeleteManipulator(manipulatorIndex)
+                                handleDeleteManipulatorByIndex(manipulatorIndex)
                               }
                             />
                           ),
