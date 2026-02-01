@@ -5,7 +5,6 @@ import { Plus, Trash2, ArrowRight, X } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { Manipulator } from '@/types/karabiner';
 import { getKeyLabel } from '@/lib/keyboard-layout';
@@ -120,14 +119,6 @@ export function KeyMappingList({
       {selectedManipulators.length === 0 ? (
         <div className='py-8 text-center text-sm text-muted-foreground border rounded-lg border-dashed'>
           <p>No mappings for this key yet.</p>
-          <Button
-            size='sm'
-            variant='link'
-            onClick={onAddManipulator}
-            className='mt-2'
-          >
-            Create the first mapping
-          </Button>
         </div>
       ) : (
         <ScrollArea className='max-h-[300px]'>
@@ -211,13 +202,6 @@ export function KeyMappingList({
           </div>
         </ScrollArea>
       )}
-
-      <Separator className='my-3' />
-
-      <p className='text-xs text-muted-foreground text-center'>
-        Click &quot;Edit&quot; to modify a mapping, or &quot;Add Mapping&quot;
-        to create a new one for this key
-      </p>
     </Card>
   );
 }

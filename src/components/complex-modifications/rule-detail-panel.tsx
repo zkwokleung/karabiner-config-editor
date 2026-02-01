@@ -26,7 +26,7 @@ import {
 } from '@dnd-kit/sortable';
 import { ComplexModificationKeyboard } from './keyboard/complex-modification-keyboard';
 import { KeyMappingList } from './keyboard/key-mapping-list';
-import { ManipulatorBuilderPanel } from './builder/manipulator-builder-panel';
+import { MappingBuilderDialog } from './builder/mapping-builder-dialog';
 import { SortableMappingSummary } from './mapping-summary';
 
 interface RuleDetailPanelProps {
@@ -179,6 +179,8 @@ export function RuleDetailPanel({
       ? [rule.manipulators[editingManipulatorIndex]]
       : [];
 
+  const dialogTitle = isCreatingNew ? 'Create Mapping' : 'Edit Mapping';
+
   return (
     <div className='space-y-4'>
       <Card className='p-4'>
@@ -239,36 +241,10 @@ export function RuleDetailPanel({
                 onClearSelection={handleClearSelection}
               />
             )}
-
-            {showBuilder && builderFromKey && (
-              <ManipulatorBuilderPanel
-                fromKey={builderFromKey}
-                existingManipulators={builderExistingManipulators}
-                onSave={handleBuilderSave}
-                onCancel={handleBuilderCancel}
-                onDelete={
-                  editingManipulatorIndex !== null
-                    ? handleBuilderDelete
-                    : undefined
-                }
-              />
-            )}
           </TabsContent>
 
           <TabsContent value='list' className='mt-0 space-y-3'>
-            {showBuilder ? (
-              <ManipulatorBuilderPanel
-                fromKey={builderFromKey}
-                existingManipulators={builderExistingManipulators}
-                onSave={handleBuilderSave}
-                onCancel={handleBuilderCancel}
-                onDelete={
-                  editingManipulatorIndex !== null
-                    ? handleBuilderDelete
-                    : undefined
-                }
-              />
-            ) : (
+            {!showBuilder && (
               <>
                 <div className='flex items-center justify-end'>
                   <Button
@@ -322,6 +298,18 @@ export function RuleDetailPanel({
           </TabsContent>
         </Tabs>
       </Card>
+
+      <MappingBuilderDialog
+        open={showBuilder}
+        title={dialogTitle}
+        fromKey={builderFromKey}
+        existingManipulators={builderExistingManipulators}
+        onSave={handleBuilderSave}
+        onCancel={handleBuilderCancel}
+        onDelete={
+          editingManipulatorIndex !== null ? handleBuilderDelete : undefined
+        }
+      />
     </div>
   );
 }

@@ -94,39 +94,24 @@ export function ComplexModificationKeyboard({
     });
   }, [manipulators, modifierState]);
 
-  // Build maps for "from" and "to" keys
-  const { fromKeys, toKeys } = useMemo(() => {
-    const fromSet = new Set<string>();
-    const toSet = new Set<string>();
-
+  // Build set of keys that have mappings (from keys only)
+  const mappedKeys = useMemo(() => {
+    const keySet = new Set<string>();
     filteredManipulators.forEach((m) => {
       const fromKey = m.from.key_code || m.from.consumer_key_code || '';
       if (fromKey) {
-        fromSet.add(fromKey);
-        (m.to || []).forEach((t) => {
-          const toKey = t.key_code || t.consumer_key_code || '';
-          if (toKey) {
-            toSet.add(toKey);
-          }
-        });
+        keySet.add(fromKey);
       }
     });
-
-    return { fromKeys: fromSet, toKeys: toSet };
+    return keySet;
   }, [filteredManipulators]);
 
   // Convert to simple-keyboard buttons for styling
-  const fromButtons = useMemo(() => {
-    return Array.from(fromKeys)
+  const mappedButtons = useMemo(() => {
+    return Array.from(mappedKeys)
       .map((k) => toSimpleKeyboardButton(k))
       .join(' ');
-  }, [fromKeys]);
-
-  const toButtons = useMemo(() => {
-    return Array.from(toKeys)
-      .map((k) => toSimpleKeyboardButton(k))
-      .join(' ');
-  }, [toKeys]);
+  }, [mappedKeys]);
 
   const selectedFromButton = useMemo(() => {
     return selectedFromKey ? toSimpleKeyboardButton(selectedFromKey) : '';
@@ -149,22 +134,15 @@ export function ComplexModificationKeyboard({
         });
       }
     } else {
-      // Normal view mode - show from/to mappings
-      if (toButtons) {
+      // Normal view mode - show mapped keys
+      if (mappedButtons) {
         themes.push({
-          class: 'kb-to',
-          buttons: toButtons,
+          class: 'kb-mapped',
+          buttons: mappedButtons,
         });
       }
 
-      if (fromButtons) {
-        themes.push({
-          class: 'kb-from',
-          buttons: fromButtons,
-        });
-      }
-
-      // Selected from key (overrides from styling)
+      // Selected key (overrides mapped styling)
       if (selectedFromButton) {
         themes.push({
           class: 'kb-selected',
@@ -174,7 +152,7 @@ export function ComplexModificationKeyboard({
     }
 
     return themes.length > 0 ? themes : undefined;
-  }, [fromButtons, toButtons, selectedFromButton, selectedToButtons, mode]);
+  }, [mappedButtons, selectedFromButton, selectedToButtons, mode]);
 
   const handleKeyPress = useCallback(
     (button: string) => {
@@ -238,12 +216,8 @@ export function ComplexModificationKeyboard({
         {/* Inline Legend */}
         <div className='flex items-center gap-3 text-xs text-muted-foreground'>
           <div className='flex items-center gap-1'>
-            <div className='w-2.5 h-2.5 rounded-sm bg-blue-500/20 border border-blue-500' />
-            <span>From</span>
-          </div>
-          <div className='flex items-center gap-1'>
-            <div className='w-2.5 h-2.5 rounded-sm bg-green-500/20 border border-green-500' />
-            <span>To</span>
+            <div className='w-2.5 h-2.5 rounded-sm bg-primary/20 border border-primary' />
+            <span>Mapped</span>
           </div>
           {mode === 'select-to' && (
             <div className='flex items-center gap-1'>
@@ -298,36 +272,25 @@ export function ComplexModificationKeyboard({
           transform: translateY(1px) !important;
           box-shadow: none !important;
         }
-        /* "From" keys - blue */
-        .complex-kb.simple-keyboard .hg-button.kb-from {
-          background: color-mix(in srgb, #3b82f6 15%, var(--color-background)) !important;
-          border-color: #3b82f6 !important;
+        /* Keys with mappings */
+        .complex-kb.simple-keyboard .hg-button.kb-mapped {
+          background: color-mix(in srgb, var(--color-primary) 15%, var(--color-background)) !important;
+          border-color: var(--color-primary) !important;
           border-width: 2px !important;
-          color: #3b82f6 !important;
+          color: var(--color-primary) !important;
           font-weight: 600 !important;
         }
-        .complex-kb.simple-keyboard .hg-button.kb-from:hover {
-          background: color-mix(in srgb, #3b82f6 25%, var(--color-background)) !important;
+        .complex-kb.simple-keyboard .hg-button.kb-mapped:hover {
+          background: color-mix(in srgb, var(--color-primary) 25%, var(--color-background)) !important;
         }
-        /* "To" keys - green */
-        .complex-kb.simple-keyboard .hg-button.kb-to {
-          background: color-mix(in srgb, #22c55e 15%, var(--color-background)) !important;
-          border-color: #22c55e !important;
-          border-width: 2px !important;
-          color: #22c55e !important;
-          font-weight: 600 !important;
-        }
-        .complex-kb.simple-keyboard .hg-button.kb-to:hover {
-          background: color-mix(in srgb, #22c55e 25%, var(--color-background)) !important;
-        }
-        /* Selected "from" key - stronger blue */
+        /* Selected key */
         .complex-kb.simple-keyboard .hg-button.kb-selected {
-          background: color-mix(in srgb, #3b82f6 30%, var(--color-background)) !important;
-          border-color: #3b82f6 !important;
+          background: color-mix(in srgb, var(--color-primary) 30%, var(--color-background)) !important;
+          border-color: var(--color-primary) !important;
           border-width: 3px !important;
-          color: #3b82f6 !important;
+          color: var(--color-primary) !important;
           font-weight: 700 !important;
-          box-shadow: 0 0 0 2px color-mix(in srgb, #3b82f6 30%, transparent) !important;
+          box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 30%, transparent) !important;
         }
         /* Selected "to" keys in select mode - purple */
         .complex-kb.simple-keyboard .hg-button.kb-selected-to {

@@ -1,12 +1,19 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import { X, Plus, Trash2, Settings, ArrowRight } from 'lucide-react';
-import { Card } from '@/components/ui/card';
+import {
+  X,
+  Plus,
+  Trash2,
+  Settings,
+  ArrowRight,
+  AlertCircle,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import type {
   Manipulator,
   ToEvent,
@@ -18,6 +25,7 @@ import { ConditionEditor } from '@/components/condition-editor';
 import { ToEventEditor } from '@/components/to-event-editor';
 import { ModifierSelector as FormModifierSelector } from '@/components/modifier-selector';
 import { ComplexModificationKeyboard } from '../keyboard/complex-modification-keyboard';
+import { useToast } from '@/hooks/use-toast';
 
 interface ManipulatorBuilderPanelProps {
   fromKey: string;
@@ -34,7 +42,9 @@ export function ManipulatorBuilderPanel({
   onCancel,
   onDelete,
 }: ManipulatorBuilderPanelProps) {
+  const { toast } = useToast();
   const isEditing = existingManipulators.length > 0;
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   // Initialize state from existing manipulators or create new
   const [manipulators, setManipulators] = useState<Manipulator[]>(() => {
@@ -67,6 +77,7 @@ export function ManipulatorBuilderPanel({
 
   const updateCurrentManipulator = useCallback(
     (updates: Partial<Manipulator>) => {
+      setValidationError(null); // Clear error when user makes changes
       setManipulators((prev) => {
         const newList = [...prev];
         newList[selectedManipulatorIndex] = {
@@ -127,9 +138,7 @@ export function ManipulatorBuilderPanel({
 
   const updateConditions = (conditions: Condition[]) => {
     if (conditions.length === 0) {
-      const updated = { ...currentManipulator };
-      delete updated.conditions;
-      updateCurrentManipulator(updated);
+      updateCurrentManipulator({ conditions: undefined });
     } else {
       updateCurrentManipulator({ conditions });
     }
@@ -158,16 +167,42 @@ export function ManipulatorBuilderPanel({
   };
 
   const handleSave = () => {
+    setValidationError(null);
+
+    // Check if from key is set
+    if (!fromKey) {
+      setValidationError('Please select a "from" key.');
+      toast({
+        title: 'Validation Error',
+        description: 'Please select a "from" key.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     // Filter out manipulators with no "to" events
     const validManipulators = manipulators.filter(
       (m) => m.to && m.to.length > 0,
     );
+
     if (validManipulators.length === 0) {
-      // If no valid manipulators, treat as delete
-      onDelete?.();
+      const errorMsg =
+        'At least one mapping must have a "to" action. Add a target key or action.';
+      setValidationError(errorMsg);
+      toast({
+        title: 'Validation Error',
+        description: errorMsg,
+        variant: 'destructive',
+      });
       return;
     }
+
+    // Success
     onSave(validManipulators);
+    toast({
+      title: isEditing ? 'Mapping Updated' : 'Mapping Created',
+      description: `Successfully ${isEditing ? 'updated' : 'created'} ${validManipulators.length} mapping${validManipulators.length > 1 ? 's' : ''}.`,
+    });
   };
 
   const getMandatoryModifiers = () =>
@@ -176,7 +211,7 @@ export function ManipulatorBuilderPanel({
     currentManipulator.from.modifiers?.optional || [];
 
   return (
-    <Card className='p-4 space-y-4 relative'>
+    <div className='p-4 space-y-4 relative'>
       {/* Header */}
       <div className='flex items-center justify-between'>
         <div className='flex items-center gap-2'>
@@ -388,6 +423,14 @@ export function ManipulatorBuilderPanel({
 
       <Separator />
 
+      {/* Validation Error */}
+      {validationError && (
+        <Alert variant='destructive'>
+          <AlertCircle className='h-4 w-4' />
+          <AlertDescription>{validationError}</AlertDescription>
+        </Alert>
+      )}
+
       {/* Actions */}
       <div className='flex items-center justify-between pt-2'>
         <div>
@@ -407,7 +450,7 @@ export function ManipulatorBuilderPanel({
           </Button>
         </div>
       </div>
-    </Card>
+    </div>
   );
 }
 
