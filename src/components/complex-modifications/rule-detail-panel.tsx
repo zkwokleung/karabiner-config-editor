@@ -181,6 +181,10 @@ export function RuleDetailPanel({
 
   const dialogTitle = isCreatingNew ? 'Create Mapping' : 'Edit Mapping';
 
+  const handleDialogSelectFromKey = useCallback((keyCode: string) => {
+    setSelectedFromKey(keyCode);
+  }, []);
+
   return (
     <div className='space-y-4'>
       <Card className='p-4'>
@@ -303,12 +307,14 @@ export function RuleDetailPanel({
         open={showBuilder}
         title={dialogTitle}
         fromKey={builderFromKey}
+        manipulators={rule.manipulators}
         existingManipulators={builderExistingManipulators}
         onSave={handleBuilderSave}
         onCancel={handleBuilderCancel}
         onDelete={
           editingManipulatorIndex !== null ? handleBuilderDelete : undefined
         }
+        onSelectFromKey={handleDialogSelectFromKey}
       />
     </div>
   );

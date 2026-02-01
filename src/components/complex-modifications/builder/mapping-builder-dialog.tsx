@@ -8,25 +8,30 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ManipulatorBuilderPanel } from './manipulator-builder-panel';
+import { ComplexModificationKeyboard } from '../keyboard/complex-modification-keyboard';
 
 interface MappingBuilderDialogProps {
   open: boolean;
   title: string;
   fromKey: string;
+  manipulators: Manipulator[];
   existingManipulators?: Manipulator[];
   onSave: (manipulators: Manipulator[]) => void;
   onCancel: () => void;
   onDelete?: () => void;
+  onSelectFromKey: (keyCode: string) => void;
 }
 
 export function MappingBuilderDialog({
   open,
   title,
   fromKey,
+  manipulators,
   existingManipulators = [],
   onSave,
   onCancel,
   onDelete,
+  onSelectFromKey,
 }: MappingBuilderDialogProps) {
   return (
     <Dialog
@@ -50,8 +55,18 @@ export function MappingBuilderDialog({
             onDelete={onDelete}
           />
         ) : (
-          <div className='text-sm text-muted-foreground'>
-            Select a key to create a mapping.
+          <div className='space-y-4'>
+            <div>
+              <h3 className='text-lg font-semibold'>Create Mapping</h3>
+              <p className='text-sm text-muted-foreground'>
+                Select a key on the keyboard to start a new mapping.
+              </p>
+            </div>
+            <ComplexModificationKeyboard
+              manipulators={manipulators}
+              onKeyClick={onSelectFromKey}
+              selectedFromKey={null}
+            />
           </div>
         )}
       </DialogContent>
