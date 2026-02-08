@@ -270,39 +270,6 @@ export function VisualKeyboard({
           Click on any key to view details or create/edit mappings
         </p>
       }
-      extraStyles={`
-        .visual-kb.simple-keyboard .hg-button.kb-mapped {
-          background: color-mix(in srgb, var(--color-primary) 15%, var(--color-background)) !important;
-          border-color: var(--color-primary) !important;
-          border-width: 2px !important;
-          color: var(--color-primary) !important;
-          font-weight: 600 !important;
-        }
-        .visual-kb.simple-keyboard .hg-button.kb-mapped:hover {
-          background: color-mix(in srgb, var(--color-primary) 25%, var(--color-background)) !important;
-        }
-        .visual-kb.simple-keyboard .hg-button.kb-conflict {
-          background: color-mix(in srgb, var(--color-destructive) 15%, var(--color-background)) !important;
-          border-color: var(--color-destructive) !important;
-          border-width: 2px !important;
-          color: var(--color-destructive) !important;
-          font-weight: 600 !important;
-        }
-        .visual-kb.simple-keyboard .hg-button.kb-conflict:hover {
-          background: color-mix(in srgb, var(--color-destructive) 25%, var(--color-background)) !important;
-        }
-        .visual-kb.simple-keyboard .hg-button.kb-selected {
-          background: color-mix(in srgb, var(--color-primary) 30%, var(--color-background)) !important;
-          border-color: var(--color-primary) !important;
-          border-width: 2px !important;
-          color: var(--color-primary) !important;
-          font-weight: 700 !important;
-          box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 25%, transparent) !important;
-        }
-        .visual-kb.simple-keyboard .hg-button.kb-selected:hover {
-          background: color-mix(in srgb, var(--color-primary) 35%, var(--color-background)) !important;
-        }
-      `}
     >
       {popoverKey && popoverPosition && popoverInfo && (
         <div

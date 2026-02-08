@@ -47,7 +47,6 @@ export interface KeyboardShellProps {
   physicalKeyboardHighlightTextColor?: string;
   mergeDisplay?: boolean;
   useButtonTag?: boolean;
-  extraStyles?: string;
 }
 
 export function KeyboardShell({
@@ -70,7 +69,6 @@ export function KeyboardShell({
   physicalKeyboardHighlightTextColor,
   mergeDisplay = true,
   useButtonTag = true,
-  extraStyles,
 }: KeyboardShellProps) {
   const internalKeyboardRef = useRef<typeof Keyboard | null>(null);
   const keyboardName = useId();
@@ -113,46 +111,6 @@ export function KeyboardShell({
       .join('\n');
   }, [buttonWidths, keyboardBaseClass]);
 
-  const sharedStyles = useMemo(() => {
-    return `
-      .${keyboardBaseClass}.simple-keyboard.hg-theme-default {
-        background: var(--color-muted) !important;
-        padding: 10px !important;
-        border-radius: 10px !important;
-        font-family: inherit !important;
-      }
-      .${keyboardBaseClass}.simple-keyboard .hg-row {
-        gap: 4px !important;
-        margin-bottom: 4px !important;
-      }
-      .${keyboardBaseClass}.simple-keyboard .hg-row:last-child {
-        margin-bottom: 0 !important;
-      }
-      .${keyboardBaseClass}.simple-keyboard .hg-button {
-        height: 38px !important;
-        min-width: 38px !important;
-        border-radius: 6px !important;
-        background: var(--color-background) !important;
-        border: 1px solid var(--color-border) !important;
-        color: var(--color-foreground) !important;
-        font-size: 12px !important;
-        font-weight: 500 !important;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
-        transition: all 0.1s ease !important;
-      }
-      .${keyboardBaseClass}.simple-keyboard .hg-button:hover {
-        background: var(--color-accent) !important;
-        border-color: var(--color-primary) !important;
-      }
-      .${keyboardBaseClass}.simple-keyboard .hg-button:active {
-        transform: translateY(1px) !important;
-        box-shadow: none !important;
-      }
-      ${buttonWidthStyles}
-      ${extraStyles || ''}
-    `;
-  }, [buttonWidthStyles, extraStyles, keyboardBaseClass]);
-
   useEffect(() => {
     if (internalKeyboardRef.current?.setOptions) {
       internalKeyboardRef.current.setOptions({
@@ -193,7 +151,7 @@ export function KeyboardShell({
 
       <style
         dangerouslySetInnerHTML={{
-          __html: sharedStyles,
+          __html: buttonWidthStyles,
         }}
       />
 
@@ -205,6 +163,7 @@ export function KeyboardShell({
       >
         <Keyboard
           baseClass={keyboardBaseClass}
+          theme={`${keyboardBaseClass} keyboard-theme hg-theme-default`}
           keyboardName={keyboardName}
           keyboardRef={(instance) => {
             internalKeyboardRef.current = instance;

@@ -210,36 +210,6 @@ export function ComplexModificationKeyboard({
             : 'Click on any key to create or edit a mapping. Use modifier buttons above to filter.'}
         </p>
       }
-      extraStyles={`
-        .complex-kb.simple-keyboard .hg-button.kb-mapped {
-          background: color-mix(in srgb, var(--color-primary) 15%, var(--color-background)) !important;
-          border-color: var(--color-primary) !important;
-          border-width: 2px !important;
-          color: var(--color-primary) !important;
-          font-weight: 600 !important;
-        }
-        .complex-kb.simple-keyboard .hg-button.kb-mapped:hover {
-          background: color-mix(in srgb, var(--color-primary) 25%, var(--color-background)) !important;
-        }
-        .complex-kb.simple-keyboard .hg-button.kb-selected {
-          background: color-mix(in srgb, var(--color-primary) 30%, var(--color-background)) !important;
-          border-color: var(--color-primary) !important;
-          border-width: 3px !important;
-          color: var(--color-primary) !important;
-          font-weight: 700 !important;
-          box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 30%, transparent) !important;
-        }
-        .complex-kb.simple-keyboard .hg-button.kb-selected-to {
-          background: color-mix(in srgb, #a855f7 25%, var(--color-background)) !important;
-          border-color: #a855f7 !important;
-          border-width: 2px !important;
-          color: #a855f7 !important;
-          font-weight: 600 !important;
-        }
-        .complex-kb.simple-keyboard .hg-button.kb-selected-to:hover {
-          background: color-mix(in srgb, #a855f7 35%, var(--color-background)) !important;
-        }
-      `}
     />
   );
 }
