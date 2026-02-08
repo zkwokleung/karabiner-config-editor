@@ -1,98 +1,99 @@
 # Karabiner Config Editor
 
 A visual editor for [Karabiner-Elements](https://karabiner-elements.pqrs.org/)
-configurations. Import your existing `karabiner.json`, explore profiles through
-an intuitive UI, and export a validated configuration—without touching JSON.
+configuration files.
 
-## Why This Project Exists
+Instead of manually editing `karabiner.json`, you can import, edit, validate,
+and export configurations with a structured UI.
 
-Karabiner-Elements is incredibly flexible, but managing complex key remaps by
-hand is error-prone. A single typo or duplicate mapping can break your setup.
-This editor focuses on discoverability and guard rails so you can experiment
-with complex manipulations while always knowing the resulting JSON's shape.
+## Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Documentation](#documentation)
+- [Quick Start](#quick-start)
+- [Usage Workflow](#usage-workflow)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Scripts](#scripts)
+- [Quality Checks](#quality-checks)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Overview
+
+Karabiner-Elements is powerful, but direct JSON editing becomes difficult as
+rules grow. This project provides:
+
+- a profile-oriented editor for simple, fn, and complex mappings
+- keyboard-first visual mapping tools
+- validation and conflict checks before export
 
 ## Features
 
-- **Complex Modification Builder** — Compose manipulators with drag-and-drop
-  ordering, inline search, modifier helpers, condition builders, and conflict
-  detection.
-- **Rule Templates** — Drop in common Karabiner recipes (Hyper key, Vim
-  navigation, Caps Lock remaps) as a starting point.
-- **Simple & Fn Key Editors** — Easily remap simple modifications and function
-  keys at the profile or device level.
-- **Live Preview & Export** — See the generated JSON at all times, copy to
-  clipboard, or download a validated `karabiner.json`.
-- **Validation** — Real-time validation with error and warning detection before
-  export.
-- **Dark Mode** — Toggle between light and dark themes.
+- Complex modification builder with drag-and-drop ordering
+- Rule templates for common setups (Hyper key, Vim-style navigation, and more)
+- Profile-level and device-level simple modifications
+- Profile-level and device-level fn key mapping
+- Real-time config validation and export safeguards
+- JSON import, preview, copy, and download
+- Keyboard layout support (ANSI, ISO, JIS)
 
-## Getting Started
+## Documentation
+
+- `docs/ARCHITECTURE.md`: system design, data flow, and module boundaries
+- `docs/DEVELOPMENT.md`: local setup, workflow, and coding standards
+- `docs/USER_GUIDE.md`: end-user workflow for import/edit/export
+- `docs/VALIDATION_AND_LIMITATIONS.md`: validation rules and current limits
+
+## Quick Start
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) 18+
-- [pnpm](https://pnpm.io/) package manager
+- Node.js 18+
+- pnpm 9+
 
-### Installation
+### Install and Run
 
 ```bash
-# Clone the repository
 git clone https://github.com/zkwokleung/karabiner-config-editor.git
 cd karabiner-config-editor
-
-# Install dependencies
 pnpm install
-
-# Start the development server
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open `http://localhost:3000`.
 
-### Typical Workflow
+## Usage Workflow
 
-1. **Import** — Upload your existing `karabiner.json` file, paste raw JSON, or
-   start with a default config.
-2. **Edit** — Use the visual editors to modify profiles, simple modifications,
-   Fn keys, and complex rules.
-3. **Export** — Resolve any validation issues, then copy or download the
-   generated JSON.
+1. Import an existing `karabiner.json`, paste JSON, or start from default.
+2. Edit profiles, device mappings, fn keys, and complex rules.
+3. Resolve warnings/errors shown by validation.
+4. Export as `karabiner.json` or copy JSON to clipboard.
 
 ## Tech Stack
 
-- [Next.js 15](https://nextjs.org/) with App Router and React 19
-- [TypeScript](https://www.typescriptlang.org/)
-- [Tailwind CSS v4](https://tailwindcss.com/) with
-  [shadcn/ui](https://ui.shadcn.com/) components
-- [React Hook Form](https://react-hook-form.com/) + [Zod](https://zod.dev/) for
-  form handling
-- [@dnd-kit](https://dndkit.com/) for drag-and-drop functionality
+- Next.js 16 (App Router)
+- React 19 + TypeScript
+- Tailwind CSS v4 + shadcn/ui
+- `@dnd-kit` for drag and drop
+- `react-simple-keyboard` for visual keyboard interactions
 
 ## Project Structure
 
-```
+```text
 src/
-├── app/
-│   ├── layout.tsx          # Root layout with theme providers
-│   ├── page.tsx            # Main import → edit → export workflow
-│   └── globals.css         # Global styles
-├── components/
-│   ├── profile/            # Profile, device, and Fn key editors
-│   ├── ui/                 # shadcn/ui primitives
-│   ├── complex-modifications-editor.tsx
-│   ├── condition-editor.tsx
-│   ├── rule-templates.tsx
-│   └── to-event-editor.tsx
-├── hooks/
-│   └── use-toast.ts        # Toast notifications
-├── lib/
-│   ├── validation.ts       # Config validation and conflict detection
-│   ├── default-config.ts   # Default Karabiner config generator
-│   ├── karabiner-keycodes.ts
-│   └── utils.ts
-└── types/
-    ├── karabiner.ts        # Karabiner-Elements type definitions
-    └── profile.ts
+  app/                          # App entry, layout, global styles
+  components/
+    complex-modifications/      # Complex rule editor and builder
+    keyboard/                   # Shared keyboard rendering shell
+    mapping/                    # To-event and condition editors
+    profile/                    # Profile/device/simple/fn editors
+    ui/                         # UI primitives
+  hooks/                        # Shared hooks (toast)
+  lib/                          # Constants, validation, keyboard mappings
+  types/                        # Domain type definitions
+docs/                           # Project documentation
 ```
 
 ## Scripts
@@ -106,26 +107,33 @@ src/
 | `pnpm format`       | Format code with Prettier                |
 | `pnpm format:check` | Check formatting without writing changes |
 
-## Deployment
+## Quality Checks
 
-The project is configured for deployment on [Vercel](https://vercel.com/). Every
-push to the main branch triggers a production build.
+Run these before opening a PR:
+
+```bash
+pnpm lint
+pnpm format:check
+pnpm exec tsc --noEmit
+pnpm build
+```
 
 ## Contributing
 
-Issues and feature requests are welcome! When proposing changes:
+Please read `docs/DEVELOPMENT.md` before contributing.
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+Recommended flow:
+
+1. Create a branch (`feature/<name>` or `fix/<name>`).
+2. Make focused changes with clear commit messages.
+3. Run quality checks locally.
+4. Open a pull request with:
+   - problem statement
+   - scope of changes
+   - screenshots (for UI changes)
+   - validation steps
 
 ## License
 
-This project is open source. See the repository for license details.
-
-## Acknowledgments
-
-- [Karabiner-Elements](https://karabiner-elements.pqrs.org/) by pqrs.org
-- [shadcn/ui](https://ui.shadcn.com/) for the beautiful component library
+No license file is currently included in this repository. Add a `LICENSE` file
+before distributing outside personal/internal use.
