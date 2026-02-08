@@ -135,5 +135,4 @@ Recommended flow:
 
 ## License
 
-No license file is currently included in this repository. Add a `LICENSE` file
-before distributing outside personal/internal use.
+This project is licensed under the MIT License. See `LICENSE` for details.
