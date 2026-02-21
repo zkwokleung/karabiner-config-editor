@@ -6,12 +6,15 @@ import {
   getKeyLabel,
   toKarabinerKeyCode,
   toSimpleKeyboardButton,
-  type KeyboardLayoutType,
 } from '@/lib/keyboard-layout';
 import type { SimpleModification } from '@/types/karabiner';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { KeyboardShell } from '@/components/keyboard/keyboard-shell';
+import {
+  KeyboardShell,
+  type KeyboardShellInstance,
+} from '@/components/keyboard/keyboard-shell';
+import { useKeyboardLayout } from '@/components/keyboard/keyboard-layout-context';
 
 const EMPTY_CONFLICT_SET: ReadonlySet<string> = new Set();
 
@@ -34,7 +37,7 @@ export function VisualKeyboard({
   onEditMapping,
   onDeleteMapping,
 }: VisualKeyboardProps) {
-  const [layoutType, setLayoutType] = useState<KeyboardLayoutType>('ansi');
+  const { layoutType, setLayoutType } = useKeyboardLayout();
   const [popoverKey, setPopoverKey] = useState<string | null>(null);
   const [popoverPosition, setPopoverPosition] = useState<{
     x: number;
@@ -42,10 +45,7 @@ export function VisualKeyboard({
   } | null>(null);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const lastPressedButtonRef = useRef<string | null>(null);
-  const keyboardInstanceRef = useRef<{
-    getButtonElement?: (button: string) => HTMLElement | undefined;
-    keyboardDOM?: HTMLElement;
-  } | null>(null);
+  const keyboardInstanceRef = useRef<KeyboardShellInstance | null>(null);
 
   // Build a map of from -> to for quick lookup (Karabiner key codes)
   const mappingMap = useMemo(() => {

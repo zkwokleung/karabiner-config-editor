@@ -22,6 +22,16 @@ import {
 
 type ButtonTheme = Array<{ class: string; buttons: string }>;
 
+export interface KeyboardShellInstance {
+  getButtonElement?: (button: string) => HTMLElement | undefined;
+  keyboardDOM?: HTMLElement;
+  setOptions?: (options: {
+    layout?: ReturnType<typeof getLayoutForType>;
+    buttonTheme?: ButtonTheme;
+    display?: Record<string, string>;
+  }) => void;
+}
+
 export interface KeyboardHighlightLayer {
   className: string;
   keys: string[];
@@ -41,7 +51,7 @@ export interface KeyboardShellProps {
   highlightLayers?: KeyboardHighlightLayer[];
   display?: Record<string, string>;
   onKeyPress?: (button: string, e?: MouseEvent | KeyboardEvent) => void;
-  keyboardRef?: (instance: typeof Keyboard | null) => void;
+  keyboardRef?: (instance: KeyboardShellInstance | null) => void;
   physicalKeyboardHighlight?: boolean;
   physicalKeyboardHighlightBgColor?: string;
   physicalKeyboardHighlightTextColor?: string;
@@ -70,7 +80,7 @@ export function KeyboardShell({
   mergeDisplay = true,
   useButtonTag = true,
 }: KeyboardShellProps) {
-  const internalKeyboardRef = useRef<typeof Keyboard | null>(null);
+  const internalKeyboardRef = useRef<KeyboardShellInstance | null>(null);
   const keyboardName = useId();
 
   const layout = useMemo(() => getLayoutForType(layoutType), [layoutType]);
@@ -166,7 +176,7 @@ export function KeyboardShell({
           theme={`${keyboardBaseClass} keyboard-theme hg-theme-default`}
           keyboardName={keyboardName}
           keyboardRef={(instance) => {
-            internalKeyboardRef.current = instance;
+            internalKeyboardRef.current = instance as KeyboardShellInstance;
             keyboardRef?.(instance);
           }}
           layout={layout}

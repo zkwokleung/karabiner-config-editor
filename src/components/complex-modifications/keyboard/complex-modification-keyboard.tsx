@@ -1,12 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  toKarabinerKeyCode,
-  type KeyboardLayoutType,
-} from '@/lib/keyboard-layout';
+import { toKarabinerKeyCode } from '@/lib/keyboard-layout';
 import type { Manipulator } from '@/types/karabiner';
 import { KeyboardShell } from '@/components/keyboard/keyboard-shell';
+import { useKeyboardLayout } from '@/components/keyboard/keyboard-layout-context';
 import { ModifierStateBar, type ModifierState } from './modifier-state-bar';
 
 export interface ComplexModificationKeyboardProps {
@@ -32,7 +30,7 @@ export function ComplexModificationKeyboard({
   showMappedKeys = true,
   selectedKeys = [],
 }: ComplexModificationKeyboardProps) {
-  const [layoutType, setLayoutType] = useState<KeyboardLayoutType>('ansi');
+  const { layoutType, setLayoutType } = useKeyboardLayout();
   const [transientSelectedKeys, setTransientSelectedKeys] = useState<string[]>(
     [],
   );
