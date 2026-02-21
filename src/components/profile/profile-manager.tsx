@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { ComplexModificationsEditor } from '@/components/complex-modifications/complex-modifications-editor';
+import { KeyboardLayoutProvider } from '@/components/keyboard/keyboard-layout-context';
 import type { KarabinerConfig, Profile, Rule } from '@/types/karabiner';
 import type { DeviceTargetOption } from '@/types/profile';
 import { SimpleModificationsEditor } from '@/components/profile/simple-modifications-editor';
@@ -213,31 +214,33 @@ export function ProfileManager({ config, setConfig }: ProfileManagerProps) {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value='simple'>
-          <SimpleModificationsEditor
-            profile={selectedProfile}
-            profileIndex={selectedProfileIndex}
-            onProfileChange={replaceProfile}
-            deviceOptions={deviceOptions}
-            deviceLabelLookup={deviceLabelLookup}
-          />
-        </TabsContent>
+        <KeyboardLayoutProvider>
+          <TabsContent value='simple'>
+            <SimpleModificationsEditor
+              profile={selectedProfile}
+              profileIndex={selectedProfileIndex}
+              onProfileChange={replaceProfile}
+              deviceOptions={deviceOptions}
+              deviceLabelLookup={deviceLabelLookup}
+            />
+          </TabsContent>
 
-        <TabsContent value='fn'>
-          <ProfileFnKeysEditor
-            profile={selectedProfile}
-            profileIndex={selectedProfileIndex}
-            onProfileChange={replaceProfile}
-            deviceOptions={deviceOptions}
-          />
-        </TabsContent>
+          <TabsContent value='fn'>
+            <ProfileFnKeysEditor
+              profile={selectedProfile}
+              profileIndex={selectedProfileIndex}
+              onProfileChange={replaceProfile}
+              deviceOptions={deviceOptions}
+            />
+          </TabsContent>
 
-        <TabsContent value='complex'>
-          <ComplexModificationsEditor
-            rules={selectedProfile.complex_modifications?.rules || []}
-            onRulesChange={updateComplexModifications}
-          />
-        </TabsContent>
+          <TabsContent value='complex'>
+            <ComplexModificationsEditor
+              rules={selectedProfile.complex_modifications?.rules || []}
+              onRulesChange={updateComplexModifications}
+            />
+          </TabsContent>
+        </KeyboardLayoutProvider>
       </Tabs>
     </Card>
   );
