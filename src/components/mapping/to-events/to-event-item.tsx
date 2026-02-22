@@ -275,7 +275,8 @@ export function ToEventItem({
               modifiers: modifiers.length > 0 ? modifiers : undefined,
             })
           }
-          label='Modifiers (posted with event)'
+          label='Modifiers'
+          helpText='Modifiers to post together with this event.'
         />
 
         <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
@@ -309,8 +310,27 @@ export function ToEventItem({
                 htmlFor={`lazy-${event.key_code}`}
                 className='text-xs cursor-pointer'
               >
-                Lazy (modifier flag)
+                Lazy
               </Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type='button'
+                      variant='ghost'
+                      size='icon-sm'
+                      className='h-5 w-5 text-muted-foreground'
+                      aria-label='Lazy option help'
+                    >
+                      <CircleHelp className='h-3.5 w-3.5' />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side='top' align='start'>
+                    Treat modifier output as a flag without generating a regular
+                    key event.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
 
             <div className='flex items-center space-x-2'>
@@ -328,8 +348,27 @@ export function ToEventItem({
                 htmlFor={`repeat-${event.key_code}`}
                 className='text-xs cursor-pointer'
               >
-                Repeat (key repeat enabled, default: true)
+                Repeat
               </Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type='button'
+                      variant='ghost'
+                      size='icon-sm'
+                      className='h-5 w-5 text-muted-foreground'
+                      aria-label='Repeat option help'
+                    >
+                      <CircleHelp className='h-3.5 w-3.5' />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side='top' align='start'>
+                    Allow key repeat behavior for this event (enabled by
+                    default).
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
 
             <div className='flex items-center space-x-2'>
@@ -347,8 +386,27 @@ export function ToEventItem({
                 htmlFor={`halt-${event.key_code}`}
                 className='text-xs cursor-pointer'
               >
-                Halt (for to_after_key_up)
+                Halt
               </Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type='button'
+                      variant='ghost'
+                      size='icon-sm'
+                      className='h-5 w-5 text-muted-foreground'
+                      aria-label='Halt option help'
+                    >
+                      <CircleHelp className='h-3.5 w-3.5' />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side='top' align='start'>
+                    Stop processing subsequent events (commonly used in
+                    to_after_key_up).
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
 
             <div className='space-y-1'>

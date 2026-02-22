@@ -201,7 +201,28 @@ export function ConditionItem({
 
         {condition.type.includes('input_source') && (
           <div className='space-y-1'>
-            <Label className='text-xs'>Input Source ID (regex)</Label>
+            <div className='flex items-center gap-1'>
+              <Label className='text-xs'>Input Source ID</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type='button'
+                      size='icon-sm'
+                      variant='ghost'
+                      className='h-5 w-5 text-muted-foreground'
+                      aria-label='Input source regex help'
+                    >
+                      <CircleHelp className='h-3.5 w-3.5' />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side='top' align='start'>
+                    Enter a regex pattern, for example:
+                    ^com\\.apple\\.keylayout\\.US$
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <Input
               value={condition.input_source_id?.[0] || ''}
               onChange={(e) =>

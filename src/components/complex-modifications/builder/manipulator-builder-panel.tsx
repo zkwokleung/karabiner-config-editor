@@ -8,12 +8,19 @@ import {
   Settings,
   ArrowRight,
   AlertCircle,
+  CircleHelp,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import type {
   Manipulator,
   ToEvent,
@@ -402,9 +409,27 @@ export function ManipulatorBuilderPanel({
           {showAdvanced && (
             <div className='space-y-4 pt-2'>
               <div className='space-y-2'>
-                <Label className='text-xs'>
-                  To If Alone (when pressed alone)
-                </Label>
+                <div className='flex items-center gap-1'>
+                  <Label className='text-xs'>To If Alone</Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type='button'
+                          variant='ghost'
+                          size='icon-sm'
+                          className='h-5 w-5 text-muted-foreground'
+                          aria-label='To If Alone help'
+                        >
+                          <CircleHelp className='h-3.5 w-3.5' />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side='top' align='start'>
+                        Triggered when the key is pressed and released alone.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <ToEventEditor
                   events={currentManipulator.to_if_alone || []}
                   onChange={(events) => {
@@ -421,7 +446,27 @@ export function ManipulatorBuilderPanel({
               </div>
 
               <div className='space-y-2'>
-                <Label className='text-xs'>To If Held Down (when held)</Label>
+                <div className='flex items-center gap-1'>
+                  <Label className='text-xs'>To If Held Down</Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type='button'
+                          variant='ghost'
+                          size='icon-sm'
+                          className='h-5 w-5 text-muted-foreground'
+                          aria-label='To If Held Down help'
+                        >
+                          <CircleHelp className='h-3.5 w-3.5' />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side='top' align='start'>
+                        Triggered when the key is held past the hold threshold.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <ToEventEditor
                   events={currentManipulator.to_if_held_down || []}
                   onChange={(events) => {
@@ -438,9 +483,27 @@ export function ManipulatorBuilderPanel({
               </div>
 
               <div className='space-y-2'>
-                <Label className='text-xs'>
-                  To After Key Up (after key released)
-                </Label>
+                <div className='flex items-center gap-1'>
+                  <Label className='text-xs'>To After Key Up</Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type='button'
+                          variant='ghost'
+                          size='icon-sm'
+                          className='h-5 w-5 text-muted-foreground'
+                          aria-label='To After Key Up help'
+                        >
+                          <CircleHelp className='h-3.5 w-3.5' />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side='top' align='start'>
+                        Triggered after the original key is released.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <ToEventEditor
                   events={currentManipulator.to_after_key_up || []}
                   onChange={(events) => {
