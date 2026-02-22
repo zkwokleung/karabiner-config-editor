@@ -1,6 +1,18 @@
 // Keyboard layout data and mapping for visual keyboard component
 // Maps between simple-keyboard keys and Karabiner key codes
 
+import { ANSI_BUTTON_WIDTHS, ANSI_LAYOUT } from './layouts/ansi';
+import {
+  ISO_BUTTON_WIDTHS,
+  ISO_DISPLAY_OVERRIDES,
+  ISO_LAYOUT,
+} from './layouts/iso';
+import {
+  JIS_BUTTON_WIDTHS,
+  JIS_DISPLAY_OVERRIDES,
+  JIS_LAYOUT,
+} from './layouts/jis';
+
 export type KeyboardLayoutType = 'ansi' | 'iso' | 'jis';
 
 interface KeyboardLayoutOption {
@@ -270,51 +282,15 @@ export function getLayoutAwareKeyLabel(
   };
 }
 
-// Mac ANSI Layout (US)
-const MAC_ANSI_LAYOUT = {
-  default: [
-    '{escape} {f1} {f2} {f3} {f4} {f5} {f6} {f7} {f8} {f9} {f10} {f11} {f12}',
-    '` 1 2 3 4 5 6 7 8 9 0 - = {backspace}',
-    '{tab} q w e r t y u i o p [ ] \\',
-    "{capslock} a s d f g h j k l ; ' {enter}",
-    '{shiftleft} z x c v b n m , . / {shiftright}',
-    '{fn} {controlleft} {altleft} {metaleft} {space} {metaright} {altright} {arrowleft} {arrowup} {arrowdown} {arrowright}',
-  ],
-};
-
-// Mac ISO Layout (UK/Europe) - extra key left of Z, different Enter shape
-const MAC_ISO_LAYOUT = {
-  default: [
-    '{escape} {f1} {f2} {f3} {f4} {f5} {f6} {f7} {f8} {f9} {f10} {f11} {f12}',
-    '` 1 2 3 4 5 6 7 8 9 0 - = {backspace}',
-    '{tab} q w e r t y u i o p [ ] {enter}',
-    "{capslock} a s d f g h j k l ; ' # {enter}",
-    '{shiftleft} § z x c v b n m , . / {shiftright}',
-    '{fn} {controlleft} {altleft} {metaleft} {space} {metaright} {altright} {arrowleft} {arrowup} {arrowdown} {arrowright}',
-  ],
-};
-
-// Mac JIS Layout (Japanese) - extra keys, smaller spacebar
-const MAC_JIS_LAYOUT = {
-  default: [
-    '{escape} {f1} {f2} {f3} {f4} {f5} {f6} {f7} {f8} {f9} {f10} {f11} {f12}',
-    '1 2 3 4 5 6 7 8 9 0 - = ¥ {backspace}',
-    '{tab} q w e r t y u i o p [ ]',
-    "{controlleft} a s d f g h j k l ; ' \\ {enter}",
-    '{shiftleft} z x c v b n m , . / {ro} {shiftright}',
-    '{capslock} {altleft} {metaleft} {eisu} {space} {kana} {metaright} {fn} {arrowleft} {arrowup} {arrowdown} {arrowright}',
-  ],
-};
-
 export function getLayoutForType(layoutType: KeyboardLayoutType) {
   switch (layoutType) {
     case 'iso':
-      return MAC_ISO_LAYOUT;
+      return ISO_LAYOUT;
     case 'jis':
-      return MAC_JIS_LAYOUT;
+      return JIS_LAYOUT;
     case 'ansi':
     default:
-      return MAC_ANSI_LAYOUT;
+      return ANSI_LAYOUT;
   }
 }
 
@@ -359,20 +335,6 @@ export const KEYBOARD_DISPLAY: Record<string, string> = {
   '{ro}': 'ろ',
 };
 
-const JIS_DISPLAY_OVERRIDES: Record<string, string> = {
-  '=': '^',
-  '[': '@',
-  ']': '[',
-  '\\': ']',
-  "'": ':',
-};
-
-const ISO_DISPLAY_OVERRIDES: Record<string, string> = {
-  '`': '§',
-  '§': '\\',
-  '#': '|',
-};
-
 export function getKeyboardDisplay(
   layoutType: KeyboardLayoutType,
 ): Record<string, string> {
@@ -390,57 +352,7 @@ export const BUTTON_WIDTHS: Record<
   KeyboardLayoutType,
   Record<string, string>
 > = {
-  ansi: {
-    '{backspace}': '78px',
-    '{tab}': '58px',
-    '\\': '58px',
-    '{capslock}': '72px',
-    '{enter}': '88px',
-    '{shiftleft}': '92px',
-    '{shiftright}': '116px',
-    '{fn}': '42px',
-    '{controlleft}': '42px',
-    '{altleft}': '42px',
-    '{metaleft}': '54px',
-    '{space}': '240px',
-    '{metaright}': '54px',
-    '{altright}': '42px',
-  },
-  iso: {
-    '{backspace}': '78px',
-    '{tab}': '58px',
-    '{capslock}': '72px',
-    '{enter}': '88px',
-    '#': '42px',
-    '{shiftleft}': '48px',
-    '§': '42px',
-    '{shiftright}': '116px',
-    '{fn}': '42px',
-    '{controlleft}': '42px',
-    '{altleft}': '42px',
-    '{metaleft}': '54px',
-    '{space}': '240px',
-    '{metaright}': '54px',
-    '{altright}': '42px',
-  },
-  jis: {
-    '{backspace}': '58px',
-    '¥': '42px',
-    '{tab}': '58px',
-    '{controlleft}': '72px',
-    '{capslock}': '42px',
-    '{enter}': '68px',
-    ']': '42px',
-    '\\': '42px',
-    '{shiftleft}': '72px',
-    '{ro}': '42px',
-    '{shiftright}': '72px',
-    '{fn}': '38px',
-    '{altleft}': '38px',
-    '{metaleft}': '48px',
-    '{eisu}': '48px',
-    '{space}': '160px',
-    '{kana}': '48px',
-    '{metaright}': '48px',
-  },
+  ansi: ANSI_BUTTON_WIDTHS,
+  iso: ISO_BUTTON_WIDTHS,
+  jis: JIS_BUTTON_WIDTHS,
 };
