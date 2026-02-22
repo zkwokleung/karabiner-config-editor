@@ -303,8 +303,7 @@ export function ProfileFnKeysEditor({
             {currentFnKeys.length === 0 && (
               <Card className='p-8'>
                 <p className='text-sm text-muted-foreground text-center'>
-                  No function key mappings yet. Add one to customize F1-F20
-                  behavior.
+                  No function key mappings yet.
                 </p>
               </Card>
             )}

@@ -201,13 +201,6 @@ export function ComplexModificationKeyboard({
       highlightLayers={highlightLayers}
       onKeyPress={handleKeyPress}
       physicalKeyboardHighlight={false}
-      afterKeyboard={
-        <p className='text-xs text-muted-foreground mt-3 text-center'>
-          {mode === 'select-to'
-            ? 'Click keys to select/deselect them as "to" targets'
-            : 'Click on any key to create or edit a mapping. Use modifier buttons above to filter.'}
-        </p>
-      }
     />
   );
 }
