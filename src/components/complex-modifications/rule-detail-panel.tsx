@@ -298,8 +298,7 @@ export function RuleDetailPanel({
 
                 {rule.manipulators.length === 0 ? (
                   <div className='py-8 text-center text-sm text-muted-foreground border rounded-lg border-dashed'>
-                    No mappings yet. Click &quot;Add Mapping&quot; to create
-                    one.
+                    No mappings yet.
                   </div>
                 ) : (
                   <DndContext

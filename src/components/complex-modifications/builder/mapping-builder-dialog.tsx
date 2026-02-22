@@ -58,9 +58,6 @@ export function MappingBuilderDialog({
           <div className='space-y-4'>
             <div>
               <h3 className='text-lg font-semibold'>Create Mapping</h3>
-              <p className='text-sm text-muted-foreground'>
-                Select a key on the keyboard to start a new mapping.
-              </p>
             </div>
             <ComplexModificationKeyboard
               manipulators={manipulators}

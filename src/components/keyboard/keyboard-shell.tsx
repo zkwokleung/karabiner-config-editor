@@ -64,7 +64,7 @@ export function KeyboardShell({
   onLayoutChange,
   className,
   legend,
-  hint = 'Some physical keys map to different key codes depending on the layout.',
+  hint,
   beforeKeyboard,
   afterKeyboard,
   children,
