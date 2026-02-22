@@ -18,6 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { ProfileManager } from '@/components/profile/profile-manager';
+import { KeyboardLayoutProvider } from '@/components/keyboard/keyboard-layout-context';
 import type { KarabinerConfig } from '@/types/karabiner';
 import { validateConfig, type ValidationError } from '@/lib/validation';
 import { createMinimalKarabinerConfig } from '@/lib/default-config';
@@ -268,23 +269,25 @@ export default function KarabinerEditor() {
             </Card>
           </TabsContent>
 
-          <TabsContent value='edit'>
-            {config && (
-              <ProfileManager config={config} setConfig={updateConfig} />
-            )}
-          </TabsContent>
+          <KeyboardLayoutProvider>
+            <TabsContent value='edit'>
+              {config && (
+                <ProfileManager config={config} setConfig={updateConfig} />
+              )}
+            </TabsContent>
 
-          <TabsContent value='export'>
-            {config && (
-              <ExportPanel
-                config={config}
-                validationErrors={validationErrors}
-                onExport={handleExport}
-                onCopy={handleCopy}
-                onConfigChange={updateConfig}
-              />
-            )}
-          </TabsContent>
+            <TabsContent value='export'>
+              {config && (
+                <ExportPanel
+                  config={config}
+                  validationErrors={validationErrors}
+                  onExport={handleExport}
+                  onCopy={handleCopy}
+                  onConfigChange={updateConfig}
+                />
+              )}
+            </TabsContent>
+          </KeyboardLayoutProvider>
         </Tabs>
       </main>
     </div>
