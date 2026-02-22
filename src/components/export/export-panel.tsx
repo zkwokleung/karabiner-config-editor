@@ -6,7 +6,6 @@ import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { KeyboardLayoutProvider } from '@/components/keyboard/keyboard-layout-context';
 import { ExportKeyboardPreview } from '@/components/export/export-keyboard-preview';
 import type { ValidationError } from '@/lib/validation';
 import type { KarabinerConfig } from '@/types/karabiner';
@@ -88,12 +87,10 @@ export function ExportPanel({
 
       <Card className='p-6'>
         <h2 className='text-lg font-semibold mb-4'>Keyboard Mapping Preview</h2>
-        <KeyboardLayoutProvider>
-          <ExportKeyboardPreview
-            config={config}
-            onConfigChange={onConfigChange}
-          />
-        </KeyboardLayoutProvider>
+        <ExportKeyboardPreview
+          config={config}
+          onConfigChange={onConfigChange}
+        />
       </Card>
 
       <Card className='p-6'>
