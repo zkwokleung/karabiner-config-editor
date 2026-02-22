@@ -322,19 +322,63 @@ export function ManipulatorBuilderPanel({
 
             <div className='grid grid-cols-2 gap-3'>
               <div className='space-y-2'>
-                <Label className='text-xs'>Mandatory Modifiers</Label>
+                <div className='flex items-center gap-1'>
+                  <Label className='text-xs'>Mandatory Modifiers</Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type='button'
+                          variant='ghost'
+                          size='icon-sm'
+                          className='h-5 w-5 text-muted-foreground'
+                          aria-label='Mandatory modifiers help'
+                        >
+                          <CircleHelp className='h-3.5 w-3.5' />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side='top' align='start'>
+                        These modifiers must be held for this mapping to
+                        trigger.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <FormModifierSelector
                   selected={getMandatoryModifiers()}
                   onChange={(mods) => updateFromModifiers('mandatory', mods)}
                   label='Required with key'
+                  showInlineLabel={false}
                 />
               </div>
               <div className='space-y-2'>
-                <Label className='text-xs'>Optional Modifiers</Label>
+                <div className='flex items-center gap-1'>
+                  <Label className='text-xs'>Optional Modifiers</Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type='button'
+                          variant='ghost'
+                          size='icon-sm'
+                          className='h-5 w-5 text-muted-foreground'
+                          aria-label='Optional modifiers help'
+                        >
+                          <CircleHelp className='h-3.5 w-3.5' />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side='top' align='start'>
+                        These modifiers are optional: the mapping works with or
+                        without them held.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <FormModifierSelector
                   selected={getOptionalModifiers()}
                   onChange={(mods) => updateFromModifiers('optional', mods)}
                   label='Allowed but not required'
+                  showInlineLabel={false}
                 />
               </div>
             </div>
