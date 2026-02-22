@@ -1,13 +1,30 @@
 'use client';
 
-import { useMemo } from 'react';
-import { Plus, Trash2, ArrowRight, X } from 'lucide-react';
+import { useMemo, type ReactNode } from 'react';
+import { Plus, Trash2, ArrowRight, X, GripVertical } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { Manipulator } from '@/types/karabiner';
 import { getKeyLabel } from '@/lib/keyboard-layout';
+import {
+  DndContext,
+  PointerSensor,
+  KeyboardSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  useSortable,
+  arrayMove,
+  verticalListSortingStrategy,
+  sortableKeyboardCoordinates,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface KeyMappingListProps {
   selectedKey: string;
@@ -16,6 +33,7 @@ interface KeyMappingListProps {
   onAddManipulator: () => void;
   onEditManipulator: (index: number) => void;
   onDeleteManipulator: (index: number) => void;
+  onReorderManipulators: (manipulators: Manipulator[]) => void;
   onClearSelection: () => void;
 }
 
@@ -26,6 +44,7 @@ export function KeyMappingList({
   onAddManipulator,
   onEditManipulator,
   onDeleteManipulator,
+  onReorderManipulators,
   onClearSelection,
 }: KeyMappingListProps) {
   const selectedManipulators = useMemo(() => {
@@ -84,12 +103,44 @@ export function KeyMappingList({
   };
 
   const hasAdvancedOptions = (manipulator: Manipulator) => {
-    return (
+    return Boolean(
       manipulator.to_if_alone ||
-      manipulator.to_if_held_down ||
-      manipulator.to_after_key_up ||
-      manipulator.conditions
+        manipulator.to_if_held_down ||
+        manipulator.to_after_key_up ||
+        manipulator.conditions,
     );
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = manipulatorIndices.indexOf(active.id as number);
+    const newIndex = manipulatorIndices.indexOf(over.id as number);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const selectedManipulatorsOnly = manipulatorIndices.map(
+      (index) => manipulators[index],
+    );
+    const reorderedSelectedManipulators = arrayMove(
+      selectedManipulatorsOnly,
+      oldIndex,
+      newIndex,
+    );
+
+    const updatedManipulators = [...manipulators];
+    manipulatorIndices.forEach((index, selectedIndex) => {
+      updatedManipulators[index] = reorderedSelectedManipulators[selectedIndex];
+    });
+
+    onReorderManipulators(updatedManipulators);
   };
 
   return (
@@ -122,87 +173,163 @@ export function KeyMappingList({
         </div>
       ) : (
         <ScrollArea className='max-h-[300px]'>
-          <div className='space-y-2'>
-            {selectedManipulators.map(({ index, manipulator }) => (
-              <div
-                key={index}
-                className='flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors group'
-              >
-                <div className='flex-1 min-w-0'>
-                  <div className='flex items-center gap-2 flex-wrap'>
-                    <Badge variant='secondary' className='font-mono'>
-                      {getKeyLabel(selectedKey)}
-                    </Badge>
-                    {getModifierDisplay(manipulator)}
-                    <ArrowRight className='h-3 w-3 text-muted-foreground shrink-0' />
-                    <div className='flex items-center gap-1 flex-wrap'>
-                      {getToDisplay(manipulator)}
-                    </div>
-                  </div>
-
-                  {hasAdvancedOptions(manipulator) && (
-                    <div className='flex items-center gap-2 mt-1.5 flex-wrap'>
-                      {manipulator.to_if_alone && (
-                        <Badge
-                          variant='outline'
-                          className='text-xs bg-blue-500/10 text-blue-600 border-blue-200'
-                        >
-                          if alone
-                        </Badge>
-                      )}
-                      {manipulator.to_if_held_down && (
-                        <Badge
-                          variant='outline'
-                          className='text-xs bg-orange-500/10 text-orange-600 border-orange-200'
-                        >
-                          if held
-                        </Badge>
-                      )}
-                      {manipulator.to_after_key_up && (
-                        <Badge
-                          variant='outline'
-                          className='text-xs bg-purple-500/10 text-purple-600 border-purple-200'
-                        >
-                          after key up
-                        </Badge>
-                      )}
-                      {manipulator.conditions &&
-                        manipulator.conditions.length > 0 && (
-                          <Badge
-                            variant='outline'
-                            className='text-xs bg-green-500/10 text-green-600 border-green-200'
-                          >
-                            {manipulator.conditions.length} condition
-                            {manipulator.conditions.length > 1 ? 's' : ''}
-                          </Badge>
-                        )}
-                    </div>
-                  )}
-                </div>
-
-                <div className='flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity'>
-                  <Button
-                    size='sm'
-                    variant='ghost'
-                    onClick={() => onEditManipulator(index)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    size='icon'
-                    variant='ghost'
-                    className='text-destructive hover:text-destructive hover:bg-destructive/10'
-                    onClick={() => onDeleteManipulator(index)}
-                  >
-                    <Trash2 className='h-4 w-4' />
-                  </Button>
-                </div>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={manipulatorIndices}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className='space-y-2'>
+                {selectedManipulators.map(({ index, manipulator }) => (
+                  <SortableKeyMappingItem
+                    key={index}
+                    index={index}
+                    manipulator={manipulator}
+                    selectedKey={selectedKey}
+                    onEditManipulator={onEditManipulator}
+                    onDeleteManipulator={onDeleteManipulator}
+                    getModifierDisplay={getModifierDisplay}
+                    getToDisplay={getToDisplay}
+                    hasAdvancedOptions={hasAdvancedOptions}
+                  />
+                ))}
               </div>
-            ))}
-          </div>
+            </SortableContext>
+          </DndContext>
         </ScrollArea>
       )}
     </Card>
+  );
+}
+
+interface SortableKeyMappingItemProps {
+  index: number;
+  manipulator: Manipulator;
+  selectedKey: string;
+  onEditManipulator: (index: number) => void;
+  onDeleteManipulator: (index: number) => void;
+  getModifierDisplay: (manipulator: Manipulator) => ReactNode;
+  getToDisplay: (manipulator: Manipulator) => ReactNode;
+  hasAdvancedOptions: (manipulator: Manipulator) => boolean;
+}
+
+function SortableKeyMappingItem({
+  index,
+  manipulator,
+  selectedKey,
+  onEditManipulator,
+  onDeleteManipulator,
+  getModifierDisplay,
+  getToDisplay,
+  hasAdvancedOptions,
+}: SortableKeyMappingItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: index });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      role='button'
+      tabIndex={0}
+      onClick={() => onEditManipulator(index)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onEditManipulator(index);
+        }
+      }}
+      className='flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+    >
+      <div
+        {...attributes}
+        {...listeners}
+        onClick={(event) => event.stopPropagation()}
+        className='cursor-grab text-muted-foreground active:cursor-grabbing'
+      >
+        <GripVertical className='h-4 w-4' />
+      </div>
+
+      <div className='flex-1 min-w-0'>
+        <div className='flex items-center gap-2 flex-wrap'>
+          <Badge variant='secondary' className='font-mono'>
+            {getKeyLabel(selectedKey)}
+          </Badge>
+          {getModifierDisplay(manipulator)}
+          <ArrowRight className='h-3 w-3 text-muted-foreground shrink-0' />
+          <div className='flex items-center gap-1 flex-wrap'>
+            {getToDisplay(manipulator)}
+          </div>
+        </div>
+
+        {hasAdvancedOptions(manipulator) && (
+          <div className='flex items-center gap-2 mt-1.5 flex-wrap'>
+            {manipulator.to_if_alone && (
+              <Badge
+                variant='outline'
+                className='text-xs bg-blue-500/10 text-blue-600 border-blue-200'
+              >
+                if alone
+              </Badge>
+            )}
+            {manipulator.to_if_held_down && (
+              <Badge
+                variant='outline'
+                className='text-xs bg-orange-500/10 text-orange-600 border-orange-200'
+              >
+                if held
+              </Badge>
+            )}
+            {manipulator.to_after_key_up && (
+              <Badge
+                variant='outline'
+                className='text-xs bg-purple-500/10 text-purple-600 border-purple-200'
+              >
+                after key up
+              </Badge>
+            )}
+            {manipulator.conditions && manipulator.conditions.length > 0 && (
+              <Badge
+                variant='outline'
+                className='text-xs bg-green-500/10 text-green-600 border-green-200'
+              >
+                {manipulator.conditions.length} condition
+                {manipulator.conditions.length > 1 ? 's' : ''}
+              </Badge>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className='flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity'>
+        <Button
+          size='icon'
+          variant='ghost'
+          className='text-destructive hover:text-destructive hover:bg-destructive/10'
+          onClick={(event) => {
+            event.stopPropagation();
+            onDeleteManipulator(index);
+          }}
+        >
+          <Trash2 className='h-4 w-4' />
+        </Button>
+      </div>
+    </div>
   );
 }
 

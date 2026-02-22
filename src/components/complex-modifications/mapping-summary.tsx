@@ -52,11 +52,21 @@ export function SortableMappingSummary({
     <div
       ref={setNodeRef}
       style={style}
-      className='flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors group'
+      role='button'
+      tabIndex={0}
+      onClick={onEdit}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onEdit();
+        }
+      }}
+      className='flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
     >
       <div
         {...attributes}
         {...listeners}
+        onClick={(event) => event.stopPropagation()}
         className='cursor-grab text-muted-foreground active:cursor-grabbing'
       >
         <GripVertical className='h-4 w-4' />
@@ -134,14 +144,14 @@ export function SortableMappingSummary({
       </div>
 
       <div className='flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity'>
-        <Button size='sm' variant='ghost' onClick={onEdit}>
-          Edit
-        </Button>
         <Button
           size='icon'
           variant='ghost'
           className='text-destructive hover:text-destructive hover:bg-destructive/10'
-          onClick={onDelete}
+          onClick={(event) => {
+            event.stopPropagation();
+            onDelete();
+          }}
         >
           <Trash2 className='h-4 w-4' />
         </Button>

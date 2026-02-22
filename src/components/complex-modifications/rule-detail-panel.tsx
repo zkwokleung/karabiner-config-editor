@@ -276,6 +276,7 @@ export function RuleDetailPanel({
                 onAddManipulator={handleAddManipulatorForKey}
                 onEditManipulator={handleEditManipulator}
                 onDeleteManipulator={handleDeleteManipulatorByIndex}
+                onReorderManipulators={onReorderManipulators}
                 onClearSelection={handleClearSelection}
               />
             )}
