@@ -200,12 +200,11 @@ export function ComplexModificationsEditor({
 
   let detailFallbackMessage = '';
   if (rules.length === 0) {
-    detailFallbackMessage =
-      'No complex modification rules yet. Add one to create advanced key mappings.';
+    detailFallbackMessage = 'No complex modification rules yet.';
   } else if (filteredRules.length === 0) {
     detailFallbackMessage = 'No rules match your search query.';
   } else {
-    detailFallbackMessage = 'Select a rule from the list to view its details.';
+    detailFallbackMessage = 'No rule selected.';
   }
 
   return (
@@ -262,7 +261,7 @@ export function ComplexModificationsEditor({
                 <Card className='p-6 text-center text-sm text-muted-foreground'>
                   {isFiltering
                     ? 'No rules match your search query.'
-                    : 'No complex modification rules yet. Add one to create advanced key mappings.'}
+                    : 'No complex modification rules yet.'}
                 </Card>
               ) : (
                 <DndContext

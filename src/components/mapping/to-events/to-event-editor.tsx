@@ -1,8 +1,14 @@
 'use client';
 
-import { Plus } from 'lucide-react';
+import { CircleHelp, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import type { ToEvent } from '@/types/karabiner';
 import type { ReactNode } from 'react';
 import { ToEventItem } from './to-event-item';
@@ -12,6 +18,7 @@ interface ToEventEditorProps {
   onChange: (events: ToEvent[]) => void;
   label: string;
   showHeader?: boolean;
+  helpText?: string;
   keyCodeAction?: (index: number) => ReactNode;
 }
 
@@ -20,6 +27,7 @@ export function ToEventEditor({
   onChange,
   label,
   showHeader = true,
+  helpText,
   keyCodeAction,
 }: ToEventEditorProps) {
   const addEvent = () => {
@@ -40,7 +48,29 @@ export function ToEventEditor({
     <div className='space-y-3'>
       {showHeader && (
         <div className='flex items-center justify-between'>
-          <Label className='text-sm font-semibold'>{label}</Label>
+          <div className='flex items-center gap-1'>
+            <Label className='text-sm font-semibold'>{label}</Label>
+            {helpText ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type='button'
+                      variant='ghost'
+                      size='icon-sm'
+                      className='h-5 w-5 text-muted-foreground'
+                      aria-label={`${label} help`}
+                    >
+                      <CircleHelp className='h-3.5 w-3.5' />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side='top' align='start'>
+                    {helpText}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : null}
+          </div>
           <Button size='sm' variant='outline' onClick={addEvent}>
             <Plus className='mr-2 h-3 w-3' />
             Add Event

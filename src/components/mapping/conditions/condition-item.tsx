@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus, Trash2, X } from 'lucide-react';
+import { Plus, Trash2, X, CircleHelp } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import type { Condition } from '@/types/karabiner';
 import { CONDITION_TYPES, KEYBOARD_TYPES } from '@/lib/constants';
 
@@ -93,7 +99,27 @@ export function ConditionItem({
         {condition.type.includes('frontmost_application') && (
           <div className='space-y-2'>
             <div className='flex items-center justify-between'>
-              <Label className='text-xs'>Bundle Identifiers (regex)</Label>
+              <div className='flex items-center gap-1'>
+                <Label className='text-xs'>Bundle Identifiers (regex)</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type='button'
+                        size='icon-sm'
+                        variant='ghost'
+                        className='h-5 w-5 text-muted-foreground'
+                        aria-label='Bundle identifier regex example'
+                      >
+                        <CircleHelp className='h-3.5 w-3.5' />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side='top' align='start'>
+                      Example: ^com\\.google\\.Chrome$ for Chrome browser
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <Button size='sm' variant='ghost' onClick={addBundleIdentifier}>
                 <Plus className='h-3 w-3' />
               </Button>
@@ -117,9 +143,6 @@ export function ConditionItem({
                 </Button>
               </div>
             ))}
-            <p className='text-xs text-muted-foreground'>
-              Example: ^com\\.google\\.Chrome$ for Chrome browser
-            </p>
           </div>
         )}
 
@@ -178,7 +201,28 @@ export function ConditionItem({
 
         {condition.type.includes('input_source') && (
           <div className='space-y-1'>
-            <Label className='text-xs'>Input Source ID (regex)</Label>
+            <div className='flex items-center gap-1'>
+              <Label className='text-xs'>Input Source ID</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type='button'
+                      size='icon-sm'
+                      variant='ghost'
+                      className='h-5 w-5 text-muted-foreground'
+                      aria-label='Input source regex help'
+                    >
+                      <CircleHelp className='h-3.5 w-3.5' />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side='top' align='start'>
+                    Enter a regex pattern, for example:
+                    ^com\\.apple\\.keylayout\\.US$
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <Input
               value={condition.input_source_id?.[0] || ''}
               onChange={(e) =>

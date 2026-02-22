@@ -1,5 +1,6 @@
 'use client';
 
+import { CircleHelp } from 'lucide-react';
 import { type ReactNode, useEffect, useId, useMemo, useRef } from 'react';
 import Keyboard from 'react-simple-keyboard';
 import 'react-simple-keyboard/build/css/index.css';
@@ -19,6 +20,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 type ButtonTheme = Array<{ class: string; buttons: string }>;
 
@@ -59,12 +67,15 @@ export interface KeyboardShellProps {
   useButtonTag?: boolean;
 }
 
+const DEFAULT_LAYOUT_HINT =
+  'Some physical keys map to different key codes depending on the layout.';
+
 export function KeyboardShell({
   layoutType,
   onLayoutChange,
   className,
   legend,
-  hint = 'Some physical keys map to different key codes depending on the layout.',
+  hint = DEFAULT_LAYOUT_HINT,
   beforeKeyboard,
   afterKeyboard,
   children,
@@ -134,28 +145,49 @@ export function KeyboardShell({
   return (
     <div className={cn('select-none relative', className)}>
       <div className='flex items-center justify-between mb-3 flex-wrap gap-2'>
-        <Select
-          value={layoutType}
-          onValueChange={(value) => onLayoutChange(value as KeyboardLayoutType)}
-        >
-          <SelectTrigger className='w-auto h-8 bg-transparent text-xs'>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {KEYBOARD_LAYOUT_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label} ({option.description})
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className='flex items-center gap-1'>
+          <Select
+            value={layoutType}
+            onValueChange={(value) =>
+              onLayoutChange(value as KeyboardLayoutType)
+            }
+          >
+            <SelectTrigger className='w-auto h-8 bg-transparent text-xs'>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {KEYBOARD_LAYOUT_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label} ({option.description})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {hint ? (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='icon-sm'
+                    className='text-muted-foreground'
+                    aria-label='Keyboard layout keycode hint'
+                  >
+                    <CircleHelp className='h-4 w-4' />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side='bottom' align='start'>
+                  {hint}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ) : null}
+        </div>
 
         {legend}
       </div>
-
-      {hint ? (
-        <p className='text-xs text-muted-foreground mb-3'>{hint}</p>
-      ) : null}
 
       {beforeKeyboard}
 

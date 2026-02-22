@@ -9,7 +9,13 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { X } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { X, CircleHelp } from 'lucide-react';
 
 const MODIFIER_DISPLAY: Record<
   string,
@@ -78,12 +84,16 @@ interface ModifierSelectorProps {
   selected: string[];
   onChange: (modifiers: string[]) => void;
   label: string;
+  helpText?: string;
+  showInlineLabel?: boolean;
 }
 
 export function ModifierSelector({
   selected,
   onChange,
   label,
+  helpText,
+  showInlineLabel = true,
 }: ModifierSelectorProps) {
   const toggleModifier = (modifier: string) => {
     if (selected.includes(modifier)) {
@@ -99,7 +109,31 @@ export function ModifierSelector({
 
   return (
     <div className='space-y-2'>
-      <Label className='text-xs'>{label}</Label>
+      {showInlineLabel ? (
+        <div className='flex items-center gap-1'>
+          <Label className='text-xs'>{label}</Label>
+          {helpText ? (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='icon-sm'
+                    className='h-5 w-5 text-muted-foreground'
+                    aria-label={`${label} help`}
+                  >
+                    <CircleHelp className='h-3.5 w-3.5' />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side='top' align='start'>
+                  {helpText}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ) : null}
+        </div>
+      ) : null}
       <div className='space-y-2'>
         {selected.length > 0 && (
           <div className='grid grid-cols-4 gap-2'>

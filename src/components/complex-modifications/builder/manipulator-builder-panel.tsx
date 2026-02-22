@@ -8,12 +8,19 @@ import {
   Settings,
   ArrowRight,
   AlertCircle,
+  CircleHelp,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import type {
   Manipulator,
   ToEvent,
@@ -315,19 +322,63 @@ export function ManipulatorBuilderPanel({
 
             <div className='grid grid-cols-2 gap-3'>
               <div className='space-y-2'>
-                <Label className='text-xs'>Mandatory Modifiers</Label>
+                <div className='flex items-center gap-1'>
+                  <Label className='text-xs'>Mandatory Modifiers</Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type='button'
+                          variant='ghost'
+                          size='icon-sm'
+                          className='h-5 w-5 text-muted-foreground'
+                          aria-label='Mandatory modifiers help'
+                        >
+                          <CircleHelp className='h-3.5 w-3.5' />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side='top' align='start'>
+                        These modifiers must be held for this mapping to
+                        trigger.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <FormModifierSelector
                   selected={getMandatoryModifiers()}
                   onChange={(mods) => updateFromModifiers('mandatory', mods)}
                   label='Required with key'
+                  showInlineLabel={false}
                 />
               </div>
               <div className='space-y-2'>
-                <Label className='text-xs'>Optional Modifiers</Label>
+                <div className='flex items-center gap-1'>
+                  <Label className='text-xs'>Optional Modifiers</Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type='button'
+                          variant='ghost'
+                          size='icon-sm'
+                          className='h-5 w-5 text-muted-foreground'
+                          aria-label='Optional modifiers help'
+                        >
+                          <CircleHelp className='h-3.5 w-3.5' />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side='top' align='start'>
+                        These modifiers are optional: the mapping works with or
+                        without them held.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <FormModifierSelector
                   selected={getOptionalModifiers()}
                   onChange={(mods) => updateFromModifiers('optional', mods)}
                   label='Allowed but not required'
+                  showInlineLabel={false}
                 />
               </div>
             </div>
@@ -402,9 +453,6 @@ export function ManipulatorBuilderPanel({
           {showAdvanced && (
             <div className='space-y-4 pt-2'>
               <div className='space-y-2'>
-                <Label className='text-xs'>
-                  To If Alone (when pressed alone)
-                </Label>
                 <ToEventEditor
                   events={currentManipulator.to_if_alone || []}
                   onChange={(events) => {
@@ -416,12 +464,12 @@ export function ManipulatorBuilderPanel({
                       updateCurrentManipulator({ to_if_alone: events });
                     }
                   }}
-                  label=''
+                  label='To If Alone'
+                  helpText='Triggered when the key is pressed and released alone.'
                 />
               </div>
 
               <div className='space-y-2'>
-                <Label className='text-xs'>To If Held Down (when held)</Label>
                 <ToEventEditor
                   events={currentManipulator.to_if_held_down || []}
                   onChange={(events) => {
@@ -433,14 +481,12 @@ export function ManipulatorBuilderPanel({
                       updateCurrentManipulator({ to_if_held_down: events });
                     }
                   }}
-                  label=''
+                  label='To If Held Down'
+                  helpText='Triggered when the key is held past the hold threshold.'
                 />
               </div>
 
               <div className='space-y-2'>
-                <Label className='text-xs'>
-                  To After Key Up (after key released)
-                </Label>
                 <ToEventEditor
                   events={currentManipulator.to_after_key_up || []}
                   onChange={(events) => {
@@ -452,7 +498,8 @@ export function ManipulatorBuilderPanel({
                       updateCurrentManipulator({ to_after_key_up: events });
                     }
                   }}
-                  label=''
+                  label='To After Key Up'
+                  helpText='Triggered after the original key is released.'
                 />
               </div>
             </div>

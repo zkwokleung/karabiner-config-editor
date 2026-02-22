@@ -1,8 +1,14 @@
 'use client';
 
-import { Plus } from 'lucide-react';
+import { CircleHelp, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import type { Condition } from '@/types/karabiner';
 import { ConditionItem } from './condition-item';
 
@@ -36,7 +42,27 @@ export function ConditionEditor({
   return (
     <div className='space-y-3'>
       <div className='flex items-center justify-between gap-2'>
-        <Label className='text-sm font-semibold'>Conditions</Label>
+        <div className='flex items-center gap-1'>
+          <Label className='text-sm font-semibold'>Conditions</Label>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type='button'
+                  size='icon-sm'
+                  variant='ghost'
+                  className='h-5 w-5 text-muted-foreground'
+                  aria-label='Conditions help'
+                >
+                  <CircleHelp className='h-3.5 w-3.5' />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side='top' align='start'>
+                No conditions means this mapping applies in all contexts.
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
         <Button
           size='sm'
           variant='outline'
@@ -49,9 +75,7 @@ export function ConditionEditor({
       </div>
 
       {conditions.length === 0 && (
-        <p className='text-xs text-muted-foreground'>
-          No conditions. This mapping will apply in all contexts.
-        </p>
+        <p className='text-xs text-muted-foreground'>No conditions.</p>
       )}
 
       <div className='space-y-2'>
