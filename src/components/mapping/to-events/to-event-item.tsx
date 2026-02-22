@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import { Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronUp, CircleHelp } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +22,12 @@ import {
 } from '@/components/ui/collapsible';
 import { ModifierSelector } from '@/components/mapping/selectors/modifier-selector';
 import { KeyCodeSelector } from '@/components/mapping/selectors/key-code-selector';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import type { ToEvent } from '@/types/karabiner';
 import { TO_EVENT_TYPES } from '@/lib/constants';
 
@@ -111,7 +117,29 @@ export function ToEventItem({
 
         {eventType === 'shell_command' && (
           <div className='space-y-2'>
-            <Label className='text-xs'>Shell Command</Label>
+            <div className='flex items-center gap-1'>
+              <Label className='text-xs'>Shell Command</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type='button'
+                      variant='ghost'
+                      size='icon-sm'
+                      className='h-5 w-5 text-muted-foreground'
+                      aria-label='Shell command examples'
+                    >
+                      <CircleHelp className='h-3.5 w-3.5' />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side='top' align='start'>
+                    Example: open -a &apos;Application Name&apos; or osascript
+                    -e &apos;tell application &quot;System Events&quot; to
+                    keystroke &quot;c&quot; using command down&apos;
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <Textarea
               value={event.shell_command || ''}
               onChange={(e) =>
@@ -121,11 +149,6 @@ export function ToEventItem({
               className='font-mono text-xs'
               rows={3}
             />
-            <p className='text-xs text-muted-foreground'>
-              Example: open -a &apos;Application Name&apos; or osascript -e
-              &apos;tell application &quot;System Events&quot; to keystroke
-              &quot;c&quot; using command down&apos;
-            </p>
           </div>
         )}
 
@@ -170,7 +193,27 @@ export function ToEventItem({
 
         {eventType === 'select_input_source' && (
           <div className='space-y-2'>
-            <Label className='text-xs'>Language Code</Label>
+            <div className='flex items-center gap-1'>
+              <Label className='text-xs'>Language Code</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type='button'
+                      variant='ghost'
+                      size='icon-sm'
+                      className='h-5 w-5 text-muted-foreground'
+                      aria-label='Language code examples'
+                    >
+                      <CircleHelp className='h-3.5 w-3.5' />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side='top' align='start'>
+                    Example: en, ja, zh-Hans
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <Input
               value={event.select_input_source?.language || ''}
               onChange={(e) =>
@@ -182,9 +225,6 @@ export function ToEventItem({
               placeholder='en'
               className='text-xs'
             />
-            <p className='text-xs text-muted-foreground'>
-              Example: en, ja, zh-Hans
-            </p>
           </div>
         )}
 
@@ -312,7 +352,28 @@ export function ToEventItem({
             </div>
 
             <div className='space-y-1'>
-              <Label className='text-xs'>Hold Down Milliseconds</Label>
+              <div className='flex items-center gap-1'>
+                <Label className='text-xs'>Hold Down Milliseconds</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type='button'
+                        variant='ghost'
+                        size='icon-sm'
+                        className='h-5 w-5 text-muted-foreground'
+                        aria-label='Hold down milliseconds help'
+                      >
+                        <CircleHelp className='h-3.5 w-3.5' />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side='top' align='start'>
+                      Interval between key_down and key_up when sent
+                      simultaneously
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <Input
                 type='number'
                 value={event.hold_down_milliseconds || 0}
@@ -326,9 +387,6 @@ export function ToEventItem({
                 placeholder='0'
                 className='text-xs'
               />
-              <p className='text-xs text-muted-foreground'>
-                Interval between key_down and key_up when sent simultaneously
-              </p>
             </div>
           </CollapsibleContent>
         </Collapsible>
