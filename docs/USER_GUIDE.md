@@ -48,6 +48,8 @@ In the **Export** tab:
 - Review warnings and errors
 - Download `karabiner.json`
 - Copy formatted JSON to clipboard
+- Inspect mappings on a visual keyboard (click a key to see all matching simple,
+  fn, and complex mappings)
 
 Export is blocked while validation contains severity `error`.
 

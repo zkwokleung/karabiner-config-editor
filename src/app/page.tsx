@@ -7,11 +7,8 @@ import {
   Moon,
   Sun,
   Upload,
-  Download,
-  Copy,
   FileJson,
   CheckCircle2,
-  AlertCircle,
   FilePlus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,11 +18,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { ProfileManager } from '@/components/profile/profile-manager';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import type { KarabinerConfig } from '@/types/karabiner';
 import { validateConfig, type ValidationError } from '@/lib/validation';
 import { createMinimalKarabinerConfig } from '@/lib/default-config';
+import { ExportPanel } from '@/components/export/export-panel';
 
 export default function KarabinerEditor() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
@@ -278,74 +274,16 @@ export default function KarabinerEditor() {
             )}
           </TabsContent>
 
-          <TabsContent value='export' className='space-y-6'>
-            {validationErrors.length > 0 && (
-              <Card className='p-4'>
-                <h3 className='font-semibold mb-3 flex items-center gap-2'>
-                  <AlertCircle className='h-5 w-5 text-yellow-600 dark:text-yellow-500' />
-                  Validation Issues ({validationErrors.length})
-                </h3>
-                <ScrollArea className='max-h-[300px]'>
-                  <div className='space-y-2'>
-                    {validationErrors.map((error, index) => (
-                      <Alert
-                        key={index}
-                        variant={
-                          error.severity === 'error' ? 'destructive' : 'default'
-                        }
-                        className={
-                          error.severity === 'warning'
-                            ? 'border-yellow-500 dark:border-yellow-600'
-                            : ''
-                        }
-                      >
-                        <AlertCircle className='h-4 w-4' />
-                        <AlertTitle className='text-sm font-medium'>
-                          {error.severity === 'error' ? 'Error' : 'Warning'}:{' '}
-                          {error.path}
-                        </AlertTitle>
-                        <AlertDescription className='text-xs'>
-                          {error.message}
-                        </AlertDescription>
-                      </Alert>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </Card>
-            )}
-
-            <Card className='p-6'>
-              <h2 className='text-lg font-semibold mb-4'>Export Config</h2>
-              <div className='flex gap-4'>
-                <Button
-                  onClick={handleExport}
-                  disabled={validationErrors.some(
-                    (e) => e.severity === 'error',
-                  )}
-                >
-                  <Download className='mr-2 h-4 w-4' />
-                  Download JSON
-                </Button>
-                <Button onClick={handleCopy} variant='outline'>
-                  <Copy className='mr-2 h-4 w-4' />
-                  Copy to Clipboard
-                </Button>
-              </div>
-              {validationErrors.some((e) => e.severity === 'error') && (
-                <p className='text-sm text-destructive mt-2'>
-                  Fix all errors before exporting
-                </p>
-              )}
-            </Card>
-
-            <Card className='p-6'>
-              <h2 className='text-lg font-semibold mb-4'>Preview</h2>
-              <Textarea
-                value={config ? JSON.stringify(config, null, 2) : ''}
-                readOnly
-                className='font-mono text-sm min-h-[400px]'
+          <TabsContent value='export'>
+            {config && (
+              <ExportPanel
+                config={config}
+                validationErrors={validationErrors}
+                onExport={handleExport}
+                onCopy={handleCopy}
+                onConfigChange={updateConfig}
               />
-            </Card>
+            )}
           </TabsContent>
         </Tabs>
       </main>
