@@ -224,6 +224,52 @@ export function getKeyLabel(keyCode: string): string {
   return keyCode.replace(/_/g, ' ');
 }
 
+export interface LayoutAwareKeyLabel {
+  keyCode: string;
+  output: string | null;
+  display: string;
+}
+
+export function getLayoutOutputForKeyCode(
+  keyCode: string,
+  layoutType: KeyboardLayoutType,
+): string | null {
+  const simpleButton = toSimpleKeyboardButton(keyCode);
+  if (!simpleButton || simpleButton.startsWith('{')) {
+    return null;
+  }
+
+  const display = getKeyboardDisplay(layoutType);
+  const output = display[simpleButton] || simpleButton;
+  if (!output || output === ' ') {
+    return null;
+  }
+
+  return output;
+}
+
+export function getLayoutAwareKeyLabel(
+  keyCode: string,
+  layoutType: KeyboardLayoutType,
+): LayoutAwareKeyLabel {
+  const output = getLayoutOutputForKeyCode(keyCode, layoutType);
+  const keyCodeLabel = getKeyLabel(keyCode);
+
+  if (!output || output === keyCodeLabel) {
+    return {
+      keyCode,
+      output: null,
+      display: keyCodeLabel,
+    };
+  }
+
+  return {
+    keyCode,
+    output,
+    display: `${keyCodeLabel} (${output})`,
+  };
+}
+
 // Mac ANSI Layout (US)
 const MAC_ANSI_LAYOUT = {
   default: [

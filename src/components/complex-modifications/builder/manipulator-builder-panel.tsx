@@ -27,12 +27,13 @@ import type {
   Condition,
   Modifiers,
 } from '@/types/karabiner';
-import { getKeyLabel } from '@/lib/keyboard-layout';
+import { getKeyLabel, getLayoutAwareKeyLabel } from '@/lib/keyboard-layout';
 import { ConditionEditor } from '@/components/mapping/conditions/condition-editor';
 import { ToEventEditor } from '@/components/mapping/to-events/to-event-editor';
 import { ModifierSelector as FormModifierSelector } from '@/components/mapping/selectors/modifier-selector';
 import { ToEventKeyboardDialog } from './to-event-keyboard-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useKeyboardLayout } from '@/components/keyboard/keyboard-layout-context';
 
 interface ManipulatorBuilderPanelProps {
   fromKey: string;
@@ -50,6 +51,7 @@ export function ManipulatorBuilderPanel({
   onDelete,
 }: ManipulatorBuilderPanelProps) {
   const { toast } = useToast();
+  const { layoutType } = useKeyboardLayout();
   const isEditing = existingManipulators.length > 0;
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -315,7 +317,9 @@ export function ManipulatorBuilderPanel({
               <ArrowRight className='h-4 w-4 text-muted-foreground' />
               <span className='text-sm text-muted-foreground'>
                 {currentToKeys.length > 0
-                  ? currentToKeys.map((k) => getKeyLabel(k)).join(', ')
+                  ? currentToKeys
+                      .map((k) => getLayoutAwareKeyLabel(k, layoutType).display)
+                      .join(', ')
                   : 'No target keys selected'}
               </span>
             </div>

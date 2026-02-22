@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Check, ChevronsUpDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,12 +17,18 @@ import {
   findKeyCodeItem,
   type KeyCodeItem,
 } from '@/lib/karabiner-keycodes';
+import {
+  getLayoutAwareKeyLabel,
+  type KeyboardLayoutType,
+} from '@/lib/keyboard-layout';
 
 interface KeyCodeSelectorProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   excludeNotFrom?: boolean; // Exclude keys that can't be used as "from"
+  layoutAware?: boolean;
+  layoutType?: KeyboardLayoutType;
 }
 
 /**
@@ -34,6 +40,8 @@ export function KeyCodeSelector({
   onChange,
   placeholder = 'Select key...',
   excludeNotFrom = false,
+  layoutAware = false,
+  layoutType,
 }: KeyCodeSelectorProps) {
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
@@ -41,9 +49,34 @@ export function KeyCodeSelector({
   const [menuHeight, setMenuHeight] = useState(400);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
+  const getItemPresentation = useMemo(() => {
+    return (item: KeyCodeItem) => {
+      const keyValue = getKeyCodeValue(item);
+
+      if (layoutAware && layoutType && item.key_code) {
+        const layoutLabel = getLayoutAwareKeyLabel(item.key_code, layoutType);
+        return {
+          keyValue,
+          label: layoutLabel.output
+            ? `${item.key_code} -> ${layoutLabel.output}`
+            : item.label,
+          output: layoutLabel.output,
+        };
+      }
+
+      return {
+        keyValue,
+        label: item.label,
+        output: null,
+      };
+    };
+  }, [layoutAware, layoutType]);
+
   // Find the selected item to display its label
   const selectedItem = findKeyCodeItem(value);
-  const displayValue = selectedItem?.label || value || placeholder;
+  const displayValue = selectedItem
+    ? getItemPresentation(selectedItem).label
+    : value || placeholder;
 
   useEffect(() => {
     if (open && triggerRef.current) {
@@ -72,9 +105,12 @@ export function KeyCodeSelector({
       // Filter by search
       if (!searchValue) return true;
       const search = searchValue.toLowerCase();
+      const presentation = getItemPresentation(item);
       return (
         item.label.toLowerCase().includes(search) ||
-        getKeyCodeValue(item).toLowerCase().includes(search)
+        presentation.keyValue.toLowerCase().includes(search) ||
+        presentation.label.toLowerCase().includes(search) ||
+        (presentation.output?.toLowerCase().includes(search) ?? false)
       );
     }),
   })).filter((category) => category.items.length > 0);
@@ -187,7 +223,8 @@ export function KeyCodeSelector({
                   return (
                     <div className='space-y-0.5'>
                       {category.items.map((item, index) => {
-                        const keyValue = getKeyCodeValue(item);
+                        const presentation = getItemPresentation(item);
+                        const keyValue = presentation.keyValue;
                         const isSelected = value === keyValue;
 
                         return (
@@ -206,7 +243,7 @@ export function KeyCodeSelector({
                               )}
                             />
                             <span className='font-mono truncate'>
-                              {item.label}
+                              {presentation.label}
                             </span>
                           </button>
                         );

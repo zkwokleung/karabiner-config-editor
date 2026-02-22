@@ -28,6 +28,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useKeyboardLayout } from '@/components/keyboard/keyboard-layout-context';
 import type { ToEvent } from '@/types/karabiner';
 import { TO_EVENT_TYPES } from '@/lib/constants';
 
@@ -46,6 +47,8 @@ export function ToEventItem({
   showDelete,
   keyCodeAction,
 }: ToEventItemProps) {
+  const { layoutType } = useKeyboardLayout();
+
   const getEventType = (): string => {
     if (event.shell_command) return 'shell_command';
     if (event.set_variable) return 'set_variable';
@@ -108,10 +111,15 @@ export function ToEventItem({
                   value={event.key_code || ''}
                   onChange={(key) => onUpdate({ ...event, key_code: key })}
                   placeholder='Select key'
+                  layoutAware
+                  layoutType={layoutType}
                 />
               </div>
               {keyCodeAction}
             </div>
+            <p className='text-xs text-muted-foreground'>
+              Stores key_code. Output preview follows selected keyboard layout.
+            </p>
           </div>
         )}
 
