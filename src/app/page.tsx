@@ -6,6 +6,7 @@ import { useState } from 'react';
 import {
   Moon,
   Sun,
+  Github,
   Upload,
   FileJson,
   CheckCircle2,
@@ -165,18 +166,35 @@ export default function KarabinerEditor() {
               Karabiner Config Editor
             </h1>
           </div>
-          <Button
-            variant='outline'
-            size='icon'
-            onClick={toggleTheme}
-            className='rounded-lg bg-transparent'
-          >
-            {theme === 'light' ? (
-              <Moon className='h-5 w-5' />
-            ) : (
-              <Sun className='h-5 w-5' />
-            )}
-          </Button>
+          <div className='flex items-center gap-2'>
+            <Button
+              asChild
+              variant='outline'
+              size='icon'
+              className='rounded-lg bg-transparent'
+            >
+              <a
+                href='https://github.com/zkwokleung/karabiner-config-editor'
+                target='_blank'
+                rel='noreferrer noopener'
+                aria-label='Open GitHub repository'
+              >
+                <Github className='h-5 w-5' />
+              </a>
+            </Button>
+            <Button
+              variant='outline'
+              size='icon'
+              onClick={toggleTheme}
+              className='rounded-lg bg-transparent'
+            >
+              {theme === 'light' ? (
+                <Moon className='h-5 w-5' />
+              ) : (
+                <Sun className='h-5 w-5' />
+              )}
+            </Button>
+          </div>
         </div>
       </header>
 
