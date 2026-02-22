@@ -42,7 +42,7 @@ export function MappingBuilderDialog({
         }
       }}
     >
-      <DialogContent className='sm:max-w-6xl' showCloseButton={false}>
+      <DialogContent className='sm:max-w-4xl' showCloseButton={false}>
         <DialogHeader className='sr-only'>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
