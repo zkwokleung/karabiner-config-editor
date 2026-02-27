@@ -187,6 +187,7 @@
 /* Shared visual styling for react-simple-keyboard across keyboard components. */
 .keyboard-theme.hg-theme-default {
   background: var(--color-muted) !important;
+  border: 1px solid var(--color-border) !important;
   padding: 10px !important;
   border-radius: 10px !important;
   font-family: inherit !important;
@@ -205,12 +206,13 @@
   height: 38px !important;
   min-width: 38px !important;
   border-radius: 6px !important;
-  background: var(--color-background);
+  background: var(--color-background) !important;
   border: 1px solid var(--color-border) !important;
   color: var(--color-foreground) !important;
   font-size: 12px !important;
   font-weight: 500 !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+  box-shadow: 0 1px 2px
+    color-mix(in srgb, var(--color-foreground) 8%, transparent) !important;
   transition: all 0.1s ease !important;
 }
 
@@ -261,19 +263,19 @@
 .hg-button.kb-selected-to {
   background: color-mix(
     in srgb,
-    #a855f7 25%,
+    var(--color-primary) 25%,
     var(--color-background)
   ) !important;
-  border-color: #a855f7 !important;
+  border-color: var(--color-primary) !important;
   border-width: 2px !important;
-  color: #a855f7 !important;
+  color: var(--color-primary) !important;
   font-weight: 600 !important;
 }
 
 .hg-button.kb-selected-to:hover {
   background: color-mix(
     in srgb,
-    #a855f7 35%,
+    var(--color-primary) 35%,
     var(--color-background)
   ) !important;
 }
