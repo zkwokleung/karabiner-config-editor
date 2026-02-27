@@ -25,6 +25,57 @@ import { validateConfig, type ValidationError } from '@/lib/validation';
 import { createMinimalKarabinerConfig } from '@/lib/default-config';
 import { ExportPanel } from '@/components/export/export-panel';
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  'https://karabiner-config-editor.vercel.app';
+
+const softwareApplicationSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Karabiner Config Editor',
+  applicationCategory: 'DeveloperApplication',
+  operatingSystem: 'Web',
+  url: siteUrl,
+  description:
+    'Visual editor for Karabiner-Elements configuration files, including profile mappings, complex modifications, validation, and export.',
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'USD',
+  },
+};
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'What is Karabiner Config Editor used for?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'It helps you import, edit, validate, and export Karabiner-Elements configurations without manually editing karabiner.json.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Can I edit complex modifications visually?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes. The editor includes a complex modification builder with templates and validation checks before export.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Does this tool support existing karabiner.json files?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes. You can upload or paste an existing karabiner.json file, edit it in the UI, and export it again.',
+      },
+    },
+  ],
+};
+
 export default function KarabinerEditor() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [config, setConfig] = useState<KarabinerConfig | null>(null);
@@ -156,6 +207,16 @@ export default function KarabinerEditor() {
 
   return (
     <div className='min-h-screen bg-background'>
+      <script
+        type='application/ld+json'
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(softwareApplicationSchema),
+        }}
+      />
+      <script
+        type='application/ld+json'
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
       <Toaster />
 
       <header className='border-b border-border bg-card'>
