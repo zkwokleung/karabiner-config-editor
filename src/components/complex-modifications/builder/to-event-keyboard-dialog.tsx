@@ -29,8 +29,12 @@ export function ToEventKeyboardDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='sm:max-w-5xl'>
         <DialogHeader>
-          <DialogTitle>Select From Keyboard</DialogTitle>
+          <DialogTitle>Select To Event Key</DialogTitle>
         </DialogHeader>
+        <p className='text-xs text-muted-foreground'>
+          Displayed symbols follow the selected layout. The saved value uses
+          key_code.
+        </p>
         <ComplexModificationKeyboard
           manipulators={[]}
           mode='select-to'
