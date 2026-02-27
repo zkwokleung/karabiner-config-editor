@@ -85,7 +85,7 @@ export function ToEventEditor({
             event={event}
             onUpdate={(updated) => updateEvent(index, updated)}
             onDelete={() => deleteEvent(index)}
-            showDelete={events.length > 1}
+            showDelete
             keyCodeAction={keyCodeAction ? keyCodeAction(index) : null}
           />
         ))}
