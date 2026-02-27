@@ -221,7 +221,7 @@ export function ManipulatorBuilderPanel({
 
     if (validManipulators.length === 0) {
       const errorMsg =
-        'At least one mapping must have a "to" action. Add a target key or action.';
+        'At least one manipulator must have a "to" action. Add a target key or action.';
       setValidationError(errorMsg);
       toast({
         title: 'Validation Error',
@@ -234,8 +234,8 @@ export function ManipulatorBuilderPanel({
     // Success
     onSave(validManipulators);
     toast({
-      title: isEditing ? 'Mapping Updated' : 'Mapping Created',
-      description: `Successfully ${isEditing ? 'updated' : 'created'} ${validManipulators.length} mapping${validManipulators.length > 1 ? 's' : ''}.`,
+      title: isEditing ? 'Manipulator Updated' : 'Manipulator Created',
+      description: `Successfully ${isEditing ? 'updated' : 'created'} ${validManipulators.length} manipulator${validManipulators.length > 1 ? 's' : ''}.`,
     });
   };
 
@@ -250,7 +250,7 @@ export function ManipulatorBuilderPanel({
       <div className='flex items-center justify-between'>
         <div className='flex items-center gap-2'>
           <h3 className='text-lg font-semibold'>
-            {isEditing ? 'Edit' : 'Create'} Mapping
+            {isEditing ? 'Edit' : 'Create'} Manipulator
           </h3>
           <Badge variant='outline' className='font-mono'>
             {getKeyLabel(fromKey)}
@@ -284,7 +284,7 @@ export function ManipulatorBuilderPanel({
               onClick={() => setSelectedManipulatorIndex(index)}
               className='relative pr-6'
             >
-              Mapping {index + 1}
+              Manipulator {index + 1}
               {manipulators.length > 1 && (
                 <button
                   className='absolute right-1 top-1/2 -translate-y-1/2 hover:text-destructive'
@@ -342,7 +342,7 @@ export function ManipulatorBuilderPanel({
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent side='top' align='start'>
-                        These modifiers must be held for this mapping to
+                        These modifiers must be held for this manipulator to
                         trigger.
                       </TooltipContent>
                     </Tooltip>
@@ -372,8 +372,8 @@ export function ManipulatorBuilderPanel({
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent side='top' align='start'>
-                        These modifiers are optional: the mapping works with or
-                        without them held.
+                        These modifiers are optional: the manipulator works with
+                        or without them held.
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -527,7 +527,7 @@ export function ManipulatorBuilderPanel({
           {isEditing && onDelete && (
             <Button variant='destructive' size='sm' onClick={onDelete}>
               <Trash2 className='h-4 w-4 mr-2' />
-              Delete All Mappings
+              Delete All Manipulators
             </Button>
           )}
         </div>
@@ -536,7 +536,7 @@ export function ManipulatorBuilderPanel({
             Cancel
           </Button>
           <Button onClick={handleSave}>
-            {isEditing ? 'Update' : 'Create'} Mapping
+            {isEditing ? 'Update' : 'Create'} Manipulator
           </Button>
         </div>
       </div>

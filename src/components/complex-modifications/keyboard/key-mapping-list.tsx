@@ -147,19 +147,19 @@ export function KeyMappingList({
     <Card className='p-4'>
       <div className='flex items-center justify-between mb-3'>
         <div className='flex items-center gap-2'>
-          <span className='text-sm font-medium'>Mappings for</span>
+          <span className='text-sm font-medium'>Manipulators for</span>
           <Badge variant='secondary' className='font-mono text-base'>
             {getKeyLabel(selectedKey)}
           </Badge>
           <span className='text-sm text-muted-foreground'>
-            ({selectedManipulators.length} mapping
+            ({selectedManipulators.length} manipulator
             {selectedManipulators.length === 1 ? '' : 's'})
           </span>
         </div>
         <div className='flex items-center gap-2'>
           <Button size='sm' variant='outline' onClick={onAddManipulator}>
             <Plus className='h-3 w-3 mr-1' />
-            Add Mapping
+            Add Manipulator
           </Button>
           <Button size='icon' variant='ghost' onClick={onClearSelection}>
             <X className='h-4 w-4' />
@@ -169,7 +169,7 @@ export function KeyMappingList({
 
       {selectedManipulators.length === 0 ? (
         <div className='py-8 text-center text-sm text-muted-foreground border rounded-lg border-dashed'>
-          <p>No mappings for this key yet.</p>
+          <p>No manipulators for this key yet.</p>
         </div>
       ) : (
         <ScrollArea className='max-h-[300px]'>

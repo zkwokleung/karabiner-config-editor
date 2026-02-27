@@ -60,7 +60,7 @@ export function SortableRuleListItem({
           {rule.description || 'Untitled rule'}
         </span>
         <Badge variant='secondary' className='w-fit'>
-          {rule.manipulators.length} mapping
+          {rule.manipulators.length} manipulator
           {rule.manipulators.length === 1 ? '' : 's'}
         </Badge>
       </div>

@@ -213,7 +213,7 @@ export function RuleDetailPanel({
       ? [rule.manipulators[editingManipulatorIndex]]
       : [];
 
-  const dialogTitle = isCreatingNew ? 'Create Mapping' : 'Edit Mapping';
+  const dialogTitle = isCreatingNew ? 'Create Manipulator' : 'Edit Manipulator';
 
   const handleDialogSelectFromKey = useCallback((keyCode: string) => {
     setSelectedFromKey(keyCode);
@@ -256,7 +256,7 @@ export function RuleDetailPanel({
               </TabsTrigger>
             </TabsList>
             <Badge variant='secondary'>
-              {rule.manipulators.length} mapping
+              {rule.manipulators.length} manipulator
               {rule.manipulators.length === 1 ? '' : 's'}
             </Badge>
           </div>
@@ -293,13 +293,13 @@ export function RuleDetailPanel({
                     className='bg-transparent'
                   >
                     <Plus className='mr-2 h-3 w-3' />
-                    Add Mapping
+                    Add Manipulator
                   </Button>
                 </div>
 
                 {rule.manipulators.length === 0 ? (
                   <div className='py-8 text-center text-sm text-muted-foreground border rounded-lg border-dashed'>
-                    No mappings yet.
+                    No manipulators yet.
                   </div>
                 ) : (
                   <DndContext

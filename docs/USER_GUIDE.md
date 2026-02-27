@@ -20,7 +20,7 @@ You can start in three ways:
 
 If JSON is invalid, the editor will show an error and keep your current state.
 
-## Edit Profiles and Mappings
+## Edit Profiles and Modifications
 
 In the **Edit** tab:
 
@@ -48,8 +48,8 @@ In the **Export** tab:
 - Review warnings and errors
 - Download `karabiner.json`
 - Copy formatted JSON to clipboard
-- Inspect mappings on a visual keyboard (click a key to see all matching simple,
-  fn, and complex mappings)
+- Inspect modifications on a visual keyboard (click a key to see all matching
+  simple/fn mappings and complex manipulators)
 
 Export is blocked while validation contains severity `error`.
 

@@ -111,7 +111,7 @@ export function ComplexModificationKeyboard({
     });
   }, [manipulators, modifierState]);
 
-  // Build set of keys that have mappings (from keys only)
+  // Build set of keys that have manipulators (from keys only)
   const mappedKeys = useMemo(() => {
     if (!showMappedKeys) {
       return [];
