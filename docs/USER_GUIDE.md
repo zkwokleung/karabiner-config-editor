@@ -28,6 +28,7 @@ In the **Edit** tab:
 - Edit simple modifications per profile or per device
 - Edit fn key mappings per profile or per device
 - Build complex modifications with keyboard/list workflows
+- Manage Configurations for Devices, Virtual Keyboard, and UI settings
 
 ## Use Complex Rule Builder
 
@@ -40,6 +41,18 @@ Inside a rule you can:
 - configure advanced actions (`to_if_alone`, `to_if_held_down`, etc.)
 
 You can also start from built-in rule templates.
+
+## Configure Devices, Virtual Keyboard, and UI
+
+In the **Configurations** tab:
+
+- **Devices**: add/remove devices and set identifiers (`vendor_id`,
+  `product_id`, keyboard/pointing flags) plus device options (`ignore`,
+  `disable_built_in_keyboard_if_exists`, `treat_as_built_in_keyboard`).
+- **Virtual Keyboard**: configure `country_code`, `mouse_key_xy_scale`,
+  `caps_lock_delay_milliseconds`, and sticky modifier key indicator behavior.
+- **UI**: control global preferences like update checks, menu bar visibility,
+  profile name in menu bar, quit confirmation, and unsafe UI mode.
 
 ## Validate and Export
 
