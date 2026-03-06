@@ -174,7 +174,7 @@ export function ComplexModificationKeyboard({
       )}
       {mode === 'select-to' && (
         <div className='flex items-center gap-1'>
-          <div className='w-2.5 h-2.5 rounded-sm bg-purple-500/20 border border-purple-500' />
+          <div className='w-2.5 h-2.5 rounded-sm bg-primary/30 border border-primary' />
           <span>Selected</span>
         </div>
       )}
