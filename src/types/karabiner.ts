@@ -58,6 +58,7 @@ export interface Rule {
 }
 
 export interface Manipulator {
+  description?: string;
   type: string;
   from: FromEvent;
   to?: ToEvent[];

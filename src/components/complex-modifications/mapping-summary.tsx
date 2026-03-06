@@ -104,6 +104,12 @@ export function SortableMappingSummary({
           )}
         </div>
 
+        {manipulator.description && (
+          <p className='mt-1.5 text-xs text-muted-foreground break-words'>
+            {manipulator.description}
+          </p>
+        )}
+
         {hasAdvanced && (
           <div className='flex items-center gap-1.5 mt-1.5 flex-wrap'>
             {manipulator.to_if_alone && (
