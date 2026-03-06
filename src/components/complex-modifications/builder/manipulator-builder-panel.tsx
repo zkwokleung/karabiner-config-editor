@@ -11,6 +11,7 @@ import {
   CircleHelp,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
@@ -309,6 +310,23 @@ export function ManipulatorBuilderPanel({
         <div className='space-y-4'>
           {/* From section */}
           <div className='space-y-3'>
+            <div className='space-y-2'>
+              <Label className='text-sm font-semibold'>Description</Label>
+              <Input
+                value={currentManipulator.description || ''}
+                onChange={(event) => {
+                  const nextDescription = event.target.value.trim();
+                  updateCurrentManipulator({
+                    description:
+                      nextDescription.length > 0
+                        ? event.target.value
+                        : undefined,
+                  });
+                }}
+                placeholder='Optional description for this manipulator'
+              />
+            </div>
+
             <Label className='text-sm font-semibold'>From Key</Label>
             <div className='flex items-center gap-2 p-3 bg-muted rounded-lg'>
               <Badge variant='secondary' className='font-mono text-base'>

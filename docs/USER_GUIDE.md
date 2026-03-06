@@ -35,6 +35,7 @@ In the **Edit** tab:
 Inside a rule you can:
 
 - add and reorder manipulators
+- add optional description text per manipulator
 - set `from` key and modifiers
 - add one or more `to` events
 - add conditions

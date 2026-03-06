@@ -277,6 +277,12 @@ function SortableKeyMappingItem({
           </div>
         </div>
 
+        {manipulator.description && (
+          <p className='mt-1.5 text-xs text-muted-foreground break-words'>
+            {manipulator.description}
+          </p>
+        )}
+
         {hasAdvancedOptions(manipulator) && (
           <div className='flex items-center gap-2 mt-1.5 flex-wrap'>
             {manipulator.to_if_alone && (

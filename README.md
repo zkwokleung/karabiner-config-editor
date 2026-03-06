@@ -32,6 +32,7 @@ rules grow. This project provides:
 ## Features
 
 - Complex modification builder with drag-and-drop ordering
+- Optional per-manipulator descriptions for clearer rule intent
 - Rule templates for common setups (Hyper key, Vim-style navigation, and more)
 - Profile-level and device-level simple modifications
 - Profile-level and device-level fn key mapping
