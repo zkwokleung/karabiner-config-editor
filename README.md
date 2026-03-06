@@ -35,6 +35,7 @@ rules grow. This project provides:
 - Rule templates for common setups (Hyper key, Vim-style navigation, and more)
 - Profile-level and device-level simple modifications
 - Profile-level and device-level fn key mapping
+- Configurations section for Devices, Virtual Keyboard, and UI settings
 - Real-time config validation and export safeguards
 - JSON import, preview, copy, and download
 - Keyboard layout support (ANSI, ISO, JIS)

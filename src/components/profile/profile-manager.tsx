@@ -22,6 +22,7 @@ import type { DeviceTargetOption } from '@/types/profile';
 import { SimpleModificationsEditor } from '@/components/profile/simple-modifications-editor';
 import { ProfileFnKeysEditor } from '@/components/profile/profile-fn-keys-editor';
 import { buildDeviceLabelLookup } from '@/components/profile/utils';
+import { ConfigurationsEditor } from '@/components/profile/configurations-editor';
 
 interface ProfileManagerProps {
   config: KarabinerConfig;
@@ -152,6 +153,15 @@ export function ProfileManager({ config, setConfig }: ProfileManagerProps) {
     }
   };
 
+  const updateGlobalSettings = (
+    updater: (settings: KarabinerConfig['global']) => KarabinerConfig['global'],
+  ) => {
+    setConfig({
+      ...config,
+      global: updater(config.global),
+    });
+  };
+
   return (
     <Card className='p-6'>
       <Tabs defaultValue='simple' className='w-full'>
@@ -201,7 +211,7 @@ export function ProfileManager({ config, setConfig }: ProfileManagerProps) {
           </div>
         </div>
 
-        <TabsList className='grid w-full grid-cols-3 mb-6'>
+        <TabsList className='grid w-full grid-cols-4 mb-6'>
           <TabsTrigger value='simple' className='cursor-pointer'>
             Simple
           </TabsTrigger>
@@ -210,6 +220,9 @@ export function ProfileManager({ config, setConfig }: ProfileManagerProps) {
           </TabsTrigger>
           <TabsTrigger value='complex' className='cursor-pointer'>
             Complex
+          </TabsTrigger>
+          <TabsTrigger value='configurations' className='cursor-pointer'>
+            Configurations
           </TabsTrigger>
         </TabsList>
 
@@ -236,6 +249,17 @@ export function ProfileManager({ config, setConfig }: ProfileManagerProps) {
           <ComplexModificationsEditor
             rules={selectedProfile.complex_modifications?.rules || []}
             onRulesChange={updateComplexModifications}
+          />
+        </TabsContent>
+
+        <TabsContent value='configurations'>
+          <ConfigurationsEditor
+            profile={selectedProfile}
+            globalSettings={config.global}
+            onProfileChange={replaceProfile}
+            onGlobalSettingsChange={(settings) =>
+              updateGlobalSettings(() => settings)
+            }
           />
         </TabsContent>
       </Tabs>
