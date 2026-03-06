@@ -63,7 +63,7 @@ State ownership pattern:
 Update pattern:
 
 1. User edits in nested component
-2. Component builds updated profile/rule/mapping
+2. Component builds updated profile/rule/manipulator
 3. Parent callback replaces affected branch
 4. Root `updateConfig` re-runs validation
 5. Export tab reflects latest config and errors
@@ -73,9 +73,9 @@ Update pattern:
 Validation is currently runtime and UI-oriented:
 
 - required profile/rule/manipulator fields
-- incomplete mappings
+- incomplete manipulators
 - duplicate simple mappings
-- conflicting complex mapping sources
+- conflicting complex manipulator sources
 
 Validation blocks export when severity is `error`.
 

@@ -57,7 +57,7 @@ export function MappingBuilderDialog({
         ) : (
           <div className='space-y-4'>
             <div>
-              <h3 className='text-lg font-semibold'>Create Mapping</h3>
+              <h3 className='text-lg font-semibold'>Create Manipulator</h3>
             </div>
             <ComplexModificationKeyboard
               manipulators={manipulators}

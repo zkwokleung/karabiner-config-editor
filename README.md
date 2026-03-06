@@ -25,8 +25,8 @@ and export configurations with a structured UI.
 Karabiner-Elements is powerful, but direct JSON editing becomes difficult as
 rules grow. This project provides:
 
-- a profile-oriented editor for simple, fn, and complex mappings
-- keyboard-first visual mapping tools
+- a profile-oriented editor for simple, fn, and complex manipulators
+- keyboard-first visual manipulator tools
 - validation and conflict checks before export
 
 ## Features

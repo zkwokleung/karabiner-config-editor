@@ -172,7 +172,10 @@ export function ComplexModificationsEditor({
       (_, index) => index !== manipIndex,
     );
     onRulesChange(newRules);
-    toast({ title: 'Mapping deleted', description: 'Key mapping removed' });
+    toast({
+      title: 'Manipulator deleted',
+      description: 'Key manipulator removed',
+    });
   };
 
   const handleUpdateManipulator = (
@@ -241,7 +244,7 @@ export function ComplexModificationsEditor({
           <AlertDescription>
             <div className='space-y-1'>
               <p className='font-semibold'>
-                Conflicting key mappings detected:
+                Conflicting key manipulators detected:
               </p>
               <ul className='list-inside list-disc text-sm'>
                 {conflicts.map((conflict, index) => (
