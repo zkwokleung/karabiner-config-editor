@@ -18,6 +18,14 @@ export interface ValidationError {
 export function validateConfig(config: KarabinerConfig): ValidationError[] {
   const errors: ValidationError[] = [];
 
+  if (!config.global) {
+    errors.push({
+      path: 'global',
+      message: 'Global settings are missing; defaults were applied.',
+      severity: 'warning',
+    });
+  }
+
   // Validate profiles exist
   if (!config.profiles || config.profiles.length === 0) {
     errors.push({

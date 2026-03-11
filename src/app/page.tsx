@@ -76,6 +76,19 @@ const faqSchema = {
   ],
 };
 
+function normalizeConfigShape(value: unknown): KarabinerConfig {
+  const config =
+    typeof value === 'object' && value !== null
+      ? (value as Partial<KarabinerConfig>)
+      : {};
+
+  return {
+    ...config,
+    global: config.global ?? {},
+    profiles: Array.isArray(config.profiles) ? config.profiles : [],
+  } as KarabinerConfig;
+}
+
 export default function KarabinerEditor() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [config, setConfig] = useState<KarabinerConfig | null>(null);
@@ -106,7 +119,7 @@ export default function KarabinerEditor() {
     reader.onload = (e) => {
       try {
         const content = e.target?.result as string;
-        const parsed = JSON.parse(content);
+        const parsed = normalizeConfigShape(JSON.parse(content));
         updateConfig(parsed);
         setJsonInput(JSON.stringify(parsed, null, 2));
         setActiveTab('edit');
@@ -147,7 +160,7 @@ export default function KarabinerEditor() {
     }
 
     try {
-      const parsed = JSON.parse(jsonInput);
+      const parsed = normalizeConfigShape(JSON.parse(jsonInput));
       updateConfig(parsed);
       setJsonInput(JSON.stringify(parsed, null, 2));
       setActiveTab('edit');
