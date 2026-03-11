@@ -421,40 +421,41 @@ function ParameterInputField({
   onValueChange,
 }: ParameterInputFieldProps) {
   return (
-    <div className='grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end'>
-      <div className='space-y-1.5'>
-        <div className='flex items-center gap-1.5'>
-          <Label htmlFor={id}>{label}</Label>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type='button'
-                  className='text-muted-foreground hover:text-foreground cursor-help'
-                  aria-label={`${label} help`}
-                >
-                  <CircleHelp className='h-4 w-4' />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side='top' align='start' className='max-w-xs'>
-                {description}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
+    <div className='space-y-1.5'>
+      <div className='flex items-center gap-1.5'>
+        <Label htmlFor={id}>{label}</Label>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type='button'
+                className='text-muted-foreground hover:text-foreground cursor-help'
+                aria-label={`${label} help`}
+              >
+                <CircleHelp className='h-4 w-4' />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side='top' align='start' className='max-w-xs'>
+              {description}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+      <div className='flex items-center gap-2'>
         <Input
           id={id}
           type='number'
           step={step}
+          className='w-40'
           value={value ?? defaultValue}
           onChange={(event) =>
             onValueChange(parseOptionalNumber(event.target.value))
           }
         />
+        <p className='text-xs text-muted-foreground'>
+          (Default value is {defaultValue})
+        </p>
       </div>
-      <p className='text-xs text-muted-foreground'>
-        Default value is {defaultValue}
-      </p>
     </div>
   );
 }
