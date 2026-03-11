@@ -143,10 +143,8 @@ export interface MouseKey {
 }
 
 export interface VirtualHidKeyboard {
-  country_code?: number;
+  keyboard_type_v2?: 'ansi' | 'iso' | 'jis';
   mouse_key_xy_scale?: number;
-  indicate_sticky_modifier_keys_state?: boolean;
-  caps_lock_delay_milliseconds?: number;
 }
 
 export interface Device {

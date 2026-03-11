@@ -28,6 +28,8 @@ const PROFILE_PARAMETER_DEFAULTS: Required<Parameters> = {
   'mouse_motion_to_scroll.speed': 100,
 };
 
+const MOUSE_KEY_XY_SCALE_DEFAULT = 100;
+
 type ProfileParameterKey = keyof Parameters;
 
 interface ConfigurationsEditorProps {
@@ -47,9 +49,25 @@ export function ConfigurationsEditor({
 
   const updateVirtualKeyboard = (updates: Partial<VirtualHidKeyboard>) => {
     const current = profile.virtual_hid_keyboard ?? {};
+    const hasMouseKeyScaleUpdate = Object.prototype.hasOwnProperty.call(
+      updates,
+      'mouse_key_xy_scale',
+    );
+    const normalizedUpdates: Partial<VirtualHidKeyboard> = {
+      ...updates,
+    };
+
+    if (hasMouseKeyScaleUpdate) {
+      normalizedUpdates.mouse_key_xy_scale =
+        updates.mouse_key_xy_scale === MOUSE_KEY_XY_SCALE_DEFAULT
+          ? undefined
+          : updates.mouse_key_xy_scale;
+    }
+
     const next = normalizeOptionalObject<VirtualHidKeyboard>({
       ...current,
-      ...updates,
+      keyboard_type_v2: current.keyboard_type_v2 ?? 'ansi',
+      ...normalizedUpdates,
     });
     onProfileChange({ ...profile, virtual_hid_keyboard: next });
   };
@@ -113,65 +131,96 @@ export function ConfigurationsEditor({
             </p>
           </div>
 
-          <div className='grid gap-3 sm:grid-cols-2'>
+          <div className='space-y-3'>
+            <h4 className='text-sm font-semibold'>Keyboard Type</h4>
             <div className='space-y-1.5'>
-              <Label htmlFor='vk-country-code'>Country code</Label>
-              <Input
-                id='vk-country-code'
-                type='number'
-                value={virtualKeyboard.country_code ?? ''}
-                onChange={(event) =>
-                  updateVirtualKeyboard({
-                    country_code: parseOptionalNumber(event.target.value),
-                  })
-                }
-                placeholder='e.g. 0'
-              />
-            </div>
-            <div className='space-y-1.5'>
-              <Label htmlFor='vk-mouse-key-scale'>Mouse key XY scale</Label>
-              <Input
-                id='vk-mouse-key-scale'
-                type='number'
-                value={virtualKeyboard.mouse_key_xy_scale ?? ''}
-                onChange={(event) =>
-                  updateVirtualKeyboard({
-                    mouse_key_xy_scale: parseOptionalNumber(event.target.value),
-                  })
-                }
-                placeholder='e.g. 100'
-              />
-            </div>
-            <div className='space-y-1.5'>
-              <Label htmlFor='vk-caps-delay'>Caps Lock delay (ms)</Label>
-              <Input
-                id='vk-caps-delay'
-                type='number'
-                value={virtualKeyboard.caps_lock_delay_milliseconds ?? ''}
-                onChange={(event) =>
-                  updateVirtualKeyboard({
-                    caps_lock_delay_milliseconds: parseOptionalNumber(
-                      event.target.value,
-                    ),
-                  })
-                }
-                placeholder='e.g. 0'
-              />
+              <Label>Keyboard layout</Label>
+              <div className='space-y-2'>
+                <label className='flex cursor-pointer items-start gap-2 rounded-md border p-2 hover:bg-muted/50'>
+                  <input
+                    type='radio'
+                    name='vk-keyboard-type'
+                    value='ansi'
+                    checked={
+                      (virtualKeyboard.keyboard_type_v2 ?? 'ansi') === 'ansi'
+                    }
+                    onChange={() =>
+                      updateVirtualKeyboard({
+                        keyboard_type_v2: 'ansi',
+                      })
+                    }
+                    className='mt-0.5'
+                  />
+                  <span className='text-sm'>
+                    ANSI (North America, most of Asia and others)
+                  </span>
+                </label>
+                <label className='flex cursor-pointer items-start gap-2 rounded-md border p-2 hover:bg-muted/50'>
+                  <input
+                    type='radio'
+                    name='vk-keyboard-type'
+                    value='iso'
+                    checked={
+                      (virtualKeyboard.keyboard_type_v2 ?? 'ansi') === 'iso'
+                    }
+                    onChange={() =>
+                      updateVirtualKeyboard({
+                        keyboard_type_v2: 'iso',
+                      })
+                    }
+                    className='mt-0.5'
+                  />
+                  <span className='text-sm'>
+                    ISO (Europe, Latin America, Middle-East and others)
+                  </span>
+                </label>
+                <label className='flex cursor-pointer items-start gap-2 rounded-md border p-2 hover:bg-muted/50'>
+                  <input
+                    type='radio'
+                    name='vk-keyboard-type'
+                    value='jis'
+                    checked={
+                      (virtualKeyboard.keyboard_type_v2 ?? 'ansi') === 'jis'
+                    }
+                    onChange={() =>
+                      updateVirtualKeyboard({
+                        keyboard_type_v2: 'jis',
+                      })
+                    }
+                    className='mt-0.5'
+                  />
+                  <span className='text-sm'>JIS (Japanese)</span>
+                </label>
+              </div>
             </div>
           </div>
 
-          <CheckboxField
-            id='vk-indicate-sticky'
-            label='Indicate sticky modifier keys state'
-            checked={Boolean(
-              virtualKeyboard.indicate_sticky_modifier_keys_state,
-            )}
-            onCheckedChange={(checked) =>
-              updateVirtualKeyboard({
-                indicate_sticky_modifier_keys_state: checked ? true : undefined,
-              })
-            }
-          />
+          <div className='space-y-3'>
+            <h4 className='text-sm font-semibold'>Mouse Key</h4>
+            <div className='space-y-1.5'>
+              <Label htmlFor='vk-mouse-key-scale'>Mouse key XY scale</Label>
+              <div className='flex items-center gap-2'>
+                <Input
+                  id='vk-mouse-key-scale'
+                  type='number'
+                  value={
+                    virtualKeyboard.mouse_key_xy_scale ??
+                    MOUSE_KEY_XY_SCALE_DEFAULT
+                  }
+                  onChange={(event) =>
+                    updateVirtualKeyboard({
+                      mouse_key_xy_scale: parseOptionalNumber(
+                        event.target.value,
+                      ),
+                    })
+                  }
+                  placeholder='e.g. 100'
+                  className='w-20'
+                />
+                <span className='text-sm text-muted-foreground'>%</span>
+              </div>
+            </div>
+          </div>
         </Card>
       </TabsContent>
 
