@@ -239,9 +239,10 @@ export function ConfigurationsEditor({
             <div className='space-y-3'>
               <ParameterInputField
                 id='param-simultaneous-threshold'
-                label='Simultaneous Key Press Threshold (ms)'
+                label='Simultaneous Key Press Threshold'
                 description='Maximum interval allowed between key presses for Karabiner to treat them as a simultaneous chord.'
                 step={10}
+                unitLabel='ms'
                 defaultValue={
                   PROFILE_PARAMETER_DEFAULTS[
                     'basic.simultaneous_threshold_milliseconds'
@@ -260,9 +261,10 @@ export function ConfigurationsEditor({
 
               <ParameterInputField
                 id='param-delayed-action-delay'
-                label='Delayed Action Delay (ms)'
+                label='Delayed Action Delay'
                 description='Wait time before executing to_delayed_action when a delayed action is configured in a manipulator.'
                 step={10}
+                unitLabel='ms'
                 defaultValue={
                   PROFILE_PARAMETER_DEFAULTS[
                     'basic.to_delayed_action_delay_milliseconds'
@@ -283,9 +285,10 @@ export function ConfigurationsEditor({
 
               <ParameterInputField
                 id='param-to-if-alone-timeout'
-                label='Tap Timeout (ms)'
+                label='Tap Timeout'
                 description='Maximum time a key can be held and still trigger to_if_alone behavior.'
                 step={100}
+                unitLabel='ms'
                 defaultValue={
                   PROFILE_PARAMETER_DEFAULTS[
                     'basic.to_if_alone_timeout_milliseconds'
@@ -304,9 +307,10 @@ export function ConfigurationsEditor({
 
               <ParameterInputField
                 id='param-to-if-held-down-threshold'
-                label='Hold Threshold (ms)'
+                label='Hold Threshold'
                 description='Minimum hold duration before to_if_held_down behavior is triggered.'
                 step={10}
+                unitLabel='ms'
                 defaultValue={
                   PROFILE_PARAMETER_DEFAULTS[
                     'basic.to_if_held_down_threshold_milliseconds'
@@ -337,6 +341,7 @@ export function ConfigurationsEditor({
                 label='Scroll Conversion Speed'
                 description='Multiplier used when converting mouse motion to scroll events; higher values scroll faster.'
                 step={10}
+                unitLabel='%'
                 defaultValue={
                   PROFILE_PARAMETER_DEFAULTS['mouse_motion_to_scroll.speed']
                 }
@@ -435,6 +440,7 @@ interface ParameterInputFieldProps {
   label: string;
   description: string;
   step: number;
+  unitLabel?: string;
   defaultValue: number;
   value: number | undefined;
   onValueChange: (value: number | undefined) => void;
@@ -465,6 +471,7 @@ function ParameterInputField({
   label,
   description,
   step,
+  unitLabel,
   defaultValue,
   value,
   onValueChange,
@@ -501,6 +508,9 @@ function ParameterInputField({
             onValueChange(parseOptionalNumber(event.target.value))
           }
         />
+        {unitLabel ? (
+          <span className='text-sm text-muted-foreground'>{unitLabel}</span>
+        ) : null}
         <p className='text-xs text-muted-foreground'>
           (Default value is {defaultValue})
         </p>
