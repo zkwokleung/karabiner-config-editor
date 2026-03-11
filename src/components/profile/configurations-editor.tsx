@@ -1,17 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { Trash2 } from 'lucide-react';
-import { AddDeviceDialog } from '@/components/profile/add-device-dialog';
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { formatDeviceLabel } from '@/components/profile/utils';
 import type {
-  Device,
   GlobalSettings,
   Profile,
   VirtualHidKeyboard,
@@ -31,56 +25,6 @@ export function ConfigurationsEditor({
   onGlobalSettingsChange,
 }: ConfigurationsEditorProps) {
   const safeGlobalSettings = globalSettings ?? {};
-  const [selectedDeviceIndex, setSelectedDeviceIndex] = useState<number | null>(
-    profile.devices && profile.devices.length > 0 ? 0 : null,
-  );
-
-  const devices = profile.devices ?? [];
-
-  useEffect(() => {
-    setSelectedDeviceIndex((current) => {
-      if (devices.length === 0) return null;
-      if (current === null) return 0;
-      if (current >= devices.length) return devices.length - 1;
-      return current;
-    });
-  }, [devices.length]);
-
-  const selectedDevice =
-    selectedDeviceIndex !== null ? devices[selectedDeviceIndex] : null;
-
-  const deviceLabels = useMemo(() => {
-    return devices.map((device, index) => formatDeviceLabel(device, index));
-  }, [devices]);
-
-  const updateDevice = (index: number, updater: (device: Device) => Device) => {
-    const target = devices[index];
-    if (!target) return;
-    const nextDevices = devices.map((device, deviceIndex) =>
-      deviceIndex === index ? updater(device) : device,
-    );
-    onProfileChange({ ...profile, devices: nextDevices });
-  };
-
-  const addDevice = (device: Device) => {
-    const nextDevices = [...devices, device];
-    onProfileChange({ ...profile, devices: nextDevices });
-    setSelectedDeviceIndex(nextDevices.length - 1);
-  };
-
-  const removeDevice = (index: number) => {
-    const nextDevices = devices.filter(
-      (_, deviceIndex) => deviceIndex !== index,
-    );
-    onProfileChange({ ...profile, devices: nextDevices });
-    setSelectedDeviceIndex((current) => {
-      if (nextDevices.length === 0) return null;
-      if (current === null) return 0;
-      if (current === index) return Math.min(index, nextDevices.length - 1);
-      if (current > index) return current - 1;
-      return current;
-    });
-  };
 
   const updateVirtualKeyboard = (updates: Partial<VirtualHidKeyboard>) => {
     const current = profile.virtual_hid_keyboard ?? {};
@@ -105,11 +49,8 @@ export function ConfigurationsEditor({
   const virtualKeyboard = profile.virtual_hid_keyboard ?? {};
 
   return (
-    <Tabs defaultValue='devices' className='w-full'>
-      <TabsList className='grid w-full grid-cols-3 mb-6'>
-        <TabsTrigger value='devices' className='cursor-pointer'>
-          Devices
-        </TabsTrigger>
+    <Tabs defaultValue='virtual-keyboard' className='w-full'>
+      <TabsList className='grid w-full grid-cols-2 mb-6'>
         <TabsTrigger value='virtual-keyboard' className='cursor-pointer'>
           Virtual Keyboard
         </TabsTrigger>
@@ -117,193 +58,6 @@ export function ConfigurationsEditor({
           UI
         </TabsTrigger>
       </TabsList>
-
-      <TabsContent value='devices'>
-        <div className='grid gap-4 lg:grid-cols-[300px_1fr]'>
-          <Card className='p-4 space-y-3'>
-            <div className='flex items-center justify-between'>
-              <h3 className='text-sm font-semibold'>Configured Devices</h3>
-              <AddDeviceDialog
-                onAdd={addDevice}
-                buttonVariant='outline'
-                buttonClassName='h-8 px-3'
-              />
-            </div>
-
-            {devices.length === 0 ? (
-              <p className='text-sm text-muted-foreground'>
-                No devices configured yet.
-              </p>
-            ) : (
-              <div className='space-y-2'>
-                {deviceLabels.map((label, index) => (
-                  <div
-                    key={`${label}-${index}`}
-                    className={`flex items-center justify-between rounded-md border p-2 ${
-                      selectedDeviceIndex === index
-                        ? 'border-primary bg-primary/10'
-                        : 'hover:bg-muted'
-                    }`}
-                  >
-                    <button
-                      type='button'
-                      className='flex-1 text-left text-sm'
-                      onClick={() => setSelectedDeviceIndex(index)}
-                    >
-                      {label}
-                    </button>
-                    <Button
-                      size='icon'
-                      variant='ghost'
-                      className='h-6 w-6'
-                      onClick={() => removeDevice(index)}
-                    >
-                      <Trash2 className='h-3 w-3' />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-
-          <Card className='p-4'>
-            {!selectedDevice || selectedDeviceIndex === null ? (
-              <p className='text-sm text-muted-foreground'>
-                Select a device to edit identifiers and device-specific
-                settings.
-              </p>
-            ) : (
-              <div className='space-y-5'>
-                <div className='space-y-3'>
-                  <h3 className='text-sm font-semibold'>Identifiers</h3>
-                  <div className='grid gap-3 sm:grid-cols-2'>
-                    <div className='space-y-1.5'>
-                      <Label htmlFor='device-vendor-id'>Vendor ID</Label>
-                      <Input
-                        id='device-vendor-id'
-                        type='number'
-                        value={selectedDevice.identifiers.vendor_id ?? ''}
-                        onChange={(event) => {
-                          updateDevice(selectedDeviceIndex, (device) => ({
-                            ...device,
-                            identifiers: {
-                              ...device.identifiers,
-                              vendor_id: parseOptionalNumber(
-                                event.target.value,
-                              ),
-                            },
-                          }));
-                        }}
-                        placeholder='e.g. 1452'
-                      />
-                    </div>
-                    <div className='space-y-1.5'>
-                      <Label htmlFor='device-product-id'>Product ID</Label>
-                      <Input
-                        id='device-product-id'
-                        type='number'
-                        value={selectedDevice.identifiers.product_id ?? ''}
-                        onChange={(event) => {
-                          updateDevice(selectedDeviceIndex, (device) => ({
-                            ...device,
-                            identifiers: {
-                              ...device.identifiers,
-                              product_id: parseOptionalNumber(
-                                event.target.value,
-                              ),
-                            },
-                          }));
-                        }}
-                        placeholder='e.g. 610'
-                      />
-                    </div>
-                  </div>
-
-                  <div className='grid gap-2 sm:grid-cols-2'>
-                    <CheckboxField
-                      id='device-is-keyboard'
-                      label='Is keyboard'
-                      checked={Boolean(selectedDevice.identifiers.is_keyboard)}
-                      onCheckedChange={(checked) => {
-                        updateDevice(selectedDeviceIndex, (device) => ({
-                          ...device,
-                          identifiers: {
-                            ...device.identifiers,
-                            is_keyboard: checked,
-                          },
-                        }));
-                      }}
-                    />
-                    <CheckboxField
-                      id='device-is-pointing-device'
-                      label='Is pointing device'
-                      checked={Boolean(
-                        selectedDevice.identifiers.is_pointing_device,
-                      )}
-                      onCheckedChange={(checked) => {
-                        updateDevice(selectedDeviceIndex, (device) => ({
-                          ...device,
-                          identifiers: {
-                            ...device.identifiers,
-                            is_pointing_device: checked,
-                          },
-                        }));
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div className='space-y-3'>
-                  <h3 className='text-sm font-semibold'>Device Settings</h3>
-                  <div className='grid gap-2'>
-                    <CheckboxField
-                      id='device-ignore'
-                      label='Ignore this device'
-                      checked={Boolean(selectedDevice.ignore)}
-                      onCheckedChange={(checked) => {
-                        updateDevice(selectedDeviceIndex, (device) => ({
-                          ...device,
-                          ignore: checked ? true : undefined,
-                        }));
-                      }}
-                    />
-                    <CheckboxField
-                      id='device-disable-built-in'
-                      label='Disable built-in keyboard if this device exists'
-                      checked={Boolean(
-                        selectedDevice.disable_built_in_keyboard_if_exists,
-                      )}
-                      onCheckedChange={(checked) => {
-                        updateDevice(selectedDeviceIndex, (device) => ({
-                          ...device,
-                          disable_built_in_keyboard_if_exists: checked
-                            ? true
-                            : undefined,
-                        }));
-                      }}
-                    />
-                    <CheckboxField
-                      id='device-treat-as-built-in'
-                      label='Treat as built-in keyboard'
-                      checked={Boolean(
-                        selectedDevice.treat_as_built_in_keyboard,
-                      )}
-                      onCheckedChange={(checked) => {
-                        updateDevice(selectedDeviceIndex, (device) => ({
-                          ...device,
-                          treat_as_built_in_keyboard: checked
-                            ? true
-                            : undefined,
-                        }));
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-          </Card>
-        </div>
-      </TabsContent>
 
       <TabsContent value='virtual-keyboard'>
         <Card className='p-4 space-y-4'>
