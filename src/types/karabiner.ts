@@ -8,6 +8,8 @@ export interface KarabinerConfig {
 export interface GlobalSettings {
   ask_for_confirmation_before_quitting?: boolean;
   check_for_updates_on_startup?: boolean;
+  enable_notification_window?: boolean;
+  show_additional_menu_items?: boolean;
   show_in_menu_bar?: boolean;
   show_profile_name_in_menu_bar?: boolean;
   unsafe_ui?: boolean;
@@ -145,6 +147,7 @@ export interface MouseKey {
 export interface VirtualHidKeyboard {
   keyboard_type_v2?: 'ansi' | 'iso' | 'jis';
   mouse_key_xy_scale?: number;
+  indicate_sticky_modifier_keys_state?: boolean;
 }
 
 export interface Device {

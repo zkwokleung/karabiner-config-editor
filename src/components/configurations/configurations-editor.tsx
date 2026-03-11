@@ -40,6 +40,10 @@ export function ConfigurationsEditor({
       updates,
       'mouse_key_xy_scale',
     );
+    const hasStickyIndicatorUpdate = Object.prototype.hasOwnProperty.call(
+      updates,
+      'indicate_sticky_modifier_keys_state',
+    );
     const normalizedUpdates: Partial<VirtualHidKeyboard> = {
       ...updates,
     };
@@ -51,9 +55,15 @@ export function ConfigurationsEditor({
           : updates.mouse_key_xy_scale;
     }
 
+    if (hasStickyIndicatorUpdate) {
+      normalizedUpdates.indicate_sticky_modifier_keys_state =
+        updates.indicate_sticky_modifier_keys_state === true
+          ? undefined
+          : updates.indicate_sticky_modifier_keys_state;
+    }
+
     const next = normalizeOptionalObject<VirtualHidKeyboard>({
       ...current,
-      keyboard_type_v2: current.keyboard_type_v2 ?? 'ansi',
       ...normalizedUpdates,
     });
 
@@ -63,12 +73,29 @@ export function ConfigurationsEditor({
   const updateGlobalSetting = <K extends keyof GlobalSettings>(
     key: K,
     value: GlobalSettings[K],
+    defaultValue?: GlobalSettings[K],
   ) => {
+    const normalizedValue =
+      defaultValue !== undefined && value === defaultValue ? undefined : value;
+
     const nextGlobal = normalizeOptionalObject<GlobalSettings>({
       ...safeGlobalSettings,
-      [key]: value,
+      [key]: normalizedValue,
     });
     onGlobalSettingsChange(nextGlobal ?? {});
+  };
+
+  const updateVirtualKeyboardSetting = <K extends keyof VirtualHidKeyboard>(
+    key: K,
+    value: VirtualHidKeyboard[K],
+    defaultValue?: VirtualHidKeyboard[K],
+  ) => {
+    const normalizedValue =
+      defaultValue !== undefined && value === defaultValue ? undefined : value;
+
+    updateVirtualKeyboard({
+      [key]: normalizedValue,
+    } as Partial<VirtualHidKeyboard>);
   };
 
   const updateProfileParameter = (
@@ -124,7 +151,9 @@ export function ConfigurationsEditor({
       <TabsContent value='ui'>
         <UiTab
           globalSettings={safeGlobalSettings}
+          virtualKeyboard={profile.virtual_hid_keyboard ?? {}}
           onGlobalSettingChange={updateGlobalSetting}
+          onVirtualKeyboardSettingChange={updateVirtualKeyboardSetting}
         />
       </TabsContent>
     </Tabs>
