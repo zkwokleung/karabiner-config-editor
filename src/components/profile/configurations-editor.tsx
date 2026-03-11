@@ -495,7 +495,7 @@ function ParameterInputField({
           id={id}
           type='number'
           step={step}
-          className='w-40'
+          className='w-20'
           value={value ?? defaultValue}
           onChange={(event) =>
             onValueChange(parseOptionalNumber(event.target.value))
