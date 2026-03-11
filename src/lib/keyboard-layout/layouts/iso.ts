@@ -14,21 +14,3 @@ export const ISO_DISPLAY_OVERRIDES: Record<string, string> = {
   '§': '\\',
   '#': '|',
 };
-
-export const ISO_BUTTON_WIDTHS: Record<string, string> = {
-  '{backspace}': '78px',
-  '{tab}': '58px',
-  '{capslock}': '72px',
-  '{enter}': '88px',
-  '#': '42px',
-  '{shiftleft}': '48px',
-  '§': '42px',
-  '{shiftright}': '116px',
-  '{fn}': '42px',
-  '{controlleft}': '42px',
-  '{altleft}': '42px',
-  '{metaleft}': '54px',
-  '{space}': '240px',
-  '{metaright}': '54px',
-  '{altright}': '42px',
-};
