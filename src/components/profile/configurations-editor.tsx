@@ -19,7 +19,7 @@ import type {
 
 interface ConfigurationsEditorProps {
   profile: Profile;
-  globalSettings: GlobalSettings;
+  globalSettings?: GlobalSettings;
   onProfileChange: (profile: Profile) => void;
   onGlobalSettingsChange: (settings: GlobalSettings) => void;
 }
@@ -30,6 +30,7 @@ export function ConfigurationsEditor({
   onProfileChange,
   onGlobalSettingsChange,
 }: ConfigurationsEditorProps) {
+  const safeGlobalSettings = globalSettings ?? {};
   const [selectedDeviceIndex, setSelectedDeviceIndex] = useState<number | null>(
     profile.devices && profile.devices.length > 0 ? 0 : null,
   );
@@ -95,7 +96,7 @@ export function ConfigurationsEditor({
     value: GlobalSettings[K],
   ) => {
     const nextGlobal = normalizeOptionalObject<GlobalSettings>({
-      ...globalSettings,
+      ...safeGlobalSettings,
       [key]: value,
     });
     onGlobalSettingsChange(nextGlobal ?? {});
@@ -389,7 +390,7 @@ export function ConfigurationsEditor({
               id='ui-ask-before-quit'
               label='Ask for confirmation before quitting'
               checked={Boolean(
-                globalSettings.ask_for_confirmation_before_quitting,
+                safeGlobalSettings.ask_for_confirmation_before_quitting,
               )}
               onCheckedChange={(checked) =>
                 updateGlobalSetting(
@@ -401,7 +402,7 @@ export function ConfigurationsEditor({
             <CheckboxField
               id='ui-check-updates'
               label='Check for updates on startup'
-              checked={Boolean(globalSettings.check_for_updates_on_startup)}
+              checked={Boolean(safeGlobalSettings.check_for_updates_on_startup)}
               onCheckedChange={(checked) =>
                 updateGlobalSetting(
                   'check_for_updates_on_startup',
@@ -412,7 +413,7 @@ export function ConfigurationsEditor({
             <CheckboxField
               id='ui-show-menu-bar'
               label='Show icon in menu bar'
-              checked={Boolean(globalSettings.show_in_menu_bar)}
+              checked={Boolean(safeGlobalSettings.show_in_menu_bar)}
               onCheckedChange={(checked) =>
                 updateGlobalSetting(
                   'show_in_menu_bar',
@@ -423,7 +424,9 @@ export function ConfigurationsEditor({
             <CheckboxField
               id='ui-show-profile-name'
               label='Show profile name in menu bar'
-              checked={Boolean(globalSettings.show_profile_name_in_menu_bar)}
+              checked={Boolean(
+                safeGlobalSettings.show_profile_name_in_menu_bar,
+              )}
               onCheckedChange={(checked) =>
                 updateGlobalSetting(
                   'show_profile_name_in_menu_bar',
@@ -434,7 +437,7 @@ export function ConfigurationsEditor({
             <CheckboxField
               id='ui-unsafe-mode'
               label='Enable unsafe UI mode'
-              checked={Boolean(globalSettings.unsafe_ui)}
+              checked={Boolean(safeGlobalSettings.unsafe_ui)}
               onCheckedChange={(checked) =>
                 updateGlobalSetting('unsafe_ui', checked ? true : undefined)
               }

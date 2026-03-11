@@ -156,9 +156,10 @@ export function ProfileManager({ config, setConfig }: ProfileManagerProps) {
   const updateGlobalSettings = (
     updater: (settings: KarabinerConfig['global']) => KarabinerConfig['global'],
   ) => {
+    const currentGlobal = config.global ?? {};
     setConfig({
       ...config,
-      global: updater(config.global),
+      global: updater(currentGlobal),
     });
   };
 
@@ -255,7 +256,7 @@ export function ProfileManager({ config, setConfig }: ProfileManagerProps) {
         <TabsContent value='configurations'>
           <ConfigurationsEditor
             profile={selectedProfile}
-            globalSettings={config.global}
+            globalSettings={config.global ?? {}}
             onProfileChange={replaceProfile}
             onGlobalSettingsChange={(settings) =>
               updateGlobalSettings(() => settings)
