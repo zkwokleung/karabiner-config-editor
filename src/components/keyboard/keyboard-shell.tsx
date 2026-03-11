@@ -67,7 +67,7 @@ export interface KeyboardShellProps {
 }
 
 const DEFAULT_LAYOUT_HINT =
-  'Some physical keys map to different key codes depending on the layout.';
+  'Some physical keys map to different key codes depending on the type.';
 
 export function KeyboardShell({
   layoutType,
