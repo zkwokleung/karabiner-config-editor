@@ -236,7 +236,7 @@ export function ConfigurationsEditor({
                 id='param-to-if-alone-timeout'
                 label='Tap Timeout (ms)'
                 description='Maximum time a key can be held and still trigger to_if_alone behavior.'
-                step={10}
+                step={100}
                 defaultValue={
                   PROFILE_PARAMETER_DEFAULTS[
                     'basic.to_if_alone_timeout_milliseconds'
@@ -287,7 +287,7 @@ export function ConfigurationsEditor({
                 id='param-mouse-motion-speed'
                 label='Scroll Conversion Speed'
                 description='Multiplier used when converting mouse motion to scroll events; higher values scroll faster.'
-                step={1}
+                step={10}
                 defaultValue={
                   PROFILE_PARAMETER_DEFAULTS['mouse_motion_to_scroll.speed']
                 }
