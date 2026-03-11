@@ -1,15 +1,34 @@
 'use client';
 
+import { CircleHelp } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import type {
+  ComplexModifications,
   GlobalSettings,
+  Parameters,
   Profile,
   VirtualHidKeyboard,
 } from '@/types/karabiner';
+
+const PROFILE_PARAMETER_DEFAULTS: Required<Parameters> = {
+  'basic.simultaneous_threshold_milliseconds': 500,
+  'basic.to_delayed_action_delay_milliseconds': 500,
+  'basic.to_if_alone_timeout_milliseconds': 1000,
+  'basic.to_if_held_down_threshold_milliseconds': 500,
+  'mouse_motion_to_scroll.speed': 100,
+};
+
+type ProfileParameterKey = keyof Parameters;
 
 interface ConfigurationsEditorProps {
   profile: Profile;
@@ -46,13 +65,39 @@ export function ConfigurationsEditor({
     onGlobalSettingsChange(nextGlobal ?? {});
   };
 
+  const updateProfileParameter = (
+    key: ProfileParameterKey,
+    value: number | undefined,
+  ) => {
+    const currentComplex = profile.complex_modifications;
+    const currentParameters = currentComplex?.parameters ?? {};
+    const nextParameters = normalizeProfileParameters({
+      ...currentParameters,
+      [key]: value,
+    });
+
+    const nextComplex = normalizeOptionalObject<ComplexModifications>({
+      ...(currentComplex ?? {}),
+      parameters: nextParameters,
+    });
+
+    onProfileChange({
+      ...profile,
+      complex_modifications: nextComplex,
+    });
+  };
+
   const virtualKeyboard = profile.virtual_hid_keyboard ?? {};
+  const profileParameters = profile.complex_modifications?.parameters ?? {};
 
   return (
     <Tabs defaultValue='virtual-keyboard' className='w-full'>
-      <TabsList className='grid w-full grid-cols-2 mb-6'>
+      <TabsList className='grid w-full grid-cols-3 mb-6'>
         <TabsTrigger value='virtual-keyboard' className='cursor-pointer'>
           Virtual Keyboard
+        </TabsTrigger>
+        <TabsTrigger value='parameter' className='cursor-pointer'>
+          Parameter
         </TabsTrigger>
         <TabsTrigger value='ui' className='cursor-pointer'>
           UI
@@ -127,6 +172,132 @@ export function ConfigurationsEditor({
               })
             }
           />
+        </Card>
+      </TabsContent>
+
+      <TabsContent value='parameter'>
+        <Card className='p-4 space-y-6'>
+          <div>
+            <h3 className='text-sm font-semibold'>Profile Parameters</h3>
+            <p className='text-sm text-muted-foreground'>
+              Tune timing and behavior for complex modifications in this
+              profile.
+            </p>
+          </div>
+
+          <div className='space-y-3'>
+            <h4 className='text-sm font-semibold'>Basic Parameters</h4>
+            <div className='space-y-3'>
+              <ParameterInputField
+                id='param-simultaneous-threshold'
+                label='Simultaneous Key Press Threshold (ms)'
+                description='Maximum interval allowed between key presses for Karabiner to treat them as a simultaneous chord.'
+                step={10}
+                defaultValue={
+                  PROFILE_PARAMETER_DEFAULTS[
+                    'basic.simultaneous_threshold_milliseconds'
+                  ]
+                }
+                value={
+                  profileParameters['basic.simultaneous_threshold_milliseconds']
+                }
+                onValueChange={(next) =>
+                  updateProfileParameter(
+                    'basic.simultaneous_threshold_milliseconds',
+                    next,
+                  )
+                }
+              />
+
+              <ParameterInputField
+                id='param-delayed-action-delay'
+                label='Delayed Action Delay (ms)'
+                description='Wait time before executing to_delayed_action when a delayed action is configured in a manipulator.'
+                step={10}
+                defaultValue={
+                  PROFILE_PARAMETER_DEFAULTS[
+                    'basic.to_delayed_action_delay_milliseconds'
+                  ]
+                }
+                value={
+                  profileParameters[
+                    'basic.to_delayed_action_delay_milliseconds'
+                  ]
+                }
+                onValueChange={(next) =>
+                  updateProfileParameter(
+                    'basic.to_delayed_action_delay_milliseconds',
+                    next,
+                  )
+                }
+              />
+
+              <ParameterInputField
+                id='param-to-if-alone-timeout'
+                label='Tap Timeout (ms)'
+                description='Maximum time a key can be held and still trigger to_if_alone behavior.'
+                step={10}
+                defaultValue={
+                  PROFILE_PARAMETER_DEFAULTS[
+                    'basic.to_if_alone_timeout_milliseconds'
+                  ]
+                }
+                value={
+                  profileParameters['basic.to_if_alone_timeout_milliseconds']
+                }
+                onValueChange={(next) =>
+                  updateProfileParameter(
+                    'basic.to_if_alone_timeout_milliseconds',
+                    next,
+                  )
+                }
+              />
+
+              <ParameterInputField
+                id='param-to-if-held-down-threshold'
+                label='Hold Threshold (ms)'
+                description='Minimum hold duration before to_if_held_down behavior is triggered.'
+                step={10}
+                defaultValue={
+                  PROFILE_PARAMETER_DEFAULTS[
+                    'basic.to_if_held_down_threshold_milliseconds'
+                  ]
+                }
+                value={
+                  profileParameters[
+                    'basic.to_if_held_down_threshold_milliseconds'
+                  ]
+                }
+                onValueChange={(next) =>
+                  updateProfileParameter(
+                    'basic.to_if_held_down_threshold_milliseconds',
+                    next,
+                  )
+                }
+              />
+            </div>
+          </div>
+
+          <div className='space-y-3'>
+            <h4 className='text-sm font-semibold'>
+              Mouse Motion to Scroll Parameters
+            </h4>
+            <div className='space-y-3'>
+              <ParameterInputField
+                id='param-mouse-motion-speed'
+                label='Scroll Conversion Speed'
+                description='Multiplier used when converting mouse motion to scroll events; higher values scroll faster.'
+                step={1}
+                defaultValue={
+                  PROFILE_PARAMETER_DEFAULTS['mouse_motion_to_scroll.speed']
+                }
+                value={profileParameters['mouse_motion_to_scroll.speed']}
+                onValueChange={(next) =>
+                  updateProfileParameter('mouse_motion_to_scroll.speed', next)
+                }
+              />
+            </div>
+          </div>
         </Card>
       </TabsContent>
 
@@ -210,6 +381,16 @@ interface CheckboxFieldProps {
   onCheckedChange: (checked: boolean) => void;
 }
 
+interface ParameterInputFieldProps {
+  id: string;
+  label: string;
+  description: string;
+  step: number;
+  defaultValue: number;
+  value: number | undefined;
+  onValueChange: (value: number | undefined) => void;
+}
+
 function CheckboxField({
   id,
   label,
@@ -226,6 +407,54 @@ function CheckboxField({
       <Label htmlFor={id} className='text-sm font-normal'>
         {label}
       </Label>
+    </div>
+  );
+}
+
+function ParameterInputField({
+  id,
+  label,
+  description,
+  step,
+  defaultValue,
+  value,
+  onValueChange,
+}: ParameterInputFieldProps) {
+  return (
+    <div className='grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end'>
+      <div className='space-y-1.5'>
+        <div className='flex items-center gap-1.5'>
+          <Label htmlFor={id}>{label}</Label>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type='button'
+                  className='text-muted-foreground hover:text-foreground cursor-help'
+                  aria-label={`${label} help`}
+                >
+                  <CircleHelp className='h-4 w-4' />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side='top' align='start' className='max-w-xs'>
+                {description}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+        <Input
+          id={id}
+          type='number'
+          step={step}
+          value={value ?? defaultValue}
+          onChange={(event) =>
+            onValueChange(parseOptionalNumber(event.target.value))
+          }
+        />
+      </div>
+      <p className='text-xs text-muted-foreground'>
+        Default value is {defaultValue}
+      </p>
     </div>
   );
 }
@@ -249,4 +478,22 @@ function normalizeOptionalObject<T extends object>(value: T): T | undefined {
   }
 
   return Object.fromEntries(nextEntries) as T;
+}
+
+function normalizeProfileParameters(
+  parameters: Parameters,
+): Parameters | undefined {
+  const nextEntries = Object.entries(parameters).filter(([key, value]) => {
+    if (value === undefined) {
+      return false;
+    }
+
+    return value !== PROFILE_PARAMETER_DEFAULTS[key as ProfileParameterKey];
+  });
+
+  if (nextEntries.length === 0) {
+    return undefined;
+  }
+
+  return Object.fromEntries(nextEntries) as Parameters;
 }

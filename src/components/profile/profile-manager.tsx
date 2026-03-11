@@ -139,7 +139,7 @@ export function ProfileManager({ config, setConfig }: ProfileManagerProps) {
     updateProfile((profile) => ({
       ...profile,
       complex_modifications: {
-        ...(profile.complex_modifications ?? { parameters: {}, rules: [] }),
+        ...(profile.complex_modifications ?? { rules: [] }),
         rules,
       },
     }));
