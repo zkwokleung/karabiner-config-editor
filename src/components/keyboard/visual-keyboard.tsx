@@ -37,7 +37,7 @@ export function VisualKeyboard({
   onEditMapping,
   onDeleteMapping,
 }: VisualKeyboardProps) {
-  const { layoutType, setLayoutType } = useKeyboardLayout();
+  const { layoutType, setLayoutType, keyboardTypeV2 } = useKeyboardLayout();
   const [popoverKey, setPopoverKey] = useState<string | null>(null);
   const [popoverPosition, setPopoverPosition] = useState<{
     x: number;
@@ -255,6 +255,7 @@ export function VisualKeyboard({
     <KeyboardShell
       className={className}
       layoutType={layoutType}
+      displayLayoutType={keyboardTypeV2}
       onLayoutChange={(value) => setLayoutType(value)}
       legend={legend}
       keyboardBaseClass='visual-kb'

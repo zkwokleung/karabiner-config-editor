@@ -30,7 +30,7 @@ export function ComplexModificationKeyboard({
   showMappedKeys = true,
   selectedKeys = [],
 }: ComplexModificationKeyboardProps) {
-  const { layoutType, setLayoutType } = useKeyboardLayout();
+  const { layoutType, setLayoutType, keyboardTypeV2 } = useKeyboardLayout();
   const [transientSelectedKeys, setTransientSelectedKeys] = useState<string[]>(
     [],
   );
@@ -194,6 +194,7 @@ export function ComplexModificationKeyboard({
     <KeyboardShell
       className={className}
       layoutType={layoutType}
+      displayLayoutType={keyboardTypeV2}
       onLayoutChange={(value) => setLayoutType(value)}
       legend={legend}
       beforeKeyboard={modifierControls}

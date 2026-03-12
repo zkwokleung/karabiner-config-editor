@@ -33,11 +33,27 @@ export function ProfileManager({ config, setConfig }: ProfileManagerProps) {
   const [selectedProfileIndex, setSelectedProfileIndex] = useState(0);
   const { toast } = useToast();
 
+  const getSelectedProfileIndex = (profiles: Profile[]) => {
+    const selectedIndex = profiles.findIndex((profile) => profile.selected);
+    return selectedIndex >= 0 ? selectedIndex : 0;
+  };
+
   useEffect(() => {
     if (selectedProfileIndex >= config.profiles.length) {
       setSelectedProfileIndex(Math.max(0, config.profiles.length - 1));
     }
   }, [config.profiles.length, selectedProfileIndex]);
+
+  useEffect(() => {
+    if (config.profiles.length === 0) {
+      return;
+    }
+
+    const selectedIndex = getSelectedProfileIndex(config.profiles);
+    if (selectedIndex !== selectedProfileIndex) {
+      setSelectedProfileIndex(selectedIndex);
+    }
+  }, [config.profiles, selectedProfileIndex]);
 
   const selectedProfile = config.profiles[selectedProfileIndex];
 
@@ -81,6 +97,19 @@ export function ProfileManager({ config, setConfig }: ProfileManagerProps) {
     replaceProfile(nextProfile);
   };
 
+  const setSelectedProfileInConfig = (index: number) => {
+    const nextProfiles = config.profiles.map((profile, profileIndex) => ({
+      ...profile,
+      selected: profileIndex === index,
+    }));
+
+    setConfig({
+      ...config,
+      profiles: nextProfiles,
+    });
+    setSelectedProfileIndex(index);
+  };
+
   const updateProfileName = (name: string) => {
     updateProfile((profile) => ({
       ...profile,
@@ -91,7 +120,7 @@ export function ProfileManager({ config, setConfig }: ProfileManagerProps) {
   const addProfile = () => {
     const newProfile: Profile = {
       name: `Profile ${config.profiles.length + 1}`,
-      selected: false,
+      selected: true,
       simple_modifications: [],
       fn_function_keys: [],
       devices: [],
@@ -100,9 +129,14 @@ export function ProfileManager({ config, setConfig }: ProfileManagerProps) {
       },
     };
 
+    const nextProfiles = config.profiles.map((profile) => ({
+      ...profile,
+      selected: false,
+    }));
+
     setConfig({
       ...config,
-      profiles: [...config.profiles, newProfile],
+      profiles: [...nextProfiles, newProfile],
     });
 
     setSelectedProfileIndex(config.profiles.length);
@@ -126,8 +160,15 @@ export function ProfileManager({ config, setConfig }: ProfileManagerProps) {
     const nextProfiles = config.profiles.filter(
       (_, profileIndex) => profileIndex !== index,
     );
-    setConfig({ ...config, profiles: nextProfiles });
-    setSelectedProfileIndex(Math.max(0, index - 1));
+
+    const nextSelectedIndex = Math.max(0, index - 1);
+    const normalizedProfiles = nextProfiles.map((profile, profileIndex) => ({
+      ...profile,
+      selected: profileIndex === nextSelectedIndex,
+    }));
+
+    setConfig({ ...config, profiles: normalizedProfiles });
+    setSelectedProfileIndex(nextSelectedIndex);
 
     toast({
       title: 'Profile deleted',
@@ -149,7 +190,7 @@ export function ProfileManager({ config, setConfig }: ProfileManagerProps) {
     if (value === '__new__') {
       addProfile();
     } else {
-      setSelectedProfileIndex(Number(value));
+      setSelectedProfileInConfig(Number(value));
     }
   };
 

@@ -45,7 +45,7 @@ export function ExportKeyboardPreview({
   onConfigChange,
 }: ExportKeyboardPreviewProps) {
   const { toast } = useToast();
-  const { layoutType, setLayoutType } = useKeyboardLayout();
+  const { layoutType, setLayoutType, keyboardTypeV2 } = useKeyboardLayout();
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [directionFilter, setDirectionFilter] =
     useState<MappingDirectionFilter>('both');
@@ -168,6 +168,7 @@ export function ExportKeyboardPreview({
       <div className='space-y-3'>
         <KeyboardShell
           layoutType={layoutType}
+          displayLayoutType={keyboardTypeV2}
           onLayoutChange={(value) => setLayoutType(value)}
           legend={legend}
           keyboardBaseClass='export-kb'
