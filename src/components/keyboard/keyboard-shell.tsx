@@ -6,7 +6,6 @@ import Keyboard from 'react-simple-keyboard';
 import 'react-simple-keyboard/build/css/index.css';
 import { cn } from '@/lib/utils';
 import {
-  BUTTON_WIDTHS,
   KEYBOARD_LAYOUT_OPTIONS,
   getKeyboardDisplay,
   getLayoutForType,
@@ -68,7 +67,7 @@ export interface KeyboardShellProps {
 }
 
 const DEFAULT_LAYOUT_HINT =
-  'Some physical keys map to different key codes depending on the layout.';
+  'Some physical keys map to different key codes depending on the type.';
 
 export function KeyboardShell({
   layoutType,
@@ -102,7 +101,6 @@ export function KeyboardShell({
   const resolvedDisplay = useMemo(() => {
     return display ? { ...baseDisplay, ...display } : baseDisplay;
   }, [baseDisplay, display]);
-  const buttonWidths = useMemo(() => BUTTON_WIDTHS[layoutType], [layoutType]);
   const buttonTheme = useMemo<ButtonTheme | undefined>(() => {
     if (!highlightLayers || highlightLayers.length === 0) {
       return undefined;
@@ -123,14 +121,6 @@ export function KeyboardShell({
 
     return themes.length > 0 ? themes : undefined;
   }, [highlightLayers]);
-
-  const buttonWidthStyles = useMemo(() => {
-    return Object.entries(buttonWidths)
-      .map(([button, width]) => {
-        return `.${keyboardBaseClass} .hg-button[data-skbtn="${button}"] { width: ${width}; min-width: ${width}; max-width: ${width}; }`;
-      })
-      .join('\n');
-  }, [buttonWidths, keyboardBaseClass]);
 
   useEffect(() => {
     if (internalKeyboardRef.current?.setOptions) {
@@ -190,12 +180,6 @@ export function KeyboardShell({
       </div>
 
       {beforeKeyboard}
-
-      <style
-        dangerouslySetInnerHTML={{
-          __html: buttonWidthStyles,
-        }}
-      />
 
       <div
         className={cn(

@@ -8,20 +8,3 @@ export const ANSI_LAYOUT = {
     '{fn} {controlleft} {altleft} {metaleft} {space} {metaright} {altright} {arrowleft} {arrowup} {arrowdown} {arrowright}',
   ],
 };
-
-export const ANSI_BUTTON_WIDTHS: Record<string, string> = {
-  '{backspace}': '78px',
-  '{tab}': '58px',
-  '\\': '58px',
-  '{capslock}': '72px',
-  '{enter}': '88px',
-  '{shiftleft}': '92px',
-  '{shiftright}': '116px',
-  '{fn}': '42px',
-  '{controlleft}': '42px',
-  '{altleft}': '42px',
-  '{metaleft}': '54px',
-  '{space}': '240px',
-  '{metaright}': '54px',
-  '{altright}': '42px',
-};

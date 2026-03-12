@@ -18,7 +18,6 @@ export function createMinimalKarabinerConfig(): KarabinerConfig {
         fn_function_keys: [],
         devices: [],
         complex_modifications: {
-          parameters: {},
           rules: [],
         },
       },

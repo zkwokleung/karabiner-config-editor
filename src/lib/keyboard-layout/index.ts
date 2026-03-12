@@ -1,17 +1,9 @@
 // Keyboard layout data and mapping for visual keyboard component
 // Maps between simple-keyboard keys and Karabiner key codes
 
-import { ANSI_BUTTON_WIDTHS, ANSI_LAYOUT } from './layouts/ansi';
-import {
-  ISO_BUTTON_WIDTHS,
-  ISO_DISPLAY_OVERRIDES,
-  ISO_LAYOUT,
-} from './layouts/iso';
-import {
-  JIS_BUTTON_WIDTHS,
-  JIS_DISPLAY_OVERRIDES,
-  JIS_LAYOUT,
-} from './layouts/jis';
+import { ANSI_LAYOUT } from './layouts/ansi';
+import { ISO_DISPLAY_OVERRIDES, ISO_LAYOUT } from './layouts/iso';
+import { JIS_DISPLAY_OVERRIDES, JIS_LAYOUT } from './layouts/jis';
 
 export type KeyboardLayoutType = 'ansi' | 'iso' | 'jis';
 
@@ -181,11 +173,11 @@ export function toSimpleKeyboardButton(karabinerKeyCode: string): string {
 // Display labels for Karabiner key codes
 const KEY_DISPLAY_LABELS: Record<string, string> = {
   escape: 'Esc',
-  delete_or_backspace: '⌫',
+  delete_or_backspace: 'delete ⌫',
   delete_forward: '⌦',
   tab: '⇥',
   caps_lock: '⇪',
-  return_or_enter: '↩',
+  return_or_enter: '↵',
   left_shift: '⇧',
   right_shift: '⇧',
   left_control: '⌃',
@@ -296,7 +288,7 @@ export function getLayoutForType(layoutType: KeyboardLayoutType) {
 
 // Display mappings for simple-keyboard buttons
 export const KEYBOARD_DISPLAY: Record<string, string> = {
-  '{escape}': 'Esc',
+  '{escape}': 'Esc ⎋',
   '{f1}': 'F1',
   '{f2}': 'F2',
   '{f3}': 'F3',
@@ -309,14 +301,14 @@ export const KEYBOARD_DISPLAY: Record<string, string> = {
   '{f10}': 'F10',
   '{f11}': 'F11',
   '{f12}': 'F12',
-  '{backspace}': '⌫',
+  '{backspace}': 'backspace ⌫',
   '{bksp}': '⌫',
   '{tab}': '⇥',
-  '{capslock}': '⇪',
+  '{capslock}': 'caps lock ⇪',
   '{lock}': '⇪',
-  '{enter}': '↩',
-  '{shiftleft}': '⇧',
-  '{shiftright}': '⇧',
+  '{enter}': 'Enter ↵',
+  '{shiftleft}': 'shift ⇧',
+  '{shiftright}': 'shift ⇧',
   '{shift}': '⇧',
   '{controlleft}': '⌃',
   '{controlright}': '⌃',
@@ -346,13 +338,3 @@ export function getKeyboardDisplay(
   }
   return KEYBOARD_DISPLAY;
 }
-
-// Button widths for proper key sizing
-export const BUTTON_WIDTHS: Record<
-  KeyboardLayoutType,
-  Record<string, string>
-> = {
-  ansi: ANSI_BUTTON_WIDTHS,
-  iso: ISO_BUTTON_WIDTHS,
-  jis: JIS_BUTTON_WIDTHS,
-};

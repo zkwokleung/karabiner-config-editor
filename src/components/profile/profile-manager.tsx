@@ -22,7 +22,7 @@ import type { DeviceTargetOption } from '@/types/profile';
 import { SimpleModificationsEditor } from '@/components/profile/simple-modifications-editor';
 import { ProfileFnKeysEditor } from '@/components/profile/profile-fn-keys-editor';
 import { buildDeviceLabelLookup } from '@/components/profile/utils';
-import { ConfigurationsEditor } from '@/components/profile/configurations-editor';
+import { ConfigurationsEditor } from '@/components/configurations/configurations-editor';
 
 interface ProfileManagerProps {
   config: KarabinerConfig;
@@ -139,7 +139,7 @@ export function ProfileManager({ config, setConfig }: ProfileManagerProps) {
     updateProfile((profile) => ({
       ...profile,
       complex_modifications: {
-        ...(profile.complex_modifications ?? { parameters: {}, rules: [] }),
+        ...(profile.complex_modifications ?? { rules: [] }),
         rules,
       },
     }));
