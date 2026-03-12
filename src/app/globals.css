@@ -186,96 +186,123 @@
 
 /* Shared visual styling for react-simple-keyboard across keyboard components. */
 .keyboard-theme.hg-theme-default {
-  background: var(--color-muted) !important;
-  border: 1px solid var(--color-border) !important;
-  padding: 10px !important;
-  border-radius: 10px !important;
-  font-family: inherit !important;
+  --kb-key-bg: var(--color-background);
+  --kb-key-border-color: var(--color-border);
+  --kb-key-border-width: 1px;
+  --kb-key-color: var(--color-foreground);
+  --kb-key-font-weight: 500;
+  --kb-key-shadow: 0 1px 2px
+    color-mix(in srgb, var(--color-foreground) 8%, transparent);
+  --kb-key-hover-bg: var(--color-accent);
+  --kb-key-hover-border-color: var(--color-primary);
+
+  background: var(--color-muted);
+  border: 1px solid var(--color-border);
+  padding: 10px;
+  border-radius: 10px;
+  font-family: inherit;
 }
 
-.keyboard-theme .hg-row {
-  gap: 4px !important;
-  margin-bottom: 4px !important;
+.keyboard-theme.hg-theme-default .hg-row {
+  gap: 4px;
+  margin-bottom: 4px;
 }
 
-.keyboard-theme .hg-row:last-child {
-  margin-bottom: 0 !important;
+.keyboard-theme.hg-theme-default .hg-row:last-child {
+  margin-bottom: 0;
 }
 
-.keyboard-theme .hg-button {
-  height: 38px !important;
-  min-width: 38px !important;
-  border-radius: 6px !important;
-  background: var(--color-background) !important;
-  border: 1px solid var(--color-border) !important;
-  color: var(--color-foreground) !important;
-  font-size: 12px !important;
-  font-weight: 500 !important;
-  box-shadow: 0 1px 2px
-    color-mix(in srgb, var(--color-foreground) 8%, transparent) !important;
-  transition: all 0.1s ease !important;
+.keyboard-theme.hg-theme-default .hg-row .hg-button:not(:last-child),
+.keyboard-theme.hg-theme-default .hg-row .hg-button-container {
+  margin-right: 0;
 }
 
-.keyboard-theme .hg-button:hover {
-  background: var(--color-accent) !important;
-  border-color: var(--color-primary) !important;
+.keyboard-theme.hg-theme-default button.hg-button {
+  height: 38px;
+  min-width: 38px;
+  border-radius: 6px;
+  background: var(--kb-key-bg);
+  border: var(--kb-key-border-width) solid var(--kb-key-border-color);
+  color: var(--kb-key-color);
+  font-size: 12px;
+  font-weight: var(--kb-key-font-weight);
+  box-shadow: var(--kb-key-shadow);
+  transition: all 0.1s ease;
 }
 
-.keyboard-theme .hg-button:active {
-  transform: translateY(1px) !important;
-  box-shadow: none !important;
+.keyboard-theme.hg-theme-default button.hg-button:hover {
+  background: var(--kb-key-hover-bg);
+  border-color: var(--kb-key-hover-border-color);
 }
 
-.hg-button.kb-mapped {
-  background: color-mix(
+.keyboard-theme.hg-theme-default button.hg-button:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+.keyboard-theme.hg-theme-default button.hg-button.kb-mapped {
+  --kb-key-bg: color-mix(
     in srgb,
     var(--color-primary) 15%,
     var(--color-background)
-  ) !important;
-  border-color: var(--color-primary) !important;
-  border-width: 2px !important;
-  color: var(--color-primary) !important;
-  font-weight: 600 !important;
-}
-
-.hg-button.kb-mapped:hover {
-  background: color-mix(
+  );
+  --kb-key-border-color: var(--color-primary);
+  --kb-key-border-width: 2px;
+  --kb-key-color: var(--color-primary);
+  --kb-key-font-weight: 600;
+  --kb-key-hover-bg: color-mix(
     in srgb,
     var(--color-primary) 25%,
     var(--color-background)
-  ) !important;
+  );
 }
 
-.hg-button.kb-selected {
-  background: color-mix(
+.keyboard-theme.hg-theme-default button.hg-button.kb-selected {
+  --kb-key-bg: color-mix(
     in srgb,
     var(--color-primary) 30%,
     var(--color-background)
-  ) !important;
-  border-color: var(--color-primary) !important;
-  border-width: 3px !important;
-  color: var(--color-primary) !important;
-  font-weight: 700 !important;
-  box-shadow: 0 0 0 2px
-    color-mix(in srgb, var(--color-primary) 30%, transparent) !important;
+  );
+  --kb-key-border-color: var(--color-primary);
+  --kb-key-border-width: 3px;
+  --kb-key-color: var(--color-primary);
+  --kb-key-font-weight: 700;
+  --kb-key-shadow: 0 0 0 2px
+    color-mix(in srgb, var(--color-primary) 30%, transparent);
 }
 
-.hg-button.kb-selected-to {
-  background: color-mix(
+.keyboard-theme.hg-theme-default button.hg-button.kb-selected-to {
+  --kb-key-bg: color-mix(
     in srgb,
     var(--color-primary) 25%,
     var(--color-background)
-  ) !important;
-  border-color: var(--color-primary) !important;
-  border-width: 2px !important;
-  color: var(--color-primary) !important;
-  font-weight: 600 !important;
-}
-
-.hg-button.kb-selected-to:hover {
-  background: color-mix(
+  );
+  --kb-key-border-color: var(--color-primary);
+  --kb-key-border-width: 2px;
+  --kb-key-color: var(--color-primary);
+  --kb-key-font-weight: 600;
+  --kb-key-hover-bg: color-mix(
     in srgb,
     var(--color-primary) 35%,
     var(--color-background)
-  ) !important;
+  );
+}
+
+.keyboard-theme.hg-theme-default button.hg-button.kb-conflict {
+  --kb-key-bg: color-mix(
+    in srgb,
+    var(--color-destructive) 18%,
+    var(--color-background)
+  );
+  --kb-key-border-color: var(--color-destructive);
+  --kb-key-color: var(--color-destructive);
+  --kb-key-hover-bg: color-mix(
+    in srgb,
+    var(--color-destructive) 26%,
+    var(--color-background)
+  );
+}
+
+.keyboard-theme.hg-theme-default .hg-button.hg-functionBtn.hg-button-space {
+  width: 350px;
 }
