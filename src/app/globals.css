@@ -303,6 +303,6 @@
   );
 }
 
-.keyboard-theme.hg-theme-default .hg-button.hg-functionBtn.hg-button-space {
-  width: 350px;
+.hg-button.hg-functionBtn.hg-button-space {
+  width: 200px;
 }
