@@ -28,7 +28,7 @@ import type {
   Condition,
   Modifiers,
 } from '@/types/karabiner';
-import { getKeyLabel, getLayoutAwareKeyLabel } from '@/lib/keyboard-layout';
+import { getCharacterWithKeyCodeLabel } from '@/lib/keyboard-layout';
 import { ConditionEditor } from '@/components/mapping/conditions/condition-editor';
 import { ToEventEditor } from '@/components/mapping/to-events/to-event-editor';
 import { ModifierSelector as FormModifierSelector } from '@/components/mapping/selectors/modifier-selector';
@@ -52,7 +52,7 @@ export function ManipulatorBuilderPanel({
   onDelete,
 }: ManipulatorBuilderPanelProps) {
   const { toast } = useToast();
-  const { layoutType } = useKeyboardLayout();
+  const { keyboardTypeV2 } = useKeyboardLayout();
   const isEditing = existingManipulators.length > 0;
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -245,6 +245,9 @@ export function ManipulatorBuilderPanel({
   const getOptionalModifiers = () =>
     currentManipulator.from.modifiers?.optional || [];
 
+  const formatKeyCode = (keyCode: string) =>
+    getCharacterWithKeyCodeLabel(keyCode, keyboardTypeV2);
+
   return (
     <div className='p-4 space-y-4 relative'>
       {/* Header */}
@@ -254,7 +257,7 @@ export function ManipulatorBuilderPanel({
             {isEditing ? 'Edit' : 'Create'} Manipulator
           </h3>
           <Badge variant='outline' className='font-mono'>
-            {getKeyLabel(fromKey)}
+            {formatKeyCode(fromKey)}
           </Badge>
           {getMandatoryModifiers().length > 0 && (
             <span className='text-sm text-muted-foreground'>
@@ -330,14 +333,12 @@ export function ManipulatorBuilderPanel({
             <Label className='text-sm font-semibold'>From Key</Label>
             <div className='flex items-center gap-2 p-3 bg-muted rounded-lg'>
               <Badge variant='secondary' className='font-mono text-base'>
-                {getKeyLabel(fromKey)}
+                {formatKeyCode(fromKey)}
               </Badge>
               <ArrowRight className='h-4 w-4 text-muted-foreground' />
               <span className='text-sm text-muted-foreground'>
                 {currentToKeys.length > 0
-                  ? currentToKeys
-                      .map((k) => getLayoutAwareKeyLabel(k, layoutType).display)
-                      .join(', ')
+                  ? currentToKeys.map((k) => formatKeyCode(k)).join(', ')
                   : 'No target keys selected'}
               </span>
             </div>

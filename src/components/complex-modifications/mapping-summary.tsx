@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Manipulator } from '@/types/karabiner';
+import { getCharacterWithKeyCodeLabel } from '@/lib/keyboard-layout';
+import { useKeyboardLayout } from '@/components/keyboard/keyboard-layout-context';
 
 interface MappingSummaryProps {
   manipulator: Manipulator;
@@ -20,6 +22,8 @@ export function SortableMappingSummary({
   onEdit,
   onDelete,
 }: MappingSummaryProps) {
+  const { keyboardTypeV2 } = useKeyboardLayout();
+
   const {
     attributes,
     listeners,
@@ -47,6 +51,9 @@ export function SortableMappingSummary({
     manipulator.to_if_held_down ||
     manipulator.to_after_key_up ||
     (manipulator.conditions && manipulator.conditions.length > 0);
+
+  const formatKeyCode = (keyCode: string) =>
+    getCharacterWithKeyCodeLabel(keyCode, keyboardTypeV2);
 
   return (
     <div
@@ -78,7 +85,7 @@ export function SortableMappingSummary({
             {mandatory.length > 0 && (
               <span className='mr-1'>{getModifierSymbols(mandatory)}</span>
             )}
-            {fromKey.toUpperCase()}
+            {formatKeyCode(fromKey)}
           </Badge>
           <span className='text-muted-foreground'>→</span>
           {toEvents.length === 0 ? (
@@ -92,7 +99,7 @@ export function SortableMappingSummary({
                   {mods.length > 0 && (
                     <span className='mr-1'>{getModifierSymbols(mods)}</span>
                   )}
-                  {to.shell_command ? 'Shell' : key.toUpperCase()}
+                  {to.shell_command ? 'Shell' : formatKeyCode(key)}
                 </Badge>
               );
             })

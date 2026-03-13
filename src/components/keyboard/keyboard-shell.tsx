@@ -46,6 +46,7 @@ export interface KeyboardHighlightLayer {
 
 export interface KeyboardShellProps {
   layoutType: KeyboardLayoutType;
+  displayLayoutType?: KeyboardLayoutType;
   onLayoutChange: (layout: KeyboardLayoutType) => void;
   className?: string;
   legend?: ReactNode;
@@ -71,6 +72,7 @@ const DEFAULT_LAYOUT_HINT =
 
 export function KeyboardShell({
   layoutType,
+  displayLayoutType,
   onLayoutChange,
   className,
   legend,
@@ -93,10 +95,12 @@ export function KeyboardShell({
   const internalKeyboardRef = useRef<KeyboardShellInstance | null>(null);
   const keyboardName = useId();
 
+  const resolvedDisplayLayoutType = displayLayoutType ?? layoutType;
+
   const layout = useMemo(() => getLayoutForType(layoutType), [layoutType]);
   const baseDisplay = useMemo(
-    () => getKeyboardDisplay(layoutType),
-    [layoutType],
+    () => getKeyboardDisplay(resolvedDisplayLayoutType),
+    [resolvedDisplayLayoutType],
   );
   const resolvedDisplay = useMemo(() => {
     return display ? { ...baseDisplay, ...display } : baseDisplay;

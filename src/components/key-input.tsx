@@ -1,12 +1,15 @@
 'use client';
 
 import { KeyCodeSelector } from '@/components/mapping/selectors/key-code-selector';
+import type { KeyboardLayoutType } from '@/lib/keyboard-layout';
 
 interface KeyInputProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   excludeNotFrom?: boolean;
+  layoutAware?: boolean;
+  layoutType?: KeyboardLayoutType;
 }
 
 /**
@@ -18,6 +21,8 @@ export function KeyInput({
   onChange,
   placeholder = 'Select or type key...',
   excludeNotFrom = false,
+  layoutAware = false,
+  layoutType,
 }: KeyInputProps) {
   return (
     <KeyCodeSelector
@@ -25,6 +30,8 @@ export function KeyInput({
       onChange={onChange}
       placeholder={placeholder}
       excludeNotFrom={excludeNotFrom}
+      layoutAware={layoutAware}
+      layoutType={layoutType}
     />
   );
 }

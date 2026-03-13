@@ -30,7 +30,12 @@ import {
   type SimpleModificationDuplicate,
 } from '@/lib/validation';
 import { VisualKeyboard } from '@/components/keyboard/visual-keyboard';
-import { getKeyLabel } from '@/lib/keyboard-layout';
+import {
+  formatDisplayWithKeyCode,
+  getCharacterWithKeyCodeLabel,
+  type KeyboardLayoutType,
+} from '@/lib/keyboard-layout';
+import { useKeyboardLayout } from '@/components/keyboard/keyboard-layout-context';
 
 interface SimpleModificationsEditorProps {
   profile: Profile;
@@ -58,6 +63,10 @@ export function SimpleModificationsEditor({
   const [editFromKey, setEditFromKey] = useState<string>('');
   const [editToKey, setEditToKey] = useState<string>('');
   const { toast } = useToast();
+  const { keyboardTypeV2 } = useKeyboardLayout();
+
+  const formatKeyCode = (keyCode: string) =>
+    getCharacterWithKeyCodeLabel(keyCode, keyboardTypeV2);
 
   const duplicates = useMemo<SimpleModificationDuplicate[]>(() => {
     return findDuplicateSimpleModifications(profile);
@@ -213,7 +222,7 @@ export function SimpleModificationsEditor({
 
     toast({
       title: 'Mapping created',
-      description: `${getKeyLabel(from)} → ${getKeyLabel(to)}`,
+      description: `${formatKeyCode(from)} → ${formatKeyCode(to)}`,
     });
   };
 
@@ -258,7 +267,7 @@ export function SimpleModificationsEditor({
 
     toast({
       title: 'Mapping updated',
-      description: `${getKeyLabel(fromKey)} → ${getKeyLabel(newToKey)}`,
+      description: `${formatKeyCode(fromKey)} → ${formatKeyCode(newToKey)}`,
     });
   };
 
@@ -291,7 +300,7 @@ export function SimpleModificationsEditor({
 
     toast({
       title: 'Mapping removed',
-      description: `Removed mapping for ${getKeyLabel(fromKey)}`,
+      description: `Removed mapping for ${formatKeyCode(fromKey)}`,
     });
   };
 
@@ -468,11 +477,11 @@ export function SimpleModificationsEditor({
                         <div className='flex items-center justify-between gap-4'>
                           <div className='flex items-center gap-3'>
                             <code className='px-3 py-1 rounded bg-muted text-sm font-mono'>
-                              {formatKeyLabel(mod.from)}
+                              {formatKeyLabel(mod.from, keyboardTypeV2)}
                             </code>
                             <span className='text-muted-foreground'>→</span>
                             <code className='px-3 py-1 rounded bg-muted text-sm font-mono'>
-                              {formatKeyLabel(toValue)}
+                              {formatKeyLabel(toValue, keyboardTypeV2)}
                             </code>
                           </div>
                           <Button
@@ -517,6 +526,8 @@ export function SimpleModificationsEditor({
                 value={editFromKey}
                 onChange={setEditFromKey}
                 placeholder='Select or type key to remap'
+                layoutAware
+                layoutType={keyboardTypeV2}
               />
             </div>
 
@@ -526,6 +537,8 @@ export function SimpleModificationsEditor({
                 value={editToKey}
                 onChange={setEditToKey}
                 placeholder='Select or type target key'
+                layoutAware
+                layoutType={keyboardTypeV2}
               />
             </div>
 
@@ -543,21 +556,26 @@ export function SimpleModificationsEditor({
   );
 }
 
-function formatKeyLabel(key?: KeyCode | null): string {
+function formatKeyLabel(
+  key: KeyCode | null | undefined,
+  layoutType: KeyboardLayoutType,
+): string {
   if (!key) {
     return '-';
   }
 
   if (key.key_code) {
-    return key.key_code.replace(/_/g, ' ');
+    return getCharacterWithKeyCodeLabel(key.key_code, layoutType);
   }
 
   if (key.consumer_key_code) {
-    return key.consumer_key_code.replace(/_/g, ' ');
+    const label = key.consumer_key_code.replace(/_/g, ' ');
+    return formatDisplayWithKeyCode(label, key.consumer_key_code);
   }
 
   if (key.pointing_button) {
-    return key.pointing_button.replace(/_/g, ' ');
+    const label = key.pointing_button.replace(/_/g, ' ');
+    return formatDisplayWithKeyCode(label, key.pointing_button);
   }
 
   return '-';

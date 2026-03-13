@@ -21,6 +21,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { ProfileManager } from '@/components/profile/profile-manager';
 import { KeyboardLayoutProvider } from '@/components/keyboard/keyboard-layout-context';
 import type { KarabinerConfig } from '@/types/karabiner';
+import type { KeyboardLayoutType } from '@/lib/keyboard-layout';
 import { validateConfig, type ValidationError } from '@/lib/validation';
 import { createMinimalKarabinerConfig } from '@/lib/default-config';
 import { ExportPanel } from '@/components/export/export-panel';
@@ -89,6 +90,26 @@ function normalizeConfigShape(value: unknown): KarabinerConfig {
   } as KarabinerConfig;
 }
 
+function getSelectedProfileKeyboardType(
+  config: KarabinerConfig | null,
+): KeyboardLayoutType {
+  if (
+    !config ||
+    !Array.isArray(config.profiles) ||
+    config.profiles.length === 0
+  ) {
+    return 'ansi';
+  }
+
+  const selectedProfile = config.profiles.find((profile) => profile.selected);
+  const fallbackProfile = config.profiles[0];
+  const keyboardType =
+    selectedProfile?.virtual_hid_keyboard?.keyboard_type_v2 ??
+    fallbackProfile?.virtual_hid_keyboard?.keyboard_type_v2;
+
+  return keyboardType ?? 'ansi';
+}
+
 export default function KarabinerEditor() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [config, setConfig] = useState<KarabinerConfig | null>(null);
@@ -98,6 +119,7 @@ export default function KarabinerEditor() {
     [],
   );
   const { toast } = useToast();
+  const selectedProfileKeyboardType = getSelectedProfileKeyboardType(config);
 
   const updateConfig = (newConfig: KarabinerConfig) => {
     setConfig(newConfig);
@@ -361,7 +383,7 @@ export default function KarabinerEditor() {
             </Card>
           </TabsContent>
 
-          <KeyboardLayoutProvider>
+          <KeyboardLayoutProvider keyboardTypeV2={selectedProfileKeyboardType}>
             <TabsContent value='edit'>
               {config && (
                 <ProfileManager config={config} setConfig={updateConfig} />
