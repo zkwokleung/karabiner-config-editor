@@ -162,12 +162,6 @@ export function ExportKeyboardPreview({
         <div className='w-2.5 h-2.5 rounded-sm bg-primary/20 border border-primary' />
         <span>Has mappings</span>
       </div>
-      {selectedKey && (
-        <div className='flex items-center gap-1'>
-          <div className='w-2.5 h-2.5 rounded-sm bg-primary/40 border border-primary' />
-          <span>Selected key</span>
-        </div>
-      )}
     </div>
   );
 
