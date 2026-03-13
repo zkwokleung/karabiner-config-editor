@@ -274,6 +274,33 @@ export function getLayoutAwareKeyLabel(
   };
 }
 
+function normalizeForComparison(value: string): string {
+  return value.trim().replace(/_/g, ' ').toLowerCase();
+}
+
+export function formatDisplayWithKeyCode(
+  displayValue: string,
+  keyCode: string,
+): string {
+  if (
+    normalizeForComparison(displayValue) === normalizeForComparison(keyCode)
+  ) {
+    return displayValue;
+  }
+
+  return `${displayValue} (${keyCode})`;
+}
+
+export function getCharacterWithKeyCodeLabel(
+  keyCode: string,
+  layoutType: KeyboardLayoutType,
+): string {
+  const output = getLayoutOutputForKeyCode(keyCode, layoutType);
+  const character = output && output !== ' ' ? output : getKeyLabel(keyCode);
+
+  return formatDisplayWithKeyCode(character, keyCode);
+}
+
 export function getLayoutForType(layoutType: KeyboardLayoutType) {
   switch (layoutType) {
     case 'iso':

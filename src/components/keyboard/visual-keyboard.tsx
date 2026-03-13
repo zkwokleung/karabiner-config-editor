@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Pencil, Trash2, ArrowRight } from 'lucide-react';
 import {
+  getCharacterWithKeyCodeLabel,
   getKeyLabel,
   toKarabinerKeyCode,
   toSimpleKeyboardButton,
@@ -230,13 +231,15 @@ export function VisualKeyboard({
 
     return {
       key: popoverKey,
-      label: getKeyLabel(popoverKey),
+      label: getCharacterWithKeyCodeLabel(popoverKey, keyboardTypeV2),
       mapsTo,
-      mapsToLabel: mapsTo ? getKeyLabel(mapsTo) : null,
+      mapsToLabel: mapsTo
+        ? getCharacterWithKeyCodeLabel(mapsTo, keyboardTypeV2)
+        : null,
       receivesFrom,
       hasConflict,
     };
-  }, [popoverKey, mappingMap, reverseMap, conflictingKeys]);
+  }, [popoverKey, mappingMap, reverseMap, conflictingKeys, keyboardTypeV2]);
 
   const legend = (
     <div className='flex items-center gap-3 text-xs text-muted-foreground'>
@@ -308,7 +311,7 @@ export function VisualKeyboard({
                     key={fromKey}
                     className='px-1.5 py-0.5 rounded bg-background font-mono text-xs'
                   >
-                    {getKeyLabel(fromKey)}
+                    {getCharacterWithKeyCodeLabel(fromKey, keyboardTypeV2)}
                   </code>
                 ))}
               </div>

@@ -18,6 +18,7 @@ import {
   type KeyCodeItem,
 } from '@/lib/karabiner-keycodes';
 import {
+  getCharacterWithKeyCodeLabel,
   getLayoutAwareKeyLabel,
   type KeyboardLayoutType,
 } from '@/lib/keyboard-layout';
@@ -57,9 +58,7 @@ export function KeyCodeSelector({
         const layoutLabel = getLayoutAwareKeyLabel(item.key_code, layoutType);
         return {
           keyValue,
-          label: layoutLabel.output
-            ? `${item.key_code} -> ${layoutLabel.output}`
-            : item.label,
+          label: getCharacterWithKeyCodeLabel(item.key_code, layoutType),
           output: layoutLabel.output,
         };
       }

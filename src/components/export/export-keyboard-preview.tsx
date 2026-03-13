@@ -27,7 +27,10 @@ import {
   type NormalizedMappingEntry,
   type NormalizedMappingType,
 } from '@/lib/mapping-normalizer';
-import { getKeyLabel, toKarabinerKeyCode } from '@/lib/keyboard-layout';
+import {
+  getCharacterWithKeyCodeLabel,
+  toKarabinerKeyCode,
+} from '@/lib/keyboard-layout';
 import { cn } from '@/lib/utils';
 import type { KarabinerConfig } from '@/types/karabiner';
 
@@ -55,6 +58,11 @@ export function ExportKeyboardPreview({
   const [editingEntry, setEditingEntry] =
     useState<NormalizedMappingEntry | null>(null);
   const [editorValue, setEditorValue] = useState('');
+
+  const formatKeyCode = useCallback(
+    (keyCode: string) => getCharacterWithKeyCodeLabel(keyCode, keyboardTypeV2),
+    [keyboardTypeV2],
+  );
 
   const entries = useMemo(() => normalizeConfigMappings(config), [config]);
   const mappingIndex = useMemo(() => buildMappingIndex(entries), [entries]);
@@ -247,6 +255,7 @@ export function ExportKeyboardPreview({
                   title='From this key'
                   entries={selectedFromEntries}
                   selectedKey={selectedKey}
+                  formatKeyCode={formatKeyCode}
                   mode='from'
                   onItemClick={handleOpenEditor}
                 />
@@ -257,6 +266,7 @@ export function ExportKeyboardPreview({
                   title='Maps to this key'
                   entries={selectedToEntries}
                   selectedKey={selectedKey}
+                  formatKeyCode={formatKeyCode}
                   mode='to'
                   onItemClick={handleOpenEditor}
                 />
@@ -324,12 +334,14 @@ function MappingSection({
   title,
   entries,
   selectedKey,
+  formatKeyCode,
   mode,
   onItemClick,
 }: {
   title: string;
   entries: NormalizedMappingEntry[];
   selectedKey: string;
+  formatKeyCode: (keyCode: string) => string;
   mode: 'from' | 'to';
   onItemClick: (entry: NormalizedMappingEntry) => void;
 }) {
@@ -355,6 +367,7 @@ function MappingSection({
               key={`${mode}-${entry.id}`}
               entry={entry}
               selectedKey={selectedKey}
+              formatKeyCode={formatKeyCode}
               mode={mode}
               onClick={() => onItemClick(entry)}
             />
@@ -368,18 +381,20 @@ function MappingSection({
 function MappingItem({
   entry,
   selectedKey,
+  formatKeyCode,
   mode,
   onClick,
 }: {
   entry: NormalizedMappingEntry;
   selectedKey: string;
+  formatKeyCode: (keyCode: string) => string;
   mode: 'from' | 'to';
   onClick: () => void;
 }) {
   const directionInfo =
     mode === 'from'
       ? formatTargetSummary(entry)
-      : formatToMatchSummary(entry, selectedKey);
+      : formatToMatchSummary(entry, selectedKey, formatKeyCode);
 
   return (
     <button
@@ -416,7 +431,7 @@ function MappingItem({
 
       <div className='text-sm flex items-center gap-2'>
         <code className='rounded bg-muted px-1.5 py-0.5 font-mono'>
-          {getKeyLabel(entry.fromKey)}
+          {formatKeyCode(entry.fromKey)}
         </code>
         <ArrowRight className='h-3.5 w-3.5 text-muted-foreground' />
         <span className='text-muted-foreground'>{directionInfo || '-'}</span>
@@ -449,13 +464,14 @@ function formatComplexPhase(phase: string): string {
 function formatToMatchSummary(
   entry: NormalizedMappingEntry,
   selectedKey: string,
+  formatKeyCode: (keyCode: string) => string,
 ): string {
   const phases = entry.toTargets
     .filter((target) => target.key === selectedKey)
     .map((target) => formatComplexPhase(target.phase));
 
   const phaseText = phases.length > 0 ? ` via ${phases.join(', ')}` : '';
-  return `${getKeyLabel(selectedKey)}${phaseText}`;
+  return `${formatKeyCode(selectedKey)}${phaseText}`;
 }
 
 function FilterPillGroup({

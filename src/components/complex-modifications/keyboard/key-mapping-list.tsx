@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { Manipulator } from '@/types/karabiner';
-import { getKeyLabel } from '@/lib/keyboard-layout';
+import { getCharacterWithKeyCodeLabel } from '@/lib/keyboard-layout';
+import { useKeyboardLayout } from '@/components/keyboard/keyboard-layout-context';
 import {
   DndContext,
   PointerSensor,
@@ -47,12 +48,17 @@ export function KeyMappingList({
   onReorderManipulators,
   onClearSelection,
 }: KeyMappingListProps) {
+  const { keyboardTypeV2 } = useKeyboardLayout();
+
   const selectedManipulators = useMemo(() => {
     return manipulatorIndices.map((i) => ({
       index: i,
       manipulator: manipulators[i],
     }));
   }, [manipulators, manipulatorIndices]);
+
+  const formatKeyCode = (keyCode: string) =>
+    getCharacterWithKeyCodeLabel(keyCode, keyboardTypeV2);
 
   const getModifierDisplay = (manipulator: Manipulator) => {
     const mandatory = manipulator.from.modifiers?.mandatory || [];
@@ -86,7 +92,7 @@ export function KeyMappingList({
     return toEvents.map((to, i) => {
       const key =
         to.key_code || to.consumer_key_code || to.shell_command || 'action';
-      const label = to.shell_command ? 'Shell' : getKeyLabel(key);
+      const label = to.shell_command ? 'Shell' : formatKeyCode(key);
       const modifiers = to.modifiers || [];
 
       return (
@@ -149,7 +155,7 @@ export function KeyMappingList({
         <div className='flex items-center gap-2'>
           <span className='text-sm font-medium'>Manipulators for</span>
           <Badge variant='secondary' className='font-mono text-base'>
-            {getKeyLabel(selectedKey)}
+            {formatKeyCode(selectedKey)}
           </Badge>
           <span className='text-sm text-muted-foreground'>
             ({selectedManipulators.length} manipulator
@@ -188,7 +194,7 @@ export function KeyMappingList({
                     key={index}
                     index={index}
                     manipulator={manipulator}
-                    selectedKey={selectedKey}
+                    selectedKeyLabel={formatKeyCode(selectedKey)}
                     onEditManipulator={onEditManipulator}
                     onDeleteManipulator={onDeleteManipulator}
                     getModifierDisplay={getModifierDisplay}
@@ -208,7 +214,7 @@ export function KeyMappingList({
 interface SortableKeyMappingItemProps {
   index: number;
   manipulator: Manipulator;
-  selectedKey: string;
+  selectedKeyLabel: string;
   onEditManipulator: (index: number) => void;
   onDeleteManipulator: (index: number) => void;
   getModifierDisplay: (manipulator: Manipulator) => ReactNode;
@@ -219,7 +225,7 @@ interface SortableKeyMappingItemProps {
 function SortableKeyMappingItem({
   index,
   manipulator,
-  selectedKey,
+  selectedKeyLabel,
   onEditManipulator,
   onDeleteManipulator,
   getModifierDisplay,
@@ -268,7 +274,7 @@ function SortableKeyMappingItem({
       <div className='flex-1 min-w-0'>
         <div className='flex items-center gap-2 flex-wrap'>
           <Badge variant='secondary' className='font-mono'>
-            {getKeyLabel(selectedKey)}
+            {selectedKeyLabel}
           </Badge>
           {getModifierDisplay(manipulator)}
           <ArrowRight className='h-3 w-3 text-muted-foreground shrink-0' />
