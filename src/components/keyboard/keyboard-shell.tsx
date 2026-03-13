@@ -146,7 +146,7 @@ export function KeyboardShell({
               onLayoutChange(value as KeyboardLayoutType)
             }
           >
-            <SelectTrigger className='w-auto h-8 bg-transparent text-xs'>
+            <SelectTrigger className='w-auto h-8 cursor-pointer bg-transparent text-xs'>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

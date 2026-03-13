@@ -288,7 +288,7 @@ export function formatDisplayWithKeyCode(
     return displayValue;
   }
 
-  return `${displayValue} (${keyCode})`;
+  return `${displayValue} · ${keyCode}`;
 }
 
 export function getCharacterWithKeyCodeLabel(

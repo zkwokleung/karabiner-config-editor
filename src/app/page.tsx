@@ -3,15 +3,7 @@
 import type React from 'react';
 
 import { useState } from 'react';
-import {
-  Moon,
-  Sun,
-  Github,
-  Upload,
-  FileJson,
-  CheckCircle2,
-  FilePlus,
-} from 'lucide-react';
+import { Moon, Sun, Github, Upload, FileJson, FilePlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -317,18 +309,6 @@ export default function KarabinerEditor() {
           </TabsList>
 
           <TabsContent value='import' className='space-y-6'>
-            {config && (
-              <Card className='p-4 bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800'>
-                <div className='flex items-center gap-2 text-green-700 dark:text-green-300'>
-                  <CheckCircle2 className='h-5 w-5' />
-                  <span className='font-medium'>
-                    Config loaded successfully! Switch to the Edit tab to modify
-                    it.
-                  </span>
-                </div>
-              </Card>
-            )}
-
             <Card className='p-6'>
               <div className='flex items-start justify-between gap-4'>
                 <div className='space-y-2'>
