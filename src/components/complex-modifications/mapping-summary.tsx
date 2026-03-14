@@ -8,6 +8,7 @@ import { CSS } from '@dnd-kit/utilities';
 import type { Manipulator } from '@/types/karabiner';
 import { getCharacterWithKeyCodeLabel } from '@/lib/keyboard-layout';
 import { useKeyboardLayout } from '@/components/keyboard/keyboard-layout-context';
+import { getEventKeyValue } from '@/lib/karabiner-keycodes';
 
 interface MappingSummaryProps {
   manipulator: Manipulator;
@@ -41,8 +42,7 @@ export function SortableMappingSummary({
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const fromKey =
-    manipulator.from.key_code || manipulator.from.consumer_key_code || '';
+  const fromKey = getEventKeyValue(manipulator.from);
   const mandatory = manipulator.from.modifiers?.mandatory || [];
   const toEvents = manipulator.to || [];
 
@@ -92,7 +92,7 @@ export function SortableMappingSummary({
             <span className='text-sm text-muted-foreground'>No action</span>
           ) : (
             toEvents.slice(0, 3).map((to, i) => {
-              const key = to.key_code || to.consumer_key_code || '';
+              const key = getEventKeyValue(to);
               const mods = to.modifiers || [];
               return (
                 <Badge key={i} variant='outline' className='font-mono text-xs'>

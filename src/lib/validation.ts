@@ -4,6 +4,7 @@ import type {
   Rule,
   Manipulator,
 } from '@/types/karabiner';
+import { getEventKeyValue } from '@/lib/karabiner-keycodes';
 
 export interface ValidationError {
   path: string;
@@ -63,11 +64,7 @@ function validateProfile(profile: Profile, index: number): ValidationError[] {
   // Validate simple modifications
   if (profile.simple_modifications) {
     profile.simple_modifications.forEach((mod, modIndex) => {
-      if (
-        !mod.from?.key_code &&
-        !mod.from?.consumer_key_code &&
-        !mod.from?.pointing_button
-      ) {
+      if (!getEventKeyValue(mod.from)) {
         errors.push({
           path: `${path}.simple_modifications[${modIndex}].from`,
           message: 'From key must be specified',
@@ -80,11 +77,7 @@ function validateProfile(profile: Profile, index: number): ValidationError[] {
   // Validate device-specific simple modifications
   profile.devices?.forEach((device, deviceIndex) => {
     device.simple_modifications?.forEach((mod, modIndex) => {
-      if (
-        !mod.from?.key_code &&
-        !mod.from?.consumer_key_code &&
-        !mod.from?.pointing_button
-      ) {
+      if (!getEventKeyValue(mod.from)) {
         errors.push({
           path: `${path}.devices[${deviceIndex}].simple_modifications[${modIndex}].from`,
           message: 'From key must be specified',
@@ -162,15 +155,11 @@ function validateManipulator(
       severity: 'error',
     });
   } else {
-    if (
-      !manipulator.from.key_code &&
-      !manipulator.from.consumer_key_code &&
-      !manipulator.from.pointing_button
-    ) {
+    if (!getEventKeyValue(manipulator.from)) {
       errors.push({
         path: `${path}.from`,
         message:
-          'From event must specify key_code, consumer_key_code, or pointing_button',
+          'From event must specify a valid key field (e.g. key_code, consumer_key_code, pointing_button, apple_vendor_top_case_key_code, apple_vendor_keyboard_key_code, generic_desktop)',
         severity: 'error',
       });
     }
@@ -224,10 +213,7 @@ export function findDuplicateSimpleModifications(
   const seenProfileKeys = new Set<string>();
 
   profile.simple_modifications?.forEach((mod) => {
-    const key =
-      mod.from.key_code ||
-      mod.from.consumer_key_code ||
-      mod.from.pointing_button;
+    const key = getEventKeyValue(mod.from);
     if (!key) {
       return;
     }
@@ -240,10 +226,7 @@ export function findDuplicateSimpleModifications(
   profile.devices?.forEach((device, deviceIndex) => {
     const seenDeviceKeys = new Set<string>();
     device.simple_modifications?.forEach((mod) => {
-      const key =
-        mod.from.key_code ||
-        mod.from.consumer_key_code ||
-        mod.from.pointing_button;
+      const key = getEventKeyValue(mod.from);
       if (!key) {
         return;
       }
@@ -271,10 +254,7 @@ export function findConflictingManipulators(rules: Rule[]): string[] {
   rules.forEach((rule, ruleIndex) => {
     rule.manipulators.forEach((manipulator, manipulatorIndex) => {
       // Create a unique key for this manipulator based on from event
-      const fromKey =
-        manipulator.from.key_code ||
-        manipulator.from.consumer_key_code ||
-        manipulator.from.pointing_button;
+      const fromKey = getEventKeyValue(manipulator.from);
       const mandatory =
         manipulator.from.modifiers?.mandatory?.sort().join('+') || '';
       const optional =

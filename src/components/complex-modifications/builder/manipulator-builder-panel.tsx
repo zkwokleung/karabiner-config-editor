@@ -36,6 +36,13 @@ import { KeyboardSelectDialog } from './keyboard-select-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useKeyboardLayout } from '@/components/keyboard/keyboard-layout-context';
 import { cn } from '@/lib/utils';
+import {
+  clearEventKeyFields,
+  getEventKeyField,
+  getEventKeyValue,
+  resolveFieldForKeyValue,
+  setEventKeyValue,
+} from '@/lib/karabiner-keycodes';
 
 interface ManipulatorBuilderPanelProps {
   fromKey: string;
@@ -82,11 +89,18 @@ export function ManipulatorBuilderPanel({
     if (existingManipulators.length > 0) {
       return existingManipulators;
     }
+    const initialFrom = fromKey
+      ? (() => {
+          const field = resolveFieldForKeyValue(fromKey);
+          return field ? setEventKeyValue({}, fromKey, field) : {};
+        })()
+      : {};
+
     return [
       {
         type: 'basic',
         from: {
-          ...(fromKey ? { key_code: fromKey } : {}),
+          ...initialFrom,
         },
         to: [],
       },
@@ -107,11 +121,12 @@ export function ManipulatorBuilderPanel({
   useEffect(() => {
     setManipulators((prev) =>
       prev.map((m) => {
+        const field = fromKey ? resolveFieldForKeyValue(fromKey) : null;
         return {
           ...m,
           from: {
             ...omitFromKeyCode(m.from),
-            ...(fromKey ? { key_code: fromKey } : {}),
+            ...(field ? setEventKeyValue({}, fromKey, field) : {}),
           },
         };
       }),
@@ -162,7 +177,7 @@ export function ManipulatorBuilderPanel({
     (field: ToEventField, index: number) => {
       const events = currentManipulator[field] || [];
       const event = events[index];
-      const currentKey = event?.key_code || event?.consumer_key_code || null;
+      const currentKey = getEventKeyValue(event) || null;
       setPendingToKey(currentKey);
       setSelectingToEvent({ field, index });
     },
@@ -180,9 +195,19 @@ export function ManipulatorBuilderPanel({
     const currentEvents = currentManipulator[field] || [];
     const nextEvents = currentEvents.map((event, index) => {
       if (index !== selectedIndex) return event;
-      const { consumer_key_code, ...rest } = event;
-      void consumer_key_code;
-      return { ...rest, key_code: pendingToKey };
+      const eventField = getEventKeyField(event);
+      const resolved = eventField || resolveFieldForKeyValue(pendingToKey);
+      if (!resolved) {
+        toast({
+          title: 'Unable to resolve key field',
+          description:
+            'The selected key is ambiguous or unknown. Please choose a specific field.',
+          variant: 'destructive',
+        });
+        return event; // leave unchanged
+      }
+
+      return setEventKeyValue(event, pendingToKey, resolved);
     });
 
     updateCurrentManipulator({ [field]: nextEvents });
@@ -224,7 +249,9 @@ export function ManipulatorBuilderPanel({
 
   const addToEvent = () => {
     const currentTo = currentManipulator.to || [];
-    updateCurrentManipulator({ to: [...currentTo, { key_code: 'a' }] });
+    updateCurrentManipulator({
+      to: [...currentTo, setEventKeyValue({}, 'a', 'key_code')],
+    });
   };
 
   const updateConditions = (conditions: Condition[]) => {
@@ -236,10 +263,11 @@ export function ManipulatorBuilderPanel({
   };
 
   const addManipulator = () => {
+    const field = fromKey ? resolveFieldForKeyValue(fromKey) : null;
     const newManipulator: Manipulator = {
       type: 'basic',
       from: {
-        ...(fromKey ? { key_code: fromKey } : {}),
+        ...(field ? setEventKeyValue({}, fromKey, field) : {}),
         modifiers: currentManipulator.from.modifiers
           ? { ...currentManipulator.from.modifiers }
           : undefined,
@@ -426,8 +454,8 @@ export function ManipulatorBuilderPanel({
               <div className='w-48'>
                 <KeyCodeSelector
                   value={fromKey}
-                  onChange={(keyCode) => {
-                    onSelectFromKey(keyCode);
+                  onChange={({ value }) => {
+                    onSelectFromKey(value);
                     setFromKeyError(false);
                     setValidationError(null);
                   }}
@@ -684,9 +712,7 @@ export function ManipulatorBuilderPanel({
 }
 
 function omitFromKeyCode(from: Manipulator['from']): Manipulator['from'] {
-  const { key_code, ...restFrom } = from;
-  void key_code;
-  return restFrom;
+  return clearEventKeyFields(from);
 }
 
 function getModifierSymbol(modifier: string): string {

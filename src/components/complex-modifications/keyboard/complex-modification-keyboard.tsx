@@ -5,6 +5,7 @@ import { toKarabinerKeyCode } from '@/lib/keyboard-layout';
 import type { Manipulator } from '@/types/karabiner';
 import { KeyboardShell } from '@/components/keyboard/keyboard-shell';
 import { useKeyboardLayout } from '@/components/keyboard/keyboard-layout-context';
+import { getEventKeyValue } from '@/lib/karabiner-keycodes';
 
 export interface ComplexModificationKeyboardProps {
   manipulators: Manipulator[];
@@ -68,7 +69,7 @@ export function ComplexModificationKeyboard({
     }
     const keySet = new Set<string>();
     manipulators.forEach((m) => {
-      const fromKey = m.from.key_code || m.from.consumer_key_code || '';
+      const fromKey = getEventKeyValue(m.from);
       if (fromKey) {
         keySet.add(fromKey);
       }

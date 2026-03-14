@@ -16,6 +16,7 @@ import {
   type KeyboardShellInstance,
 } from '@/components/keyboard/keyboard-shell';
 import { useKeyboardLayout } from '@/components/keyboard/keyboard-layout-context';
+import { getEventKeyValue } from '@/lib/karabiner-keycodes';
 
 const EMPTY_CONFLICT_SET: ReadonlySet<string> = new Set();
 
@@ -52,9 +53,9 @@ export function VisualKeyboard({
   const mappingMap = useMemo(() => {
     const map = new Map<string, string>();
     mappings.forEach((mod) => {
-      const fromKeyCode = mod.from.key_code || mod.from.consumer_key_code || '';
+      const fromKeyCode = getEventKeyValue(mod.from);
       const toRaw = Array.isArray(mod.to) ? mod.to[0] : mod.to;
-      const toKeyCode = toRaw?.key_code || toRaw?.consumer_key_code || '';
+      const toKeyCode = getEventKeyValue(toRaw);
       if (fromKeyCode && toKeyCode) {
         map.set(fromKeyCode, toKeyCode);
       }

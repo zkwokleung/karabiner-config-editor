@@ -28,6 +28,7 @@ import {
 import { RuleTemplates } from './builder/rule-templates';
 import { SortableRuleListItem } from './rule-list-item';
 import { RuleDetailPanel } from './rule-detail-panel';
+import { getEventKeyValue } from '@/lib/karabiner-keycodes';
 
 interface ComplexModificationsEditorProps {
   rules: Rule[];
@@ -61,10 +62,7 @@ export function ComplexModificationsEditor({
       .filter(({ rule }) => {
         if (rule.description.toLowerCase().includes(query)) return true;
         return rule.manipulators.some((manipulator) => {
-          const fromKey =
-            manipulator.from.key_code ||
-            manipulator.from.consumer_key_code ||
-            '';
+          const fromKey = getEventKeyValue(manipulator.from);
           return fromKey.toLowerCase().includes(query);
         });
       });

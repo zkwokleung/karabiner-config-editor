@@ -31,6 +31,12 @@ import {
 import { useKeyboardLayout } from '@/components/keyboard/keyboard-layout-context';
 import type { ToEvent } from '@/types/karabiner';
 import { TO_EVENT_TYPES } from '@/lib/constants';
+import {
+  getEventKeyField,
+  getEventKeyValue,
+  setEventKeyValue,
+  type KeySelection,
+} from '@/lib/karabiner-keycodes';
 
 interface ToEventItemProps {
   event: ToEvent;
@@ -58,12 +64,18 @@ export function ToEventItem({
   };
 
   const eventType = getEventType();
+  const eventKeyValue = getEventKeyValue(event);
+  const eventKeyField = getEventKeyField(event);
+
+  const handleKeyCodeSelection = ({ value, field }: KeySelection) => {
+    onUpdate(setEventKeyValue(event, value, field));
+  };
 
   const updateEventType = (type: string) => {
     const newEvent: ToEvent = {};
 
     if (type === 'key_code') {
-      newEvent.key_code = 'a';
+      return onUpdate(setEventKeyValue({}, 'a', 'key_code'));
     } else if (type === 'shell_command') {
       newEvent.shell_command = "echo 'Hello'";
     } else if (type === 'set_variable') {
@@ -108,8 +120,9 @@ export function ToEventItem({
             <div className='flex items-center gap-2'>
               <div className='w-48'>
                 <KeyCodeSelector
-                  value={event.key_code || ''}
-                  onChange={(key) => onUpdate({ ...event, key_code: key })}
+                  value={getEventKeyValue(event)}
+                  valueField={eventType === 'key_code' ? eventKeyField : null}
+                  onChange={handleKeyCodeSelection}
                   placeholder='Select key'
                   layoutAware
                   layoutType={layoutType}
@@ -302,7 +315,7 @@ export function ToEventItem({
           <CollapsibleContent className='space-y-3 pt-2'>
             <div className='flex items-center space-x-2'>
               <Checkbox
-                id={`lazy-${event.key_code}`}
+                id={`lazy-${eventKeyValue || 'event'}`}
                 checked={event.lazy || false}
                 onCheckedChange={(checked) =>
                   onUpdate({
@@ -312,7 +325,7 @@ export function ToEventItem({
                 }
               />
               <Label
-                htmlFor={`lazy-${event.key_code}`}
+                htmlFor={`lazy-${eventKeyValue || 'event'}`}
                 className='text-xs cursor-pointer'
               >
                 Lazy
@@ -340,7 +353,7 @@ export function ToEventItem({
 
             <div className='flex items-center space-x-2'>
               <Checkbox
-                id={`repeat-${event.key_code}`}
+                id={`repeat-${eventKeyValue || 'event'}`}
                 checked={event.repeat !== false}
                 onCheckedChange={(checked) =>
                   onUpdate({
@@ -350,7 +363,7 @@ export function ToEventItem({
                 }
               />
               <Label
-                htmlFor={`repeat-${event.key_code}`}
+                htmlFor={`repeat-${eventKeyValue || 'event'}`}
                 className='text-xs cursor-pointer'
               >
                 Repeat
@@ -378,7 +391,7 @@ export function ToEventItem({
 
             <div className='flex items-center space-x-2'>
               <Checkbox
-                id={`halt-${event.key_code}`}
+                id={`halt-${eventKeyValue || 'event'}`}
                 checked={event.halt || false}
                 onCheckedChange={(checked) =>
                   onUpdate({
@@ -388,7 +401,7 @@ export function ToEventItem({
                 }
               />
               <Label
-                htmlFor={`halt-${event.key_code}`}
+                htmlFor={`halt-${eventKeyValue || 'event'}`}
                 className='text-xs cursor-pointer'
               >
                 Halt
