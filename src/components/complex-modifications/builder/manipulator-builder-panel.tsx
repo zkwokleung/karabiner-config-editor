@@ -1,15 +1,13 @@
 'use client';
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   X,
   Plus,
   Trash2,
   Settings,
-  ArrowRight,
   AlertCircle,
   CircleHelp,
-  Pencil,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,6 +31,7 @@ import { getCharacterWithKeyCodeLabel } from '@/lib/keyboard-layout';
 import { ConditionEditor } from '@/components/mapping/conditions/condition-editor';
 import { ToEventEditor } from '@/components/mapping/to-events/to-event-editor';
 import { ModifierSelector as FormModifierSelector } from '@/components/mapping/selectors/modifier-selector';
+import { KeyCodeSelector } from '@/components/mapping/selectors/key-code-selector';
 import { KeyboardSelectDialog } from './keyboard-select-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useKeyboardLayout } from '@/components/keyboard/keyboard-layout-context';
@@ -106,13 +105,6 @@ export function ManipulatorBuilderPanel({
       }),
     );
   }, [fromKey]);
-
-  // Get current "to" key codes for keyboard highlighting
-  const currentToKeys = useMemo(() => {
-    return (currentManipulator?.to || [])
-      .map((t) => t.key_code || t.consumer_key_code || '')
-      .filter(Boolean);
-  }, [currentManipulator]);
 
   const updateCurrentManipulator = useCallback(
     (updates: Partial<Manipulator>) => {
@@ -316,15 +308,6 @@ export function ManipulatorBuilderPanel({
               No key selected
             </Badge>
           )}
-          <Button
-            size='icon'
-            variant='ghost'
-            className='h-6 w-6'
-            onClick={handleOpenFromKeyDialog}
-            aria-label='Change from key'
-          >
-            <Pencil className='h-3.5 w-3.5' />
-          </Button>
           {getMandatoryModifiers().length > 0 && (
             <span className='text-sm text-muted-foreground'>
               +{' '}
@@ -399,36 +382,32 @@ export function ManipulatorBuilderPanel({
             <Label className='text-sm font-semibold'>From Key</Label>
             <div
               className={cn(
-                'flex items-center gap-2 p-3 rounded-lg',
-                fromKeyError
-                  ? 'bg-destructive/10 border-2 border-destructive'
-                  : 'bg-muted',
+                'flex items-center gap-2 rounded-lg',
+                fromKeyError && 'bg-destructive/10 border-2 border-destructive',
               )}
             >
-              {fromKey ? (
-                <Badge variant='secondary' className='font-mono text-base'>
-                  {formatKeyCode(fromKey)}
-                </Badge>
-              ) : (
-                <span className='text-sm text-muted-foreground italic'>
-                  No key selected
-                </span>
-              )}
+              <div className='w-28'>
+                <KeyCodeSelector
+                  value={fromKey}
+                  onChange={(keyCode) => {
+                    onSelectFromKey(keyCode);
+                    setFromKeyError(false);
+                    setValidationError(null);
+                  }}
+                  placeholder='No key selected'
+                  excludeNotFrom
+                  layoutAware
+                  layoutType={keyboardTypeV2}
+                />
+              </div>
               <Button
-                size='icon'
-                variant='ghost'
-                className='h-6 w-6 shrink-0'
+                size='sm'
+                variant='outline'
+                className='shrink-0'
                 onClick={handleOpenFromKeyDialog}
-                aria-label='Change from key'
               >
-                <Pencil className='h-3.5 w-3.5' />
+                Select from Keyboard
               </Button>
-              <ArrowRight className='h-4 w-4 text-muted-foreground' />
-              <span className='text-sm text-muted-foreground'>
-                {currentToKeys.length > 0
-                  ? currentToKeys.map((k) => formatKeyCode(k)).join(', ')
-                  : 'No target keys selected'}
-              </span>
             </div>
 
             <div className='grid grid-cols-2 gap-3'>
