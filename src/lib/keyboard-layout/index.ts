@@ -103,7 +103,7 @@ const SIMPLE_KEYBOARD_TO_KARABINER: Record<string, string> = {
   '/': 'slash',
 
   // Bottom row
-  '{fn}': 'fn',
+  '{fn}': 'keyboard_fn',
   '{controlleft}': 'left_control',
   '{controlright}': 'right_control',
   '{altleft}': 'left_option',
@@ -203,6 +203,7 @@ const KEY_DISPLAY_LABELS: Record<string, string> = {
   period: '.',
   slash: '/',
   fn: 'fn',
+  keyboard_fn: 'fn',
   non_us_backslash: '§',
   non_us_pound: '#',
   international1: 'ろ',

@@ -36,6 +36,14 @@ import {
   type KeyboardLayoutType,
 } from '@/lib/keyboard-layout';
 import { useKeyboardLayout } from '@/components/keyboard/keyboard-layout-context';
+import {
+  getEventKeyField,
+  getEventKeyValue,
+  resolveFieldForKeyValue,
+  setEventKeyValue,
+  extractKeySelection,
+} from '@/lib/karabiner-keycodes';
+import type { KeyCodeField } from '@/lib/keycodes/types';
 
 interface SimpleModificationsEditorProps {
   profile: Profile;
@@ -61,7 +69,9 @@ export function SimpleModificationsEditor({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create');
   const [editFromKey, setEditFromKey] = useState<string>('');
+  const [editFromField, setEditFromField] = useState<KeyCodeField | null>(null);
   const [editToKey, setEditToKey] = useState<string>('');
+  const [editToField, setEditToField] = useState<KeyCodeField | null>(null);
   const { toast } = useToast();
   const { keyboardTypeV2 } = useKeyboardLayout();
 
@@ -175,16 +185,35 @@ export function SimpleModificationsEditor({
     });
   };
 
-  const addSimpleModification = (from: string, to: string) => {
+  const addSimpleModification = (
+    from: string,
+    to: string,
+    options?: {
+      fromField?: KeyCodeField | null;
+      toField?: KeyCodeField | null;
+    },
+  ) => {
     if (!from || !to) {
       return;
     }
 
     const target = selectedOption?.target || { type: 'profile' as const };
 
+    const fromResolved = options?.fromField ?? resolveFieldForKeyValue(from);
+    const toResolved = options?.toField ?? resolveFieldForKeyValue(to);
+    if (!fromResolved || !toResolved) {
+      toast({
+        title: 'Unable to resolve key field',
+        description:
+          'One or more keys are ambiguous or unknown. Please choose explicit key fields.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const modification = {
-      from: { key_code: from },
-      to: [{ key_code: to }],
+      from: setEventKeyValue({}, from, fromResolved),
+      to: [setEventKeyValue({}, to, toResolved)],
     };
 
     const updated = applyProfileUpdate(profile, onProfileChange, (draft) => {
@@ -226,18 +255,66 @@ export function SimpleModificationsEditor({
     });
   };
 
-  const updateSimpleModification = (fromKey: string, newToKey: string) => {
+  const updateSimpleModification = (
+    fromKey: string,
+    newToKey: string,
+    newToField?: KeyCodeField | null,
+  ) => {
     if (!fromKey || !newToKey) {
       return;
     }
 
     const target = selectedOption?.target || { type: 'profile' as const };
+    const fromFieldResolved = resolveFieldForKeyValue(fromKey);
+    if (!fromFieldResolved) {
+      toast({
+        title: 'Unable to resolve source key field',
+        description:
+          'The source key is ambiguous or unknown. Please choose a specific key field.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     const updated = applyProfileUpdate(profile, onProfileChange, (draft) => {
       if (target.type === 'profile') {
         draft.simple_modifications = draft.simple_modifications?.map((mod) => {
-          if (mod.from.key_code === fromKey) {
-            return { ...mod, to: [{ key_code: newToKey }] };
+          const sel = extractKeySelection(
+            mod.from as unknown as Record<string, string>,
+          );
+          if (sel?.value === fromKey && sel?.field === fromFieldResolved) {
+            const currentTo = Array.isArray(mod.to) ? mod.to[0] : mod.to;
+            const currentToField = getEventKeyField(
+              (typeof currentTo === 'string'
+                ? { key_code: currentTo }
+                : currentTo) || {},
+            );
+            const targetField =
+              (newToField as KeyCodeField | undefined) ??
+              currentToField ??
+              resolveFieldForKeyValue(newToKey);
+            if (!targetField) {
+              toast({
+                title: 'Unable to resolve key field',
+                description:
+                  'The target key is ambiguous or unknown. Please choose a specific field.',
+                variant: 'destructive',
+              });
+              return mod;
+            }
+
+            return {
+              ...mod,
+              to: [
+                setEventKeyValue(
+                  (typeof currentTo === 'string'
+                    ? { key_code: currentTo }
+                    : currentTo) || {},
+                  newToKey,
+                  targetField,
+                ),
+              ],
+            };
           }
           return mod;
         });
@@ -250,8 +327,42 @@ export function SimpleModificationsEditor({
         const device = { ...devices[target.deviceIndex] };
         device.simple_modifications = device.simple_modifications?.map(
           (mod) => {
-            if (mod.from.key_code === fromKey) {
-              return { ...mod, to: [{ key_code: newToKey }] };
+            const sel = extractKeySelection(
+              mod.from as unknown as Record<string, string>,
+            );
+            if (sel?.value === fromKey && sel?.field === fromFieldResolved) {
+              const currentTo = Array.isArray(mod.to) ? mod.to[0] : mod.to;
+              const currentToField = getEventKeyField(
+                (typeof currentTo === 'string'
+                  ? { key_code: currentTo }
+                  : currentTo) || {},
+              );
+              const targetField =
+                (newToField as KeyCodeField | undefined) ??
+                currentToField ??
+                resolveFieldForKeyValue(newToKey);
+              if (!targetField) {
+                toast({
+                  title: 'Unable to resolve key field',
+                  description:
+                    'The target key is ambiguous or unknown. Please choose a specific field.',
+                  variant: 'destructive',
+                });
+                return mod;
+              }
+
+              return {
+                ...mod,
+                to: [
+                  setEventKeyValue(
+                    (typeof currentTo === 'string'
+                      ? { key_code: currentTo }
+                      : currentTo) || {},
+                    newToKey,
+                    targetField,
+                  ),
+                ],
+              };
             }
             return mod;
           },
@@ -277,7 +388,7 @@ export function SimpleModificationsEditor({
     const deleted = applyProfileUpdate(profile, onProfileChange, (draft) => {
       if (target.type === 'profile') {
         draft.simple_modifications = draft.simple_modifications?.filter(
-          (mod) => mod.from.key_code !== fromKey,
+          (mod) => getEventKeyValue(mod.from) !== fromKey,
         );
       } else {
         if (!draft.devices || !draft.devices[target.deviceIndex]) {
@@ -287,7 +398,7 @@ export function SimpleModificationsEditor({
         const devices = [...draft.devices];
         const device = { ...devices[target.deviceIndex] };
         device.simple_modifications = device.simple_modifications?.filter(
-          (mod) => mod.from.key_code !== fromKey,
+          (mod) => getEventKeyValue(mod.from) !== fromKey,
         );
         devices[target.deviceIndex] = device;
         draft.devices = devices;
@@ -348,7 +459,9 @@ export function SimpleModificationsEditor({
   const handleCreateMapping = (fromKey: string) => {
     setDialogMode('create');
     setEditFromKey(fromKey);
+    setEditFromField('key_code');
     setEditToKey('');
+    setEditToField(null);
     setDialogOpen(true);
   };
 
@@ -356,6 +469,20 @@ export function SimpleModificationsEditor({
     setDialogMode('edit');
     setEditFromKey(fromKey);
     setEditToKey(currentToKey);
+    const existing = currentModifications.find(
+      (mod) => getEventKeyValue(mod.from) === fromKey,
+    );
+    setEditFromField(existing ? getEventKeyField(existing.from) : 'key_code');
+    const currentTo = existing
+      ? Array.isArray(existing.to)
+        ? existing.to[0]
+        : existing.to
+      : undefined;
+    setEditToField(
+      currentTo && typeof currentTo !== 'string'
+        ? getEventKeyField(currentTo)
+        : 'key_code',
+    );
     setDialogOpen(true);
   };
 
@@ -367,20 +494,27 @@ export function SimpleModificationsEditor({
     if (!editFromKey || !editToKey) return;
 
     if (dialogMode === 'create') {
-      addSimpleModification(editFromKey, editToKey);
+      addSimpleModification(editFromKey, editToKey, {
+        fromField: editFromField,
+        toField: editToField,
+      });
     } else {
-      updateSimpleModification(editFromKey, editToKey);
+      updateSimpleModification(editFromKey, editToKey, editToField);
     }
 
     setDialogOpen(false);
     setEditFromKey('');
+    setEditFromField(null);
     setEditToKey('');
+    setEditToField(null);
   };
 
   const handleDialogClose = () => {
     setDialogOpen(false);
     setEditFromKey('');
+    setEditFromField(null);
     setEditToKey('');
+    setEditToField(null);
   };
 
   return (
@@ -442,7 +576,9 @@ export function SimpleModificationsEditor({
                 onClick={() => {
                   setDialogMode('create');
                   setEditFromKey('');
+                  setEditFromField(null);
                   setEditToKey('');
+                  setEditToField(null);
                   setDialogOpen(true);
                 }}
               >
@@ -524,7 +660,11 @@ export function SimpleModificationsEditor({
               <Label>From Key</Label>
               <KeyInput
                 value={editFromKey}
-                onChange={setEditFromKey}
+                valueField={editFromField}
+                onChange={({ value, field }) => {
+                  setEditFromKey(value);
+                  setEditFromField(field);
+                }}
                 placeholder='Select or type key to remap'
                 layoutAware
                 layoutType={keyboardTypeV2}
@@ -535,7 +675,11 @@ export function SimpleModificationsEditor({
               <Label>To Key</Label>
               <KeyInput
                 value={editToKey}
-                onChange={setEditToKey}
+                valueField={editToField}
+                onChange={({ value, field }) => {
+                  setEditToKey(value);
+                  setEditToField(field);
+                }}
                 placeholder='Select or type target key'
                 layoutAware
                 layoutType={keyboardTypeV2}
@@ -576,6 +720,21 @@ function formatKeyLabel(
   if (key.pointing_button) {
     const label = key.pointing_button.replace(/_/g, ' ');
     return formatDisplayWithKeyCode(label, key.pointing_button);
+  }
+
+  if (key.apple_vendor_top_case_key_code) {
+    const label = key.apple_vendor_top_case_key_code.replace(/_/g, ' ');
+    return formatDisplayWithKeyCode(label, key.apple_vendor_top_case_key_code);
+  }
+
+  if (key.apple_vendor_keyboard_key_code) {
+    const label = key.apple_vendor_keyboard_key_code.replace(/_/g, ' ');
+    return formatDisplayWithKeyCode(label, key.apple_vendor_keyboard_key_code);
+  }
+
+  if (key.generic_desktop) {
+    const label = key.generic_desktop.replace(/_/g, ' ');
+    return formatDisplayWithKeyCode(label, key.generic_desktop);
   }
 
   return '-';

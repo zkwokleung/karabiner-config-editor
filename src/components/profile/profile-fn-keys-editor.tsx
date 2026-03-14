@@ -24,6 +24,13 @@ import {
   applyProfileUpdate,
   removeDeviceFromProfile,
 } from '@/components/profile/profile-mutation-utils';
+import {
+  getEventKeyField,
+  getEventKeyValue,
+  resolveFieldForKeyValue,
+  setEventKeyValue,
+} from '@/lib/karabiner-keycodes';
+import type { KeyCodeField } from '@/lib/keycodes/types';
 
 const FUNCTION_KEYS = [
   'f1',
@@ -151,7 +158,13 @@ export function ProfileFnKeysEditor({
     const added = applyProfileUpdate(profile, onProfileChange, (draft) => {
       const newFnKey: FnFunctionKey = {
         from: { key_code: 'f1' },
-        to: [{ key_code: 'display_brightness_decrement' }],
+        to: [
+          setEventKeyValue(
+            {},
+            'display_brightness_decrement',
+            'consumer_key_code',
+          ),
+        ],
       };
 
       if (selectedOption.target.type === 'profile') {
@@ -232,11 +245,27 @@ export function ProfileFnKeysEditor({
     });
   };
 
-  const updateFnKey = (index: number, from: string, to: string) => {
+  const updateFnKey = (
+    index: number,
+    from: string,
+    to: string,
+    toField?: KeyCodeField,
+  ) => {
+    const resolved = toField ?? resolveFieldForKeyValue(to);
+    if (!resolved) {
+      toast({
+        title: 'Unable to resolve key field',
+        description:
+          'The target key is ambiguous or unknown. Please choose a specific key field.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     applyProfileUpdate(profile, onProfileChange, (draft) => {
       const newFnKey: FnFunctionKey = {
         from: { key_code: from },
-        to: [{ key_code: to }],
+        to: [setEventKeyValue({}, to, resolved)],
       };
 
       if (selectedOption.target.type === 'profile') {
@@ -320,9 +349,9 @@ export function ProfileFnKeysEditor({
                           updateFnKey(
                             index,
                             key,
-                            (Array.isArray(fnKey.to)
-                              ? fnKey.to[0]?.key_code
-                              : fnKey.to?.key_code) || '',
+                            getEventKeyValue(
+                              Array.isArray(fnKey.to) ? fnKey.to[0] : fnKey.to,
+                            ),
                           )
                         }
                       >
@@ -342,13 +371,19 @@ export function ProfileFnKeysEditor({
                     <div className='space-y-2'>
                       <Label className='text-xs'>To Key</Label>
                       <KeyCodeSelector
-                        value={
-                          (Array.isArray(fnKey.to)
-                            ? fnKey.to[0]?.key_code
-                            : fnKey.to?.key_code) || ''
-                        }
-                        onChange={(key) =>
-                          updateFnKey(index, fnKey.from.key_code || '', key)
+                        value={getEventKeyValue(
+                          Array.isArray(fnKey.to) ? fnKey.to[0] : fnKey.to,
+                        )}
+                        valueField={getEventKeyField(
+                          Array.isArray(fnKey.to) ? fnKey.to[0] : fnKey.to,
+                        )}
+                        onChange={({ value, field }) =>
+                          updateFnKey(
+                            index,
+                            fnKey.from.key_code || '',
+                            value,
+                            field,
+                          )
                         }
                         placeholder='Select target key'
                       />

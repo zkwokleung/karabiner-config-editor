@@ -13,10 +13,14 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import {
   KARABINER_KEYCODES,
+  getKeyCodeField,
   getKeyCodeValue,
   findKeyCodeItem,
+  findKeyCodeItemByField,
+  type KeySelection,
   type KeyCodeItem,
 } from '@/lib/karabiner-keycodes';
+import type { KeyCodeField } from '@/lib/keycodes/types';
 import {
   getCharacterWithKeyCodeLabel,
   getLayoutAwareKeyLabel,
@@ -25,7 +29,8 @@ import {
 
 interface KeyCodeSelectorProps {
   value: string;
-  onChange: (value: string) => void;
+  valueField?: KeyCodeField | null;
+  onChange: (selection: KeySelection) => void;
   placeholder?: string;
   excludeNotFrom?: boolean; // Exclude keys that can't be used as "from"
   layoutAware?: boolean;
@@ -38,6 +43,7 @@ interface KeyCodeSelectorProps {
  */
 export function KeyCodeSelector({
   value,
+  valueField,
   onChange,
   placeholder = 'Select key...',
   excludeNotFrom = false,
@@ -72,7 +78,9 @@ export function KeyCodeSelector({
   }, [layoutAware, layoutType]);
 
   // Find the selected item to display its label
-  const selectedItem = findKeyCodeItem(value);
+  const selectedItem = valueField
+    ? findKeyCodeItemByField(value, valueField)
+    : findKeyCodeItem(value);
   const displayValue = selectedItem
     ? getItemPresentation(selectedItem).label
     : value || placeholder;
@@ -119,11 +127,21 @@ export function KeyCodeSelector({
       (c) => c.category === categoryName,
     );
     if (!category) return false;
-    return category.items.some((item) => getKeyCodeValue(item) === value);
+    return category.items.some(
+      (item) =>
+        getKeyCodeValue(item) === value &&
+        (!valueField || getKeyCodeField(item) === valueField),
+    );
   };
 
   const handleSelect = (item: KeyCodeItem) => {
-    onChange(getKeyCodeValue(item));
+    const keyValue = getKeyCodeValue(item);
+    const keyField = getKeyCodeField(item) || 'key_code';
+
+    onChange({
+      value: keyValue,
+      field: keyField,
+    });
     setOpen(false);
     setSearchValue('');
     setHoveredCategory(null);
@@ -165,7 +183,10 @@ export function KeyCodeSelector({
                         size='sm'
                         variant='secondary'
                         onClick={() => {
-                          onChange(searchValue);
+                          onChange({
+                            value: searchValue,
+                            field: 'key_code',
+                          });
                           setOpen(false);
                           setSearchValue('');
                         }}
@@ -224,7 +245,9 @@ export function KeyCodeSelector({
                       {category.items.map((item, index) => {
                         const presentation = getItemPresentation(item);
                         const keyValue = presentation.keyValue;
-                        const isSelected = value === keyValue;
+                        const isSelected =
+                          value === keyValue &&
+                          (!valueField || getKeyCodeField(item) === valueField);
 
                         return (
                           <button

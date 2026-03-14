@@ -28,6 +28,7 @@ import { ComplexModificationKeyboard } from './keyboard/complex-modification-key
 import { KeyMappingList } from './keyboard/key-mapping-list';
 import { MappingBuilderDialog } from './builder/mapping-builder-dialog';
 import { SortableMappingSummary } from './mapping-summary';
+import { getEventKeyValue } from '@/lib/karabiner-keycodes';
 
 interface RuleDetailPanelProps {
   rule: Rule;
@@ -64,10 +65,7 @@ export function RuleDetailPanel({
     (keyCode: string) => {
       return rule.manipulators
         .map((m, i) => ({ m, i }))
-        .filter(
-          ({ m }) =>
-            m.from.key_code === keyCode || m.from.consumer_key_code === keyCode,
-        )
+        .filter(({ m }) => getEventKeyValue(m.from) === keyCode)
         .map(({ i }) => i);
     },
     [rule.manipulators],
@@ -109,14 +107,10 @@ export function RuleDetailPanel({
   const handleDeleteManipulatorByIndex = useCallback(
     (index: number) => {
       const manipulator = rule.manipulators[index];
-      const fromKey =
-        manipulator?.from.key_code || manipulator?.from.consumer_key_code || '';
+      const fromKey = getEventKeyValue(manipulator?.from);
       const remainingForKey = fromKey
         ? rule.manipulators.filter(
-            (m, i) =>
-              i !== index &&
-              (m.from.key_code === fromKey ||
-                m.from.consumer_key_code === fromKey),
+            (m, i) => i !== index && getEventKeyValue(m.from) === fromKey,
           ).length
         : 0;
 
@@ -159,8 +153,7 @@ export function RuleDetailPanel({
   const handleEditFromList = useCallback(
     (index: number) => {
       const manipulator = rule.manipulators[index];
-      const fromKey =
-        manipulator.from.key_code || manipulator.from.consumer_key_code || '';
+      const fromKey = getEventKeyValue(manipulator.from);
       setSelectedFromKey(fromKey);
       setEditingManipulatorIndex(index);
       setIsCreatingNew(false);
@@ -171,10 +164,7 @@ export function RuleDetailPanel({
   const handleBuilderSave = useCallback(
     (newManipulators: Manipulator[]) => {
       const nextSelectedKey =
-        newManipulators[0]?.from.key_code ||
-        newManipulators[0]?.from.consumer_key_code ||
-        selectedFromKey ||
-        null;
+        getEventKeyValue(newManipulators[0]?.from) || selectedFromKey || null;
 
       if (editingManipulatorIndex !== null) {
         if (newManipulators.length > 0) {
@@ -204,9 +194,7 @@ export function RuleDetailPanel({
 
   const builderFromKey =
     editingManipulatorIndex !== null
-      ? rule.manipulators[editingManipulatorIndex]?.from.key_code ||
-        rule.manipulators[editingManipulatorIndex]?.from.consumer_key_code ||
-        ''
+      ? getEventKeyValue(rule.manipulators[editingManipulatorIndex]?.from)
       : selectedFromKey || '';
   const builderExistingManipulators =
     editingManipulatorIndex !== null

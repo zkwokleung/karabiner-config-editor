@@ -8,6 +8,7 @@ import type {
   Profile,
   ToEvent,
 } from '@/types/karabiner';
+import { getEventKeyValue } from '@/lib/karabiner-keycodes';
 
 export type NormalizedMappingType = 'simple' | 'fn' | 'complex';
 export type MappingScope = 'profile' | 'device';
@@ -253,12 +254,7 @@ function appendTargets(
 }
 
 function pickKey(value?: KeyCode | ToEvent | null): string {
-  if (!value) {
-    return '';
-  }
-  return (
-    value.key_code || value.consumer_key_code || value.pointing_button || ''
-  );
+  return getEventKeyValue(value);
 }
 
 function normalizeModifiers(modifiers: string[] | undefined): string[] {

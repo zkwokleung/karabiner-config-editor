@@ -34,6 +34,9 @@ export interface KeyCode {
   key_code?: string;
   consumer_key_code?: string;
   pointing_button?: string;
+  apple_vendor_top_case_key_code?: string;
+  apple_vendor_keyboard_key_code?: string;
+  generic_desktop?: string;
 }
 
 export interface FnFunctionKey {
@@ -76,6 +79,9 @@ export interface FromEvent {
   key_code?: string;
   consumer_key_code?: string;
   pointing_button?: string;
+  apple_vendor_top_case_key_code?: string;
+  apple_vendor_keyboard_key_code?: string;
+  generic_desktop?: string;
   modifiers?: Modifiers;
   simultaneous?: KeyCode[];
   simultaneous_options?: SimultaneousOptions;
@@ -85,6 +91,9 @@ export interface ToEvent {
   key_code?: string;
   consumer_key_code?: string;
   pointing_button?: string;
+  apple_vendor_top_case_key_code?: string;
+  apple_vendor_keyboard_key_code?: string;
+  generic_desktop?: string;
   shell_command?: string;
   select_input_source?: InputSource;
   set_variable?: Variable;

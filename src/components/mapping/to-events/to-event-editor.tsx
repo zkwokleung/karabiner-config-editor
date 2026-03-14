@@ -12,6 +12,7 @@ import {
 import type { ToEvent } from '@/types/karabiner';
 import type { ReactNode } from 'react';
 import { ToEventItem } from './to-event-item';
+import { setEventKeyValue } from '@/lib/karabiner-keycodes';
 
 interface ToEventEditorProps {
   events: ToEvent[];
@@ -31,7 +32,7 @@ export function ToEventEditor({
   keyCodeAction,
 }: ToEventEditorProps) {
   const addEvent = () => {
-    onChange([...events, { key_code: 'a' }]);
+    onChange([...events, setEventKeyValue({}, 'a', 'key_code')]);
   };
 
   const deleteEvent = (index: number) => {

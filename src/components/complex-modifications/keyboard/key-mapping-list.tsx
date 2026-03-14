@@ -26,6 +26,7 @@ import {
   sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { getEventKeyValue } from '@/lib/karabiner-keycodes';
 
 interface KeyMappingListProps {
   selectedKey: string;
@@ -90,8 +91,7 @@ export function KeyMappingList({
       return <span className='text-muted-foreground'>No action</span>;
 
     return toEvents.map((to, i) => {
-      const key =
-        to.key_code || to.consumer_key_code || to.shell_command || 'action';
+      const key = getEventKeyValue(to) || to.shell_command || 'action';
       const label = to.shell_command ? 'Shell' : formatKeyCode(key);
       const modifiers = to.modifiers || [];
 

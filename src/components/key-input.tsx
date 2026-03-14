@@ -2,10 +2,13 @@
 
 import { KeyCodeSelector } from '@/components/mapping/selectors/key-code-selector';
 import type { KeyboardLayoutType } from '@/lib/keyboard-layout';
+import type { KeySelection } from '@/lib/karabiner-keycodes';
+import type { KeyCodeField } from '@/lib/keycodes/types';
 
 interface KeyInputProps {
   value: string;
-  onChange: (value: string) => void;
+  valueField?: KeyCodeField | null;
+  onChange: (selection: KeySelection) => void;
   placeholder?: string;
   excludeNotFrom?: boolean;
   layoutAware?: boolean;
@@ -18,6 +21,7 @@ interface KeyInputProps {
  */
 export function KeyInput({
   value,
+  valueField,
   onChange,
   placeholder = 'Select or type key...',
   excludeNotFrom = false,
@@ -27,6 +31,7 @@ export function KeyInput({
   return (
     <KeyCodeSelector
       value={value}
+      valueField={valueField}
       onChange={onChange}
       placeholder={placeholder}
       excludeNotFrom={excludeNotFrom}
