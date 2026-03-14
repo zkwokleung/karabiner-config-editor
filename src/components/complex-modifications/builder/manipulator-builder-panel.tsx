@@ -423,7 +423,7 @@ export function ManipulatorBuilderPanel({
                 fromKeyError && 'bg-destructive/10 border-2 border-destructive',
               )}
             >
-              <div className='w-28'>
+              <div className='w-48'>
                 <KeyCodeSelector
                   value={fromKey}
                   onChange={(keyCode) => {
