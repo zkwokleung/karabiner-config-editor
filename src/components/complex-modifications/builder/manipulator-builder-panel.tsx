@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   X,
   Plus,
@@ -9,6 +9,7 @@ import {
   ArrowRight,
   AlertCircle,
   CircleHelp,
+  Pencil,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,9 +33,10 @@ import { getCharacterWithKeyCodeLabel } from '@/lib/keyboard-layout';
 import { ConditionEditor } from '@/components/mapping/conditions/condition-editor';
 import { ToEventEditor } from '@/components/mapping/to-events/to-event-editor';
 import { ModifierSelector as FormModifierSelector } from '@/components/mapping/selectors/modifier-selector';
-import { ToEventKeyboardDialog } from './to-event-keyboard-dialog';
+import { KeyboardSelectDialog } from './keyboard-select-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useKeyboardLayout } from '@/components/keyboard/keyboard-layout-context';
+import { cn } from '@/lib/utils';
 
 interface ManipulatorBuilderPanelProps {
   fromKey: string;
@@ -42,6 +44,7 @@ interface ManipulatorBuilderPanelProps {
   onSave: (manipulators: Manipulator[]) => void;
   onCancel: () => void;
   onDelete?: () => void;
+  onSelectFromKey: (keyCode: string) => void;
 }
 
 export function ManipulatorBuilderPanel({
@@ -50,11 +53,17 @@ export function ManipulatorBuilderPanel({
   onSave,
   onCancel,
   onDelete,
+  onSelectFromKey,
 }: ManipulatorBuilderPanelProps) {
   const { toast } = useToast();
   const { keyboardTypeV2 } = useKeyboardLayout();
   const isEditing = existingManipulators.length > 0;
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [fromKeyError, setFromKeyError] = useState(false);
+
+  // From-key keyboard dialog state
+  const [isSelectingFromKey, setIsSelectingFromKey] = useState(false);
+  const [pendingFromKey, setPendingFromKey] = useState<string | null>(null);
 
   // Initialize state from existing manipulators or create new
   const [manipulators, setManipulators] = useState<Manipulator[]>(() => {
@@ -65,7 +74,7 @@ export function ManipulatorBuilderPanel({
       {
         type: 'basic',
         from: {
-          key_code: fromKey,
+          ...(fromKey ? { key_code: fromKey } : {}),
         },
         to: [],
       },
@@ -81,6 +90,23 @@ export function ManipulatorBuilderPanel({
 
   const currentManipulator = manipulators[selectedManipulatorIndex];
 
+  // Sync all manipulators' from.key_code when the fromKey prop changes
+  useEffect(() => {
+    setManipulators((prev) =>
+      prev.map((m) => {
+        const { key_code, ...restFrom } = m.from;
+        void key_code;
+        return {
+          ...m,
+          from: {
+            ...restFrom,
+            ...(fromKey ? { key_code: fromKey } : {}),
+          },
+        };
+      }),
+    );
+  }, [fromKey]);
+
   // Get current "to" key codes for keyboard highlighting
   const currentToKeys = useMemo(() => {
     return (currentManipulator?.to || [])
@@ -91,6 +117,7 @@ export function ManipulatorBuilderPanel({
   const updateCurrentManipulator = useCallback(
     (updates: Partial<Manipulator>) => {
       setValidationError(null); // Clear error when user makes changes
+      setFromKeyError(false);
       setManipulators((prev) => {
         const newList = [...prev];
         newList[selectedManipulatorIndex] = {
@@ -183,7 +210,7 @@ export function ManipulatorBuilderPanel({
     const newManipulator: Manipulator = {
       type: 'basic',
       from: {
-        key_code: fromKey,
+        ...(fromKey ? { key_code: fromKey } : {}),
         modifiers: currentManipulator.from.modifiers
           ? { ...currentManipulator.from.modifiers }
           : undefined,
@@ -203,10 +230,12 @@ export function ManipulatorBuilderPanel({
 
   const handleSave = () => {
     setValidationError(null);
+    setFromKeyError(false);
 
     // Check if from key is set
     if (!fromKey) {
       setValidationError('Please select a "from" key.');
+      setFromKeyError(true);
       toast({
         title: 'Validation Error',
         description: 'Please select a "from" key.',
@@ -248,6 +277,25 @@ export function ManipulatorBuilderPanel({
   const formatKeyCode = (keyCode: string) =>
     getCharacterWithKeyCodeLabel(keyCode, keyboardTypeV2);
 
+  const handleOpenFromKeyDialog = useCallback(() => {
+    setPendingFromKey(fromKey || null);
+    setIsSelectingFromKey(true);
+  }, [fromKey]);
+
+  const handleSelectFromKey = useCallback((keyCode: string) => {
+    setPendingFromKey(keyCode);
+  }, []);
+
+  const handleConfirmFromKeySelect = useCallback(() => {
+    if (pendingFromKey) {
+      onSelectFromKey(pendingFromKey);
+      setFromKeyError(false);
+      setValidationError(null);
+    }
+    setIsSelectingFromKey(false);
+    setPendingFromKey(null);
+  }, [pendingFromKey, onSelectFromKey]);
+
   return (
     <div className='p-4 space-y-4 relative'>
       {/* Header */}
@@ -256,9 +304,27 @@ export function ManipulatorBuilderPanel({
           <h3 className='text-lg font-semibold'>
             {isEditing ? 'Edit' : 'Create'} Manipulator
           </h3>
-          <Badge variant='outline' className='font-mono'>
-            {formatKeyCode(fromKey)}
-          </Badge>
+          {fromKey ? (
+            <Badge variant='outline' className='font-mono'>
+              {formatKeyCode(fromKey)}
+            </Badge>
+          ) : (
+            <Badge
+              variant='outline'
+              className='font-mono text-muted-foreground'
+            >
+              No key selected
+            </Badge>
+          )}
+          <Button
+            size='icon'
+            variant='ghost'
+            className='h-6 w-6'
+            onClick={handleOpenFromKeyDialog}
+            aria-label='Change from key'
+          >
+            <Pencil className='h-3.5 w-3.5' />
+          </Button>
           {getMandatoryModifiers().length > 0 && (
             <span className='text-sm text-muted-foreground'>
               +{' '}
@@ -331,10 +397,32 @@ export function ManipulatorBuilderPanel({
             </div>
 
             <Label className='text-sm font-semibold'>From Key</Label>
-            <div className='flex items-center gap-2 p-3 bg-muted rounded-lg'>
-              <Badge variant='secondary' className='font-mono text-base'>
-                {formatKeyCode(fromKey)}
-              </Badge>
+            <div
+              className={cn(
+                'flex items-center gap-2 p-3 rounded-lg',
+                fromKeyError
+                  ? 'bg-destructive/10 border-2 border-destructive'
+                  : 'bg-muted',
+              )}
+            >
+              {fromKey ? (
+                <Badge variant='secondary' className='font-mono text-base'>
+                  {formatKeyCode(fromKey)}
+                </Badge>
+              ) : (
+                <span className='text-sm text-muted-foreground italic'>
+                  No key selected
+                </span>
+              )}
+              <Button
+                size='icon'
+                variant='ghost'
+                className='h-6 w-6 shrink-0'
+                onClick={handleOpenFromKeyDialog}
+                aria-label='Change from key'
+              >
+                <Pencil className='h-3.5 w-3.5' />
+              </Button>
               <ArrowRight className='h-4 w-4 text-muted-foreground' />
               <span className='text-sm text-muted-foreground'>
                 {currentToKeys.length > 0
@@ -438,8 +526,9 @@ export function ManipulatorBuilderPanel({
               )}
             />
 
-            <ToEventKeyboardDialog
+            <KeyboardSelectDialog
               open={selectingToEventIndex !== null}
+              title='Select To Event Key'
               selectedKey={pendingToKey}
               onSelectKey={handleSelectToKey}
               onConfirm={handleConfirmToKeySelect}
@@ -529,6 +618,21 @@ export function ManipulatorBuilderPanel({
           )}
         </div>
       </div>
+
+      {/* From-key keyboard dialog */}
+      <KeyboardSelectDialog
+        open={isSelectingFromKey}
+        title='Select From Key'
+        selectedKey={pendingFromKey}
+        onSelectKey={handleSelectFromKey}
+        onConfirm={handleConfirmFromKeySelect}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsSelectingFromKey(false);
+            setPendingFromKey(null);
+          }
+        }}
+      />
 
       <Separator />
 

@@ -199,7 +199,7 @@ export function RuleDetailPanel({
   );
 
   const showMappingList =
-    selectedFromKey && !editingManipulatorIndex && !isCreatingNew;
+    selectedFromKey && editingManipulatorIndex === null && !isCreatingNew;
   const showBuilder = editingManipulatorIndex !== null || isCreatingNew;
 
   const builderFromKey =
@@ -341,7 +341,6 @@ export function RuleDetailPanel({
         open={showBuilder}
         title={dialogTitle}
         fromKey={builderFromKey}
-        manipulators={rule.manipulators}
         existingManipulators={builderExistingManipulators}
         onSave={handleBuilderSave}
         onCancel={handleBuilderCancel}
