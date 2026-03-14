@@ -8,13 +8,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ManipulatorBuilderPanel } from './manipulator-builder-panel';
-import { ComplexModificationKeyboard } from '../keyboard/complex-modification-keyboard';
 
 interface MappingBuilderDialogProps {
   open: boolean;
   title: string;
   fromKey: string;
-  manipulators: Manipulator[];
   existingManipulators?: Manipulator[];
   onSave: (manipulators: Manipulator[]) => void;
   onCancel: () => void;
@@ -26,7 +24,6 @@ export function MappingBuilderDialog({
   open,
   title,
   fromKey,
-  manipulators,
   existingManipulators = [],
   onSave,
   onCancel,
@@ -46,26 +43,14 @@ export function MappingBuilderDialog({
         <DialogHeader className='sr-only'>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
-        {fromKey ? (
-          <ManipulatorBuilderPanel
-            fromKey={fromKey}
-            existingManipulators={existingManipulators}
-            onSave={onSave}
-            onCancel={onCancel}
-            onDelete={onDelete}
-          />
-        ) : (
-          <div className='space-y-4'>
-            <div>
-              <h3 className='text-lg font-semibold'>Create Manipulator</h3>
-            </div>
-            <ComplexModificationKeyboard
-              manipulators={manipulators}
-              onKeyClick={onSelectFromKey}
-              selectedFromKey={null}
-            />
-          </div>
-        )}
+        <ManipulatorBuilderPanel
+          fromKey={fromKey}
+          existingManipulators={existingManipulators}
+          onSave={onSave}
+          onCancel={onCancel}
+          onDelete={onDelete}
+          onSelectFromKey={onSelectFromKey}
+        />
       </DialogContent>
     </Dialog>
   );

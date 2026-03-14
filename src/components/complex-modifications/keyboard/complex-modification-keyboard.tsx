@@ -5,7 +5,6 @@ import { toKarabinerKeyCode } from '@/lib/keyboard-layout';
 import type { Manipulator } from '@/types/karabiner';
 import { KeyboardShell } from '@/components/keyboard/keyboard-shell';
 import { useKeyboardLayout } from '@/components/keyboard/keyboard-layout-context';
-import { ModifierStateBar, type ModifierState } from './modifier-state-bar';
 
 export interface ComplexModificationKeyboardProps {
   manipulators: Manipulator[];
@@ -34,12 +33,6 @@ export function ComplexModificationKeyboard({
   const [transientSelectedKeys, setTransientSelectedKeys] = useState<string[]>(
     [],
   );
-  const [modifierState, setModifierState] = useState<ModifierState>({
-    command: false,
-    option: false,
-    control: false,
-    shift: false,
-  });
 
   const areArraysEqual = useCallback((a: string[], b: string[]) => {
     if (a === b) return true;
@@ -68,63 +61,20 @@ export function ComplexModificationKeyboard({
     );
   }, [externalSelectedKeys, areArraysEqual]);
 
-  // Filter manipulators based on modifier state
-  const filteredManipulators = useMemo(() => {
-    const activeModifiers: string[] = [];
-    if (modifierState.command)
-      activeModifiers.push('command', 'left_command', 'right_command');
-    if (modifierState.option)
-      activeModifiers.push('option', 'left_option', 'right_option');
-    if (modifierState.control)
-      activeModifiers.push('control', 'left_control', 'right_control');
-    if (modifierState.shift)
-      activeModifiers.push('shift', 'left_shift', 'right_shift');
-
-    if (activeModifiers.length === 0) {
-      return manipulators;
-    }
-
-    return manipulators.filter((m) => {
-      const mandatory = m.from.modifiers?.mandatory || [];
-      // Check if all active modifier types are represented in mandatory
-      const hasCommand =
-        !modifierState.command ||
-        mandatory.some((mod) =>
-          ['command', 'left_command', 'right_command'].includes(mod),
-        );
-      const hasOption =
-        !modifierState.option ||
-        mandatory.some((mod) =>
-          ['option', 'left_option', 'right_option'].includes(mod),
-        );
-      const hasControl =
-        !modifierState.control ||
-        mandatory.some((mod) =>
-          ['control', 'left_control', 'right_control'].includes(mod),
-        );
-      const hasShift =
-        !modifierState.shift ||
-        mandatory.some((mod) =>
-          ['shift', 'left_shift', 'right_shift'].includes(mod),
-        );
-      return hasCommand && hasOption && hasControl && hasShift;
-    });
-  }, [manipulators, modifierState]);
-
   // Build set of keys that have manipulators (from keys only)
   const mappedKeys = useMemo(() => {
     if (!showMappedKeys) {
       return [];
     }
     const keySet = new Set<string>();
-    filteredManipulators.forEach((m) => {
+    manipulators.forEach((m) => {
       const fromKey = m.from.key_code || m.from.consumer_key_code || '';
       if (fromKey) {
         keySet.add(fromKey);
       }
     });
     return Array.from(keySet);
-  }, [filteredManipulators, showMappedKeys]);
+  }, [manipulators, showMappedKeys]);
 
   const highlightLayers = useMemo(() => {
     const dedupedSelectedKeys = Array.from(
@@ -164,31 +114,15 @@ export function ComplexModificationKeyboard({
     [mode, onKeyClick, onToKeyToggle],
   );
 
-  const legend = (
-    <div className='flex items-center gap-3 text-xs text-muted-foreground'>
-      {showMappedKeys && mode !== 'select-to' && (
+  const legend =
+    showMappedKeys && mode !== 'select-to' ? (
+      <div className='flex items-center gap-3 text-xs text-muted-foreground'>
         <div className='flex items-center gap-1'>
           <div className='w-2.5 h-2.5 rounded-sm bg-primary/20 border border-primary' />
           <span>Mapped</span>
         </div>
-      )}
-      {mode === 'select-to' && (
-        <div className='flex items-center gap-1'>
-          <div className='w-2.5 h-2.5 rounded-sm bg-primary/30 border border-primary' />
-          <span>Selected</span>
-        </div>
-      )}
-    </div>
-  );
-
-  const modifierControls = (
-    <ModifierStateBar
-      state={modifierState}
-      onChange={setModifierState}
-      className='mb-3'
-      disabled={mode === 'select-to'}
-    />
-  );
+      </div>
+    ) : null;
 
   return (
     <KeyboardShell
@@ -197,7 +131,6 @@ export function ComplexModificationKeyboard({
       displayLayoutType={keyboardTypeV2}
       onLayoutChange={(value) => setLayoutType(value)}
       legend={legend}
-      beforeKeyboard={modifierControls}
       keyboardBaseClass='complex-kb'
       highlightLayers={highlightLayers}
       onKeyPress={handleKeyPress}

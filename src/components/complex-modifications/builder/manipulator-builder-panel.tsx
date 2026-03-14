@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   X,
   Plus,
   Trash2,
   Settings,
-  ArrowRight,
   AlertCircle,
   CircleHelp,
 } from 'lucide-react';
@@ -32,9 +31,11 @@ import { getCharacterWithKeyCodeLabel } from '@/lib/keyboard-layout';
 import { ConditionEditor } from '@/components/mapping/conditions/condition-editor';
 import { ToEventEditor } from '@/components/mapping/to-events/to-event-editor';
 import { ModifierSelector as FormModifierSelector } from '@/components/mapping/selectors/modifier-selector';
-import { ToEventKeyboardDialog } from './to-event-keyboard-dialog';
+import { KeyCodeSelector } from '@/components/mapping/selectors/key-code-selector';
+import { KeyboardSelectDialog } from './keyboard-select-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useKeyboardLayout } from '@/components/keyboard/keyboard-layout-context';
+import { cn } from '@/lib/utils';
 
 interface ManipulatorBuilderPanelProps {
   fromKey: string;
@@ -42,7 +43,21 @@ interface ManipulatorBuilderPanelProps {
   onSave: (manipulators: Manipulator[]) => void;
   onCancel: () => void;
   onDelete?: () => void;
+  onSelectFromKey: (keyCode: string) => void;
 }
+
+type ToEventField =
+  | 'to'
+  | 'to_if_alone'
+  | 'to_if_held_down'
+  | 'to_after_key_up';
+
+const TO_EVENT_FIELD_LABEL: Record<ToEventField, string> = {
+  to: 'To Event',
+  to_if_alone: 'To If Alone',
+  to_if_held_down: 'To If Held Down',
+  to_after_key_up: 'To After Key Up',
+};
 
 export function ManipulatorBuilderPanel({
   fromKey,
@@ -50,11 +65,17 @@ export function ManipulatorBuilderPanel({
   onSave,
   onCancel,
   onDelete,
+  onSelectFromKey,
 }: ManipulatorBuilderPanelProps) {
   const { toast } = useToast();
   const { keyboardTypeV2 } = useKeyboardLayout();
   const isEditing = existingManipulators.length > 0;
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [fromKeyError, setFromKeyError] = useState(false);
+
+  // From-key keyboard dialog state
+  const [isSelectingFromKey, setIsSelectingFromKey] = useState(false);
+  const [pendingFromKey, setPendingFromKey] = useState<string | null>(null);
 
   // Initialize state from existing manipulators or create new
   const [manipulators, setManipulators] = useState<Manipulator[]>(() => {
@@ -65,7 +86,7 @@ export function ManipulatorBuilderPanel({
       {
         type: 'basic',
         from: {
-          key_code: fromKey,
+          ...(fromKey ? { key_code: fromKey } : {}),
         },
         to: [],
       },
@@ -74,23 +95,33 @@ export function ManipulatorBuilderPanel({
 
   const [selectedManipulatorIndex, setSelectedManipulatorIndex] = useState(0);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [selectingToEventIndex, setSelectingToEventIndex] = useState<
-    number | null
-  >(null);
+  const [selectingToEvent, setSelectingToEvent] = useState<{
+    field: ToEventField;
+    index: number;
+  } | null>(null);
   const [pendingToKey, setPendingToKey] = useState<string | null>(null);
 
   const currentManipulator = manipulators[selectedManipulatorIndex];
 
-  // Get current "to" key codes for keyboard highlighting
-  const currentToKeys = useMemo(() => {
-    return (currentManipulator?.to || [])
-      .map((t) => t.key_code || t.consumer_key_code || '')
-      .filter(Boolean);
-  }, [currentManipulator]);
+  // Sync all manipulators' from.key_code when the fromKey prop changes
+  useEffect(() => {
+    setManipulators((prev) =>
+      prev.map((m) => {
+        return {
+          ...m,
+          from: {
+            ...omitFromKeyCode(m.from),
+            ...(fromKey ? { key_code: fromKey } : {}),
+          },
+        };
+      }),
+    );
+  }, [fromKey]);
 
   const updateCurrentManipulator = useCallback(
     (updates: Partial<Manipulator>) => {
       setValidationError(null); // Clear error when user makes changes
+      setFromKeyError(false);
       setManipulators((prev) => {
         const newList = [...prev];
         newList[selectedManipulatorIndex] = {
@@ -128,43 +159,68 @@ export function ManipulatorBuilderPanel({
   }, []);
 
   const openToKeyDialog = useCallback(
-    (index: number) => {
-      const event = currentManipulator.to?.[index];
+    (field: ToEventField, index: number) => {
+      const events = currentManipulator[field] || [];
+      const event = events[index];
       const currentKey = event?.key_code || event?.consumer_key_code || null;
       setPendingToKey(currentKey);
-      setSelectingToEventIndex(index);
+      setSelectingToEvent({ field, index });
     },
-    [currentManipulator.to],
+    [currentManipulator],
   );
 
   const handleConfirmToKeySelect = useCallback(() => {
-    if (selectingToEventIndex === null || !pendingToKey) {
-      setSelectingToEventIndex(null);
+    if (!selectingToEvent || !pendingToKey) {
+      setSelectingToEvent(null);
       setPendingToKey(null);
       return;
     }
 
-    const currentTo = currentManipulator.to || [];
-    const nextTo = currentTo.map((event, index) => {
-      if (index !== selectingToEventIndex) return event;
+    const { field, index: selectedIndex } = selectingToEvent;
+    const currentEvents = currentManipulator[field] || [];
+    const nextEvents = currentEvents.map((event, index) => {
+      if (index !== selectedIndex) return event;
       const { consumer_key_code, ...rest } = event;
       void consumer_key_code;
       return { ...rest, key_code: pendingToKey };
     });
 
-    updateCurrentManipulator({ to: nextTo });
-    setSelectingToEventIndex(null);
+    updateCurrentManipulator({ [field]: nextEvents });
+    setSelectingToEvent(null);
     setPendingToKey(null);
   }, [
-    currentManipulator.to,
+    currentManipulator,
     pendingToKey,
-    selectingToEventIndex,
+    selectingToEvent,
     updateCurrentManipulator,
   ]);
 
   const updateToEvents = (events: ToEvent[]) => {
     updateCurrentManipulator({ to: events });
   };
+
+  const renderToEventKeySelectButton = useCallback(
+    (field: ToEventField, index: number) => (
+      <Button
+        size='sm'
+        variant={
+          selectingToEvent?.field === field && selectingToEvent.index === index
+            ? 'default'
+            : 'outline'
+        }
+        className='shrink-0'
+        onClick={() => openToKeyDialog(field, index)}
+      >
+        Select from Keyboard
+      </Button>
+    ),
+    [openToKeyDialog, selectingToEvent],
+  );
+
+  const toEventDialogTitle =
+    selectingToEvent === null
+      ? 'Select To Event Key'
+      : `Select ${TO_EVENT_FIELD_LABEL[selectingToEvent.field]} Key`;
 
   const addToEvent = () => {
     const currentTo = currentManipulator.to || [];
@@ -183,7 +239,7 @@ export function ManipulatorBuilderPanel({
     const newManipulator: Manipulator = {
       type: 'basic',
       from: {
-        key_code: fromKey,
+        ...(fromKey ? { key_code: fromKey } : {}),
         modifiers: currentManipulator.from.modifiers
           ? { ...currentManipulator.from.modifiers }
           : undefined,
@@ -203,10 +259,12 @@ export function ManipulatorBuilderPanel({
 
   const handleSave = () => {
     setValidationError(null);
+    setFromKeyError(false);
 
     // Check if from key is set
     if (!fromKey) {
       setValidationError('Please select a "from" key.');
+      setFromKeyError(true);
       toast({
         title: 'Validation Error',
         description: 'Please select a "from" key.',
@@ -248,6 +306,25 @@ export function ManipulatorBuilderPanel({
   const formatKeyCode = (keyCode: string) =>
     getCharacterWithKeyCodeLabel(keyCode, keyboardTypeV2);
 
+  const handleOpenFromKeyDialog = useCallback(() => {
+    setPendingFromKey(fromKey || null);
+    setIsSelectingFromKey(true);
+  }, [fromKey]);
+
+  const handleSelectFromKey = useCallback((keyCode: string) => {
+    setPendingFromKey(keyCode);
+  }, []);
+
+  const handleConfirmFromKeySelect = useCallback(() => {
+    if (pendingFromKey) {
+      onSelectFromKey(pendingFromKey);
+      setFromKeyError(false);
+      setValidationError(null);
+    }
+    setIsSelectingFromKey(false);
+    setPendingFromKey(null);
+  }, [pendingFromKey, onSelectFromKey]);
+
   return (
     <div className='p-4 space-y-4 relative'>
       {/* Header */}
@@ -256,9 +333,18 @@ export function ManipulatorBuilderPanel({
           <h3 className='text-lg font-semibold'>
             {isEditing ? 'Edit' : 'Create'} Manipulator
           </h3>
-          <Badge variant='outline' className='font-mono'>
-            {formatKeyCode(fromKey)}
-          </Badge>
+          {fromKey ? (
+            <Badge variant='outline' className='font-mono'>
+              {formatKeyCode(fromKey)}
+            </Badge>
+          ) : (
+            <Badge
+              variant='outline'
+              className='font-mono text-muted-foreground'
+            >
+              No key selected
+            </Badge>
+          )}
           {getMandatoryModifiers().length > 0 && (
             <span className='text-sm text-muted-foreground'>
               +{' '}
@@ -331,16 +417,34 @@ export function ManipulatorBuilderPanel({
             </div>
 
             <Label className='text-sm font-semibold'>From Key</Label>
-            <div className='flex items-center gap-2 p-3 bg-muted rounded-lg'>
-              <Badge variant='secondary' className='font-mono text-base'>
-                {formatKeyCode(fromKey)}
-              </Badge>
-              <ArrowRight className='h-4 w-4 text-muted-foreground' />
-              <span className='text-sm text-muted-foreground'>
-                {currentToKeys.length > 0
-                  ? currentToKeys.map((k) => formatKeyCode(k)).join(', ')
-                  : 'No target keys selected'}
-              </span>
+            <div
+              className={cn(
+                'flex items-center gap-2 rounded-lg',
+                fromKeyError && 'bg-destructive/10 border-2 border-destructive',
+              )}
+            >
+              <div className='w-48'>
+                <KeyCodeSelector
+                  value={fromKey}
+                  onChange={(keyCode) => {
+                    onSelectFromKey(keyCode);
+                    setFromKeyError(false);
+                    setValidationError(null);
+                  }}
+                  placeholder='No key selected'
+                  excludeNotFrom
+                  layoutAware
+                  layoutType={keyboardTypeV2}
+                />
+              </div>
+              <Button
+                size='sm'
+                variant='outline'
+                className='shrink-0'
+                onClick={handleOpenFromKeyDialog}
+              >
+                Select from Keyboard
+              </Button>
             </div>
 
             <div className='grid grid-cols-2 gap-3'>
@@ -424,28 +528,20 @@ export function ManipulatorBuilderPanel({
               onChange={updateToEvents}
               label=''
               showHeader={false}
-              keyCodeAction={(index) => (
-                <Button
-                  size='sm'
-                  variant={
-                    selectingToEventIndex === index ? 'default' : 'outline'
-                  }
-                  className='shrink-0'
-                  onClick={() => openToKeyDialog(index)}
-                >
-                  Select from Keyboard
-                </Button>
-              )}
+              keyCodeAction={(index) =>
+                renderToEventKeySelectButton('to', index)
+              }
             />
 
-            <ToEventKeyboardDialog
-              open={selectingToEventIndex !== null}
+            <KeyboardSelectDialog
+              open={selectingToEvent !== null}
+              title={toEventDialogTitle}
               selectedKey={pendingToKey}
               onSelectKey={handleSelectToKey}
               onConfirm={handleConfirmToKeySelect}
               onOpenChange={(open) => {
                 if (!open) {
-                  setSelectingToEventIndex(null);
+                  setSelectingToEvent(null);
                   setPendingToKey(null);
                 }
               }}
@@ -489,6 +585,9 @@ export function ManipulatorBuilderPanel({
                   }}
                   label='To If Alone'
                   helpText='Triggered when the key is pressed and released alone.'
+                  keyCodeAction={(index) =>
+                    renderToEventKeySelectButton('to_if_alone', index)
+                  }
                 />
               </div>
 
@@ -506,6 +605,9 @@ export function ManipulatorBuilderPanel({
                   }}
                   label='To If Held Down'
                   helpText='Triggered when the key is held past the hold threshold.'
+                  keyCodeAction={(index) =>
+                    renderToEventKeySelectButton('to_if_held_down', index)
+                  }
                 />
               </div>
 
@@ -523,12 +625,30 @@ export function ManipulatorBuilderPanel({
                   }}
                   label='To After Key Up'
                   helpText='Triggered after the original key is released.'
+                  keyCodeAction={(index) =>
+                    renderToEventKeySelectButton('to_after_key_up', index)
+                  }
                 />
               </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* From-key keyboard dialog */}
+      <KeyboardSelectDialog
+        open={isSelectingFromKey}
+        title='Select From Key'
+        selectedKey={pendingFromKey}
+        onSelectKey={handleSelectFromKey}
+        onConfirm={handleConfirmFromKeySelect}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsSelectingFromKey(false);
+            setPendingFromKey(null);
+          }
+        }}
+      />
 
       <Separator />
 
@@ -561,6 +681,12 @@ export function ManipulatorBuilderPanel({
       </div>
     </div>
   );
+}
+
+function omitFromKeyCode(from: Manipulator['from']): Manipulator['from'] {
+  const { key_code, ...restFrom } = from;
+  void key_code;
+  return restFrom;
 }
 
 function getModifierSymbol(modifier: string): string {
