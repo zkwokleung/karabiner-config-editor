@@ -419,7 +419,7 @@ export function ManipulatorBuilderPanel({
             <Label className='text-sm font-semibold'>From Key</Label>
             <div
               className={cn(
-                'flex items-center gap-2 rounded-lg p-3 bg-muted',
+                'flex items-center gap-2 rounded-lg',
                 fromKeyError && 'bg-destructive/10 border-2 border-destructive',
               )}
             >
