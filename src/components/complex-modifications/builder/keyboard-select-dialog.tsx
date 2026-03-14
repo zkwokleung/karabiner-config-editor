@@ -33,10 +33,6 @@ export function KeyboardSelectDialog({
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
-        <p className='text-xs text-muted-foreground'>
-          Displayed symbols follow the selected layout. The saved value uses
-          key_code.
-        </p>
         <ComplexModificationKeyboard
           manipulators={[]}
           mode='select-to'

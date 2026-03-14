@@ -106,7 +106,7 @@ export function ToEventItem({
           <div className='space-y-2'>
             <Label className='text-xs'>Key Code</Label>
             <div className='flex items-center gap-2'>
-              <div className='flex-1'>
+              <div className='w-28'>
                 <KeyCodeSelector
                   value={event.key_code || ''}
                   onChange={(key) => onUpdate({ ...event, key_code: key })}
@@ -117,9 +117,6 @@ export function ToEventItem({
               </div>
               {keyCodeAction}
             </div>
-            <p className='text-xs text-muted-foreground'>
-              Stores key_code. Output preview follows selected keyboard layout.
-            </p>
           </div>
         )}
 
