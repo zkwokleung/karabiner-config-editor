@@ -15,7 +15,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { X, CircleHelp } from 'lucide-react';
+import { X, CircleHelp, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const MODIFIER_DISPLAY: Record<
   string,
@@ -88,6 +89,47 @@ interface ModifierSelectorProps {
   showInlineLabel?: boolean;
 }
 
+function ModifierButton({
+  modifier,
+  isSelected,
+  onToggle,
+}: {
+  modifier: string;
+  isSelected: boolean;
+  onToggle: (m: string) => void;
+}) {
+  return (
+    <Button
+      key={modifier}
+      type='button'
+      variant={isSelected ? 'secondary' : 'outline'}
+      aria-pressed={isSelected}
+      className={cn(
+        'relative h-auto px-3 py-2 flex flex-col items-center gap-1',
+        isSelected && 'border-primary ring-1 ring-primary/30',
+      )}
+      onClick={() => onToggle(modifier)}
+    >
+      {isSelected ? (
+        <Check
+          aria-hidden
+          className='absolute top-1 right-1 h-3.5 w-3.5 text-primary'
+        />
+      ) : null}
+      <span className='font-mono text-base leading-none'>
+        {MODIFIER_DISPLAY[modifier]?.symbol ?? modifier}
+      </span>
+      <span
+        className={cn(
+          'text-[10px] leading-none',
+          isSelected ? 'text-foreground' : 'text-muted-foreground',
+        )}
+      >
+        {MODIFIER_DISPLAY[modifier]?.label ?? modifier}
+      </span>
+    </Button>
+  );
+}
 export function ModifierSelector({
   selected,
   onChange,
@@ -192,26 +234,17 @@ export function ModifierSelector({
                       {group.label}
                     </div>
                     <div className='grid grid-cols-3 gap-2'>
-                      {group.modifiers.map((modifier) => (
-                        <Button
-                          key={modifier}
-                          type='button'
-                          variant={
-                            selected.includes(modifier)
-                              ? 'secondary'
-                              : 'outline'
-                          }
-                          className='h-auto px-3 py-2 flex flex-col items-center gap-1'
-                          onClick={() => toggleModifier(modifier)}
-                        >
-                          <span className='font-mono text-base leading-none'>
-                            {MODIFIER_DISPLAY[modifier]?.symbol ?? modifier}
-                          </span>
-                          <span className='text-[10px] text-muted-foreground leading-none'>
-                            {MODIFIER_DISPLAY[modifier]?.label ?? modifier}
-                          </span>
-                        </Button>
-                      ))}
+                      {group.modifiers.map((modifier) => {
+                        const isSelected = selected.includes(modifier);
+                        return (
+                          <ModifierButton
+                            key={modifier}
+                            modifier={modifier}
+                            isSelected={isSelected}
+                            onToggle={toggleModifier}
+                          />
+                        );
+                      })}
                     </div>
                   </div>
                 ))}
@@ -220,24 +253,17 @@ export function ModifierSelector({
               <div className='space-y-3'>
                 <Label className='text-xs text-muted-foreground'>Other</Label>
                 <div className='grid grid-cols-2 gap-2'>
-                  {ANY_AND_OTHER.map((modifier) => (
-                    <Button
-                      key={modifier}
-                      type='button'
-                      variant={
-                        selected.includes(modifier) ? 'secondary' : 'outline'
-                      }
-                      className='h-auto px-3 py-2 flex flex-col items-center gap-1'
-                      onClick={() => toggleModifier(modifier)}
-                    >
-                      <span className='font-mono text-base leading-none'>
-                        {MODIFIER_DISPLAY[modifier]?.symbol ?? modifier}
-                      </span>
-                      <span className='text-[10px] text-muted-foreground leading-none'>
-                        {MODIFIER_DISPLAY[modifier]?.label ?? modifier}
-                      </span>
-                    </Button>
-                  ))}
+                  {ANY_AND_OTHER.map((modifier) => {
+                    const isSelected = selected.includes(modifier);
+                    return (
+                      <ModifierButton
+                        key={modifier}
+                        modifier={modifier}
+                        isSelected={isSelected}
+                        onToggle={toggleModifier}
+                      />
+                    );
+                  })}
                 </div>
               </div>
             </div>

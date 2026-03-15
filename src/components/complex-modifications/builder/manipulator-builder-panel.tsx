@@ -604,9 +604,11 @@ export function ManipulatorBuilderPanel({
                   events={currentManipulator.to_if_alone || []}
                   onChange={(events) => {
                     if (events.length === 0) {
-                      const updated = { ...currentManipulator };
-                      delete updated.to_if_alone;
-                      updateCurrentManipulator(updated);
+                      // Signal that the field should be removed by setting it to
+                      // undefined. updateCurrentManipulator merges partial
+                      // updates, so passing an object without the key will not
+                      // remove it. Use explicit undefined to clear the field.
+                      updateCurrentManipulator({ to_if_alone: undefined });
                     } else {
                       updateCurrentManipulator({ to_if_alone: events });
                     }
@@ -624,9 +626,7 @@ export function ManipulatorBuilderPanel({
                   events={currentManipulator.to_if_held_down || []}
                   onChange={(events) => {
                     if (events.length === 0) {
-                      const updated = { ...currentManipulator };
-                      delete updated.to_if_held_down;
-                      updateCurrentManipulator(updated);
+                      updateCurrentManipulator({ to_if_held_down: undefined });
                     } else {
                       updateCurrentManipulator({ to_if_held_down: events });
                     }
@@ -644,9 +644,7 @@ export function ManipulatorBuilderPanel({
                   events={currentManipulator.to_after_key_up || []}
                   onChange={(events) => {
                     if (events.length === 0) {
-                      const updated = { ...currentManipulator };
-                      delete updated.to_after_key_up;
-                      updateCurrentManipulator(updated);
+                      updateCurrentManipulator({ to_after_key_up: undefined });
                     } else {
                       updateCurrentManipulator({ to_after_key_up: events });
                     }
