@@ -10,15 +10,27 @@ function ScrollArea({
   children,
   ...props
 }: React.ComponentProps<typeof ScrollAreaPrimitive.Root>) {
+  const viewportRef = React.useRef<HTMLDivElement | null>(null);
+
+  const onWheel = (e: React.WheelEvent) => {
+    const vp = viewportRef.current;
+    if (!vp) return;
+
+    vp.scrollBy({ top: e.deltaY, behavior: 'auto' });
+    e.preventDefault();
+  };
+
   return (
     <ScrollAreaPrimitive.Root
       data-slot='scroll-area'
-      className={cn('relative', className)}
+      className={cn('relative h-full overflow-hidden', className)}
+      onWheel={onWheel}
       {...props}
     >
       <ScrollAreaPrimitive.Viewport
         data-slot='scroll-area-viewport'
-        className='focus-visible:ring-ring/50 size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:outline-1'
+        ref={viewportRef}
+        className='focus-visible:ring-ring/50 h-full w-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:outline-1'
       >
         {children}
       </ScrollAreaPrimitive.Viewport>
