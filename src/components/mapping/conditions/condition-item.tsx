@@ -3,6 +3,7 @@
 import { Plus, Trash2, X, CircleHelp } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -146,35 +147,103 @@ export function ConditionItem({
           </div>
         )}
 
-        {condition.type.includes('variable') && (
-          <div className='grid grid-cols-2 gap-2'>
-            <div className='space-y-1'>
-              <Label className='text-xs'>Variable Name</Label>
-              <Input
-                value={condition.name || ''}
-                onChange={(e) =>
-                  onUpdate({ ...condition, name: e.target.value })
-                }
-                placeholder='variable_name'
-                className='text-xs'
-              />
+        {condition.type.includes('variable') && (() => {
+          const rawValue = condition.value;
+          const varType =
+            typeof rawValue === 'boolean'
+              ? 'bool'
+              : typeof rawValue === 'string'
+                ? 'string'
+                : 'int';
+
+          const handleVarTypeChange = (newType: string) => {
+            let newValue: number | string | boolean;
+            if (newType === 'bool') {
+              newValue = false;
+            } else if (newType === 'string') {
+              newValue =
+                typeof rawValue === 'number' ? String(rawValue) : '';
+            } else {
+              newValue =
+                typeof rawValue === 'string'
+                  ? Number.parseInt(rawValue) || 0
+                  : 0;
+            }
+            onUpdate({ ...condition, value: newValue });
+          };
+
+          return (
+            <div className='space-y-2'>
+              <div className='grid grid-cols-2 gap-2'>
+                <div className='space-y-1'>
+                  <Label className='text-xs'>Variable Name</Label>
+                  <Input
+                    value={condition.name || ''}
+                    onChange={(e) =>
+                      onUpdate({ ...condition, name: e.target.value })
+                    }
+                    placeholder='variable_name'
+                    className='text-xs'
+                  />
+                </div>
+                <div className='space-y-1'>
+                  <Label className='text-xs'>Type</Label>
+                  <Select value={varType} onValueChange={handleVarTypeChange}>
+                    <SelectTrigger className='text-xs cursor-pointer'>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='int'>int</SelectItem>
+                      <SelectItem value='string'>string</SelectItem>
+                      <SelectItem value='bool'>bool</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className='space-y-1'>
+                <Label className='text-xs'>Value</Label>
+                {varType === 'bool' ? (
+                  <div className='flex items-center gap-2 pt-1'>
+                    <Checkbox
+                      id='condition-variable-bool-value'
+                      checked={rawValue === true}
+                      onCheckedChange={(checked) =>
+                        onUpdate({ ...condition, value: checked === true })
+                      }
+                    />
+                    <Label
+                      htmlFor='condition-variable-bool-value'
+                      className='text-xs cursor-pointer'
+                    >
+                      {rawValue === true ? 'true' : 'false'}
+                    </Label>
+                  </div>
+                ) : varType === 'string' ? (
+                  <Input
+                    value={typeof rawValue === 'string' ? rawValue : ''}
+                    onChange={(e) =>
+                      onUpdate({ ...condition, value: e.target.value })
+                    }
+                    placeholder='value'
+                    className='text-xs'
+                  />
+                ) : (
+                  <Input
+                    type='number'
+                    value={typeof rawValue === 'number' ? rawValue : 0}
+                    onChange={(e) =>
+                      onUpdate({
+                        ...condition,
+                        value: Number.parseInt(e.target.value) || 0,
+                      })
+                    }
+                    className='text-xs'
+                  />
+                )}
+              </div>
             </div>
-            <div className='space-y-1'>
-              <Label className='text-xs'>Value</Label>
-              <Input
-                type='number'
-                value={condition.value || 0}
-                onChange={(e) =>
-                  onUpdate({
-                    ...condition,
-                    value: Number.parseInt(e.target.value) || 0,
-                  })
-                }
-                className='text-xs'
-              />
-            </div>
-          </div>
-        )}
+          );
+        })()}
 
         {condition.type.includes('keyboard_type') && (
           <div className='space-y-1'>
