@@ -170,44 +170,130 @@ export function ToEventItem({
           </div>
         )}
 
-        {eventType === 'set_variable' && (
-          <div className='grid grid-cols-2 gap-2'>
-            <div className='space-y-1'>
-              <Label className='text-xs'>Variable Name</Label>
-              <Input
-                value={event.set_variable?.name || ''}
-                onChange={(e) =>
-                  onUpdate({
-                    ...event,
-                    set_variable: {
-                      ...(event.set_variable || { value: 1 }),
-                      name: e.target.value,
-                    },
-                  })
-                }
-                placeholder='variable_name'
-                className='text-xs'
-              />
+        {eventType === 'set_variable' && (() => {
+          const rawValue = event.set_variable?.value;
+          const varType =
+            typeof rawValue === 'boolean'
+              ? 'bool'
+              : typeof rawValue === 'string'
+                ? 'string'
+                : 'int';
+
+          const handleVarTypeChange = (newType: string) => {
+            let newValue: number | string | boolean;
+            if (newType === 'bool') {
+              newValue = false;
+            } else if (newType === 'string') {
+              newValue =
+                typeof rawValue === 'number' ? String(rawValue) : '';
+            } else {
+              newValue =
+                typeof rawValue === 'string'
+                  ? Number.parseInt(rawValue) || 0
+                  : 0;
+            }
+            onUpdate({
+              ...event,
+              set_variable: {
+                ...(event.set_variable || { name: '' }),
+                value: newValue,
+              },
+            });
+          };
+
+          return (
+            <div className='space-y-2'>
+              <div className='grid grid-cols-2 gap-2'>
+                <div className='space-y-1'>
+                  <Label className='text-xs'>Variable Name</Label>
+                  <Input
+                    value={event.set_variable?.name || ''}
+                    onChange={(e) =>
+                      onUpdate({
+                        ...event,
+                        set_variable: {
+                          ...(event.set_variable || { value: 1 }),
+                          name: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder='variable_name'
+                    className='text-xs'
+                  />
+                </div>
+                <div className='space-y-1'>
+                  <Label className='text-xs'>Type</Label>
+                  <Select value={varType} onValueChange={handleVarTypeChange}>
+                    <SelectTrigger className='text-xs cursor-pointer'>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='int'>int</SelectItem>
+                      <SelectItem value='string'>string</SelectItem>
+                      <SelectItem value='bool'>bool</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className='space-y-1'>
+                <Label className='text-xs'>Value</Label>
+                {varType === 'bool' ? (
+                  <div className='flex items-center gap-2 pt-1'>
+                    <Checkbox
+                      id='set-variable-bool-value'
+                      checked={rawValue === true}
+                      onCheckedChange={(checked) =>
+                        onUpdate({
+                          ...event,
+                          set_variable: {
+                            ...(event.set_variable || { name: '' }),
+                            value: checked === true,
+                          },
+                        })
+                      }
+                    />
+                    <Label
+                      htmlFor='set-variable-bool-value'
+                      className='text-xs cursor-pointer'
+                    >
+                      {rawValue === true ? 'true' : 'false'}
+                    </Label>
+                  </div>
+                ) : varType === 'string' ? (
+                  <Input
+                    value={typeof rawValue === 'string' ? rawValue : ''}
+                    onChange={(e) =>
+                      onUpdate({
+                        ...event,
+                        set_variable: {
+                          ...(event.set_variable || { name: '' }),
+                          value: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder='value'
+                    className='text-xs'
+                  />
+                ) : (
+                  <Input
+                    type='number'
+                    value={typeof rawValue === 'number' ? rawValue : 0}
+                    onChange={(e) =>
+                      onUpdate({
+                        ...event,
+                        set_variable: {
+                          ...(event.set_variable || { name: '' }),
+                          value: Number.parseInt(e.target.value) || 0,
+                        },
+                      })
+                    }
+                    className='text-xs'
+                  />
+                )}
+              </div>
             </div>
-            <div className='space-y-1'>
-              <Label className='text-xs'>Value</Label>
-              <Input
-                type='number'
-                value={event.set_variable?.value || 0}
-                onChange={(e) =>
-                  onUpdate({
-                    ...event,
-                    set_variable: {
-                      ...(event.set_variable || { name: '' }),
-                      value: Number.parseInt(e.target.value) || 0,
-                    },
-                  })
-                }
-                className='text-xs'
-              />
-            </div>
-          </div>
-        )}
+          );
+        })()}
 
         {eventType === 'select_input_source' && (
           <div className='space-y-2'>
