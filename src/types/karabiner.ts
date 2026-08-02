@@ -132,6 +132,7 @@ export interface Condition {
   description?: string;
   identifiers?: DeviceIdentifier[];
   keyboard_types?: string[];
+  input_sources?: InputSource[];
 }
 
 export interface InputSource {

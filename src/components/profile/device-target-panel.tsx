@@ -34,32 +34,39 @@ export function DeviceTargetPanel({
       </div>
       <ScrollArea className={scrollHeightClass}>
         <div className='space-y-2'>
-          {options.map((option) => (
-            <div
-              key={option.value}
-              className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
-                selectedValue === option.value
-                  ? 'bg-primary/10 border-primary'
-                  : 'hover:bg-muted'
-              }`}
-              onClick={() => onSelect(option.value)}
-            >
-              <span className='text-sm font-medium'>{option.label}</span>
-              {option.target.type === 'device' && (
-                <Button
-                  size='icon'
-                  variant='ghost'
-                  className='h-6 w-6'
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onDeleteDevice(option.target.deviceIndex);
-                  }}
-                >
-                  <Trash2 className='h-3 w-3' />
-                </Button>
-              )}
-            </div>
-          ))}
+          {options.map((option) => {
+            const deviceIndex =
+              option.target.type === 'device'
+                ? option.target.deviceIndex
+                : null;
+
+            return (
+              <div
+                key={option.value}
+                className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
+                  selectedValue === option.value
+                    ? 'bg-primary/10 border-primary'
+                    : 'hover:bg-muted'
+                }`}
+                onClick={() => onSelect(option.value)}
+              >
+                <span className='text-sm font-medium'>{option.label}</span>
+                {deviceIndex !== null && (
+                  <Button
+                    size='icon'
+                    variant='ghost'
+                    className='h-6 w-6'
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onDeleteDevice(deviceIndex);
+                    }}
+                  >
+                    <Trash2 className='h-3 w-3' />
+                  </Button>
+                )}
+              </div>
+            );
+          })}
         </div>
       </ScrollArea>
     </Card>

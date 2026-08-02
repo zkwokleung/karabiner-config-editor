@@ -30,6 +30,10 @@ export const metadata: Metadata = {
   alternates: {
     canonical: '/',
   },
+  icons: {
+    icon: [{ url: '/app-icon.png', type: 'image/png' }],
+    apple: [{ url: '/app-icon.png', type: 'image/png' }],
+  },
   openGraph: {
     type: 'website',
     url: '/',
@@ -39,9 +43,9 @@ export const metadata: Metadata = {
     siteName: 'Karabiner Config Editor',
     images: [
       {
-        url: '/placeholder-logo.png',
-        width: 512,
-        height: 512,
+        url: '/app-icon.png',
+        width: 1254,
+        height: 1254,
         alt: 'Karabiner Config Editor logo',
       },
     ],
@@ -51,7 +55,7 @@ export const metadata: Metadata = {
     title: 'Karabiner Config Editor',
     description:
       'Visual editor for Karabiner-Elements configurations with validation and export tools.',
-    images: ['/placeholder-logo.png'],
+    images: ['/app-icon.png'],
   },
   robots: {
     index: true,
