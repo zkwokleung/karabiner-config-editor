@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/collapsible';
 import { ModifierSelector } from '@/components/mapping/selectors/modifier-selector';
 import { KeyCodeSelector } from '@/components/mapping/selectors/key-code-selector';
+import { VariableValueEditor } from '@/components/mapping/variable-value-editor';
 import {
   Tooltip,
   TooltipContent,
@@ -171,7 +172,7 @@ export function ToEventItem({
         )}
 
         {eventType === 'set_variable' && (
-          <div className='grid grid-cols-2 gap-2'>
+          <div className='grid gap-2 sm:grid-cols-3'>
             <div className='space-y-1'>
               <Label className='text-xs'>Variable Name</Label>
               <Input
@@ -189,23 +190,18 @@ export function ToEventItem({
                 className='text-xs'
               />
             </div>
-            <div className='space-y-1'>
-              <Label className='text-xs'>Value</Label>
-              <Input
-                type='number'
-                value={event.set_variable?.value || 0}
-                onChange={(e) =>
-                  onUpdate({
-                    ...event,
-                    set_variable: {
-                      ...(event.set_variable || { name: '' }),
-                      value: Number.parseInt(e.target.value) || 0,
-                    },
-                  })
-                }
-                className='text-xs'
-              />
-            </div>
+            <VariableValueEditor
+              value={event.set_variable?.value ?? 0}
+              onChange={(value) =>
+                onUpdate({
+                  ...event,
+                  set_variable: {
+                    ...(event.set_variable ?? { name: '' }),
+                    value,
+                  },
+                })
+              }
+            />
           </div>
         )}
 

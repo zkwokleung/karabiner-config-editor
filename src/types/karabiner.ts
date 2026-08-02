@@ -126,7 +126,7 @@ export interface DelayedAction {
 export interface Condition {
   type: string;
   name?: string;
-  value?: number | string;
+  value?: VariableValue;
   bundle_identifiers?: string[];
   file_paths?: string[];
   description?: string;
@@ -143,8 +143,10 @@ export interface InputSource {
 
 export interface Variable {
   name: string;
-  value: number | string;
+  value: VariableValue;
 }
+
+export type VariableValue = number | boolean | string;
 
 export interface MouseKey {
   x?: number;
