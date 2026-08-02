@@ -149,7 +149,7 @@ export function ExportKeyboardPreview({
 
   const selectedHighlight = selectedKey ? [selectedKey] : [];
   const highlightLayers = [
-    { className: 'kb-mapped', keys: Array.from(mappingIndex.mappedKeys) },
+    { className: 'kb-mapped', keys: Array.from(mappingIndex.byFromKey.keys()) },
     { className: 'kb-selected', keys: selectedHighlight },
   ];
 
@@ -160,7 +160,7 @@ export function ExportKeyboardPreview({
     <div className='flex items-center gap-3 text-xs text-muted-foreground'>
       <div className='flex items-center gap-1'>
         <div className='w-2.5 h-2.5 rounded-sm bg-primary/20 border border-primary' />
-        <span>Has mappings</span>
+        <span>Mapped source key</span>
       </div>
     </div>
   );
