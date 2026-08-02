@@ -17,7 +17,7 @@ import {
   Sun,
   Upload,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
@@ -32,6 +32,16 @@ import { createMinimalKarabinerConfig } from '@/lib/default-config';
 import { ExportPanel } from '@/components/export/export-panel';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { usePersistedConfig } from '@/hooks/use-persisted-config';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ??
@@ -131,6 +141,8 @@ export default function KarabinerEditor() {
   } = usePersistedConfig(normalizeConfigShape);
   const [jsonInput, setJsonInput] = useState('');
   const [activeTab, setActiveTab] = useState('import');
+  const [isDefaultConfirmationOpen, setIsDefaultConfirmationOpen] =
+    useState(false);
   const validationErrors = useMemo<ValidationError[]>(
     () => (config ? validateConfig(config) : []),
     [config],
@@ -194,7 +206,7 @@ export default function KarabinerEditor() {
     reader.readAsText(file);
   };
 
-  const handleStartWithDefault = () => {
+  const applyDefaultConfig = () => {
     const minimalConfig = createMinimalKarabinerConfig();
     updateConfig(minimalConfig);
     setJsonInput(JSON.stringify(minimalConfig, null, 2));
@@ -203,6 +215,15 @@ export default function KarabinerEditor() {
       title: 'Default config ready',
       description: 'Loaded a minimal Karabiner config to get you started.',
     });
+  };
+
+  const handleStartWithDefault = () => {
+    if (config) {
+      setIsDefaultConfirmationOpen(true);
+      return;
+    }
+
+    applyDefaultConfig();
   };
 
   const handleJsonPaste = () => {
@@ -287,6 +308,31 @@ export default function KarabinerEditor() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
       <Toaster />
+
+      <AlertDialog
+        open={isDefaultConfirmationOpen}
+        onOpenChange={setIsDefaultConfirmationOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Replace the current config?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Starting with the default config will replace the config open in
+              the editor and its saved local draft. This cannot be undone after
+              the replacement is saved.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep current config</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: 'destructive' })}
+              onClick={applyDefaultConfig}
+            >
+              Replace with default
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <header className='sticky top-0 z-50 border-b border-border/70 bg-background/85 backdrop-blur-xl'>
         <div className='container mx-auto flex items-center justify-between px-4 py-3'>
