@@ -47,12 +47,13 @@ export function SimpleLineageSummary({
       </div>
       {affectedScopes.map((scope) => {
         const scopeLabel =
-          scope.kind === 'device'
+          scope.label ??
+          (scope.kind === 'device'
             ? deviceLabelLookup.get(scope.deviceIndex ?? -1) ||
               `Device ${(scope.deviceIndex ?? 0) + 1}`
             : profile.devices?.length
               ? 'All other devices'
-              : 'All devices';
+              : 'All devices');
 
         return (
           <div

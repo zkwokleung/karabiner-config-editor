@@ -15,8 +15,9 @@ export interface KeyIdentity {
 }
 
 export interface SimpleModificationLineageScope {
-  kind: 'all-other-devices' | 'device';
+  kind: 'all-other-devices' | 'condition' | 'device';
   deviceIndex?: number;
+  label?: string;
   physicalSources: KeyIdentity[];
   affected: boolean;
 }
@@ -41,11 +42,41 @@ export function resolveSimpleModificationLineage(
   );
   const scopes: SimpleModificationLineageScope[] = [];
 
-  if (isScopeAllowed(undefined, deviceConditions)) {
+  const deviceIfConditions = deviceConditions.filter(
+    (condition): condition is DeviceIfCondition =>
+      condition.type === 'device_if',
+  );
+
+  if (
+    deviceIfConditions.length === 0 &&
+    isScopeAllowed(undefined, deviceConditions)
+  ) {
     scopes.push(
-      resolveScope('all-other-devices', postSimpleInput, profileMappings),
+      resolveScope(
+        'all-other-devices',
+        postSimpleInput,
+        profileMappings,
+        undefined,
+        deviceConditions.length > 0
+          ? 'Devices allowed by conditions'
+          : undefined,
+      ),
     );
   }
+
+  getConditionDeviceCandidates(deviceIfConditions)
+    .filter((identifiers) => isScopeAllowed(identifiers, deviceConditions))
+    .forEach((identifiers, candidateIndex) => {
+      scopes.push(
+        resolveScope(
+          'condition',
+          postSimpleInput,
+          profileMappings,
+          candidateIndex,
+          formatConditionScopeLabel(identifiers),
+        ),
+      );
+    });
 
   profile.devices?.forEach((device, deviceIndex) => {
     if (!isScopeAllowed(device.identifiers, deviceConditions)) return;
@@ -76,6 +107,7 @@ function resolveScope(
   postSimpleInput: KeyIdentity,
   mappings: EffectiveMapping[],
   deviceIndex?: number,
+  label?: string,
 ): SimpleModificationLineageScope {
   const inputKey = identityKey(postSimpleInput);
   const inputIsRemapped = mappings.some(
@@ -92,6 +124,7 @@ function resolveScope(
   return {
     kind,
     deviceIndex,
+    label,
     physicalSources,
     affected: inputIsRemapped || feedingMappings.length > 0,
   };
@@ -146,6 +179,8 @@ type DeviceScopeCondition = Condition & {
   type: 'device_if' | 'device_unless';
 };
 
+type DeviceIfCondition = DeviceScopeCondition & { type: 'device_if' };
+
 function isDeviceScopeCondition(
   condition: Condition,
 ): condition is DeviceScopeCondition {
@@ -164,6 +199,70 @@ function isScopeAllowed(
       : false;
     return condition.type === 'device_if' ? matches : !matches;
   });
+}
+
+function getConditionDeviceCandidates(
+  conditions: DeviceIfCondition[],
+): DeviceIdentifier[] {
+  if (conditions.length === 0) return [];
+
+  let candidates: DeviceIdentifier[] = [{}];
+  for (const condition of conditions) {
+    const identifiers = condition.identifiers || [];
+    candidates = candidates.flatMap((candidate) =>
+      identifiers.flatMap((identifier) => {
+        const merged = mergeCompatibleIdentifiers(candidate, identifier);
+        return merged ? [merged] : [];
+      }),
+    );
+  }
+
+  const seen = new Set<string>();
+  return candidates.filter((candidate) => {
+    const key = stableIdentifierKey(candidate);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function mergeCompatibleIdentifiers(
+  left: DeviceIdentifier,
+  right: DeviceIdentifier,
+): DeviceIdentifier | null {
+  const sharedKeys = Object.keys(left).filter((key) => key in right) as Array<
+    keyof DeviceIdentifier
+  >;
+  if (sharedKeys.some((key) => left[key] !== right[key])) return null;
+  return { ...left, ...right };
+}
+
+function stableIdentifierKey(identifier: DeviceIdentifier): string {
+  return Object.entries(identifier)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([key, value]) => `${key}:${String(value)}`)
+    .join('|');
+}
+
+function formatConditionScopeLabel(identifier: DeviceIdentifier): string {
+  const parts: string[] = [];
+  if (identifier.vendor_id !== undefined) {
+    parts.push(`vendor ${identifier.vendor_id}`);
+  }
+  if (identifier.product_id !== undefined) {
+    parts.push(`product ${identifier.product_id}`);
+  }
+  if (identifier.is_keyboard !== undefined) {
+    parts.push(identifier.is_keyboard ? 'keyboard' : 'non-keyboard');
+  }
+  if (identifier.is_pointing_device !== undefined) {
+    parts.push(
+      identifier.is_pointing_device ? 'pointing device' : 'non-pointing device',
+    );
+  }
+  return parts.length > 0
+    ? `Devices matching ${parts.join(', ')}`
+    : 'Devices matching conditions';
 }
 
 function matchesIdentifier(

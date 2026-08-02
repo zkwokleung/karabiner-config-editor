@@ -11,6 +11,7 @@ import {
 import type { KarabinerConfig } from '@/types/karabiner';
 
 const DRAFT_VERSION = 1;
+const SAVE_DEBOUNCE_MS = 400;
 
 export const CONFIG_DRAFT_STORAGE_KEY =
   'karabiner-config-editor:config-draft:v1';
@@ -51,16 +52,23 @@ function parseDraft(rawDraft: string): ConfigDraftEnvelope {
   return value as unknown as ConfigDraftEnvelope;
 }
 
-function getStorageErrorMessage(error: unknown, action: 'load' | 'save') {
+function getStorageErrorMessage(
+  error: unknown,
+  action: 'load' | 'save' | 'remove',
+) {
   if (error instanceof Error && error.message) {
-    return action === 'load'
-      ? `The local draft could not be restored: ${error.message}`
-      : `The current config could not be saved locally: ${error.message}`;
+    if (action === 'load') {
+      return `The local draft could not be restored: ${error.message}`;
+    }
+    if (action === 'remove') {
+      return `The local draft could not be removed: ${error.message}`;
+    }
+    return `The current config could not be saved locally: ${error.message}`;
   }
 
-  return action === 'load'
-    ? 'The local draft could not be restored.'
-    : 'The current config could not be saved locally.';
+  if (action === 'load') return 'The local draft could not be restored.';
+  if (action === 'remove') return 'The local draft could not be removed.';
+  return 'The current config could not be saved locally.';
 }
 
 export function usePersistedConfig(
@@ -103,24 +111,38 @@ export function usePersistedConfig(
       return;
     }
 
-    const nextSavedAt = new Date().toISOString();
-    const draft: ConfigDraftEnvelope = {
-      version: DRAFT_VERSION,
-      savedAt: nextSavedAt,
-      config,
+    let hasSaved = false;
+    const saveDraft = () => {
+      if (hasSaved) return;
+      hasSaved = true;
+
+      const nextSavedAt = new Date().toISOString();
+      const draft: ConfigDraftEnvelope = {
+        version: DRAFT_VERSION,
+        savedAt: nextSavedAt,
+        config,
+      };
+
+      try {
+        window.localStorage.setItem(
+          CONFIG_DRAFT_STORAGE_KEY,
+          JSON.stringify(draft),
+        );
+        setHasStoredDraft(true);
+        setSavedAt(nextSavedAt);
+        setStorageError(null);
+      } catch (error) {
+        setStorageError(getStorageErrorMessage(error, 'save'));
+      }
     };
 
-    try {
-      window.localStorage.setItem(
-        CONFIG_DRAFT_STORAGE_KEY,
-        JSON.stringify(draft),
-      );
-      setHasStoredDraft(true);
-      setSavedAt(nextSavedAt);
-      setStorageError(null);
-    } catch (error) {
-      setStorageError(getStorageErrorMessage(error, 'save'));
-    }
+    const timeoutId = window.setTimeout(saveDraft, SAVE_DEBOUNCE_MS);
+    window.addEventListener('pagehide', saveDraft);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.removeEventListener('pagehide', saveDraft);
+    };
   }, [config, isHydrated]);
 
   const discardDraft = useCallback(() => {
@@ -128,7 +150,7 @@ export function usePersistedConfig(
       window.localStorage.removeItem(CONFIG_DRAFT_STORAGE_KEY);
       setStorageError(null);
     } catch (error) {
-      setStorageError(getStorageErrorMessage(error, 'save'));
+      setStorageError(getStorageErrorMessage(error, 'remove'));
       return false;
     }
 

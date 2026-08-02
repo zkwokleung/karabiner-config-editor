@@ -144,6 +144,8 @@ export default function KarabinerEditor() {
   const [activeTab, setActiveTab] = useState('import');
   const [isDefaultConfirmationOpen, setIsDefaultConfirmationOpen] =
     useState(false);
+  const [isDiscardConfirmationOpen, setIsDiscardConfirmationOpen] =
+    useState(false);
   const validationErrors = useMemo<ValidationError[]>(
     () => (config ? validateConfig(config) : []),
     [config],
@@ -333,6 +335,31 @@ export default function KarabinerEditor() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <AlertDialog
+        open={isDiscardConfirmationOpen}
+        onOpenChange={setIsDiscardConfirmationOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard the local draft?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes the saved draft and closes the configuration that is
+              currently open in the editor. Export it first if you may need it
+              again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep draft</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: 'destructive' })}
+              onClick={handleDiscardDraft}
+            >
+              Discard draft
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <header className='sticky top-0 z-50 border-b border-border/70 bg-background/85 backdrop-blur-xl'>
         <div className='container mx-auto flex items-center justify-between px-4 py-3'>
           <div className='flex items-center gap-3'>
@@ -467,7 +494,7 @@ export default function KarabinerEditor() {
               size='sm'
               variant='outline'
               className='shrink-0'
-              onClick={handleDiscardDraft}
+              onClick={() => setIsDiscardConfirmationOpen(true)}
             >
               Discard local draft
             </Button>
