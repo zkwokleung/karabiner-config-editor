@@ -1,25 +1,33 @@
 'use client';
 
-import { GripVertical, Trash2 } from 'lucide-react';
+import { GripVertical, Route, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { Manipulator } from '@/types/karabiner';
+import type { Manipulator, Profile } from '@/types/karabiner';
 import { getCharacterWithKeyCodeLabel } from '@/lib/keyboard-layout';
 import { useKeyboardLayout } from '@/components/keyboard/keyboard-layout-context';
 import { getEventKeyValue } from '@/lib/karabiner-keycodes';
+import {
+  resolveSimpleModificationLineage,
+  type KeyIdentity,
+} from '@/lib/simple-modification-lineage';
 
 interface MappingSummaryProps {
+  profile: Profile;
   manipulator: Manipulator;
   manipulatorIndex: number;
+  deviceLabelLookup: Map<number, string>;
   onEdit: () => void;
   onDelete: () => void;
 }
 
 export function SortableMappingSummary({
+  profile,
   manipulator,
   manipulatorIndex,
+  deviceLabelLookup,
   onEdit,
   onDelete,
 }: MappingSummaryProps) {
@@ -45,11 +53,17 @@ export function SortableMappingSummary({
   const fromKey = getEventKeyValue(manipulator.from);
   const mandatory = manipulator.from.modifiers?.mandatory || [];
   const toEvents = manipulator.to || [];
+  const lineage = resolveSimpleModificationLineage(profile, manipulator);
+  const affectedScopes =
+    lineage?.scopes.filter((scope) => scope.affected) || [];
 
   const hasAdvanced =
     manipulator.to_if_alone ||
     manipulator.to_if_held_down ||
+    manipulator.to_if_other_key_pressed ||
     manipulator.to_after_key_up ||
+    manipulator.to_delayed_action ||
+    manipulator.parameters ||
     (manipulator.conditions && manipulator.conditions.length > 0);
 
   const formatKeyCode = (keyCode: string) =>
@@ -117,6 +131,57 @@ export function SortableMappingSummary({
           </p>
         )}
 
+        {lineage && affectedScopes.length > 0 && (
+          <div className='mt-2 space-y-1.5 rounded-md border border-sky-500/20 bg-sky-500/5 p-2.5'>
+            <div className='flex items-center gap-1.5 text-xs font-medium text-foreground'>
+              <Route className='h-3.5 w-3.5 text-sky-600' />
+              Simple modification lineage
+            </div>
+            {affectedScopes.map((scope) => {
+              const scopeLabel =
+                scope.kind === 'device'
+                  ? deviceLabelLookup.get(scope.deviceIndex ?? -1) ||
+                    `Device ${(scope.deviceIndex ?? 0) + 1}`
+                  : profile.devices?.length
+                    ? 'All other devices'
+                    : 'All devices';
+
+              return (
+                <div
+                  key={`${scope.kind}-${scope.deviceIndex ?? 'profile'}`}
+                  className='flex flex-wrap items-center gap-1.5 text-xs'
+                >
+                  <span className='mr-1 text-muted-foreground'>
+                    {scopeLabel}:
+                  </span>
+                  {scope.physicalSources.length > 0 ? (
+                    scope.physicalSources.map((source) => (
+                      <Badge
+                        key={`${source.field}:${source.value}`}
+                        variant='outline'
+                        className='font-mono text-[11px]'
+                      >
+                        {formatIdentity(source, keyboardTypeV2)}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className='italic text-muted-foreground'>
+                      no physical source
+                    </span>
+                  )}
+                  <span className='text-muted-foreground'>→ post-simple</span>
+                  <Badge variant='secondary' className='font-mono text-[11px]'>
+                    {formatIdentity(lineage.postSimpleInput, keyboardTypeV2)}
+                  </Badge>
+                </div>
+              );
+            })}
+            <p className='text-[11px] text-muted-foreground'>
+              One pass only; simple mappings are not recursively chained.
+            </p>
+          </div>
+        )}
+
         {hasAdvanced && (
           <div className='flex items-center gap-1.5 mt-1.5 flex-wrap'>
             {manipulator.to_if_alone && (
@@ -135,12 +200,27 @@ export function SortableMappingSummary({
                 if held
               </Badge>
             )}
+            {manipulator.to_if_other_key_pressed && (
+              <Badge variant='outline' className='text-xs'>
+                if other key
+              </Badge>
+            )}
             {manipulator.to_after_key_up && (
               <Badge
                 variant='outline'
                 className='text-xs bg-purple-500/10 text-purple-600 border-purple-200'
               >
                 after key up
+              </Badge>
+            )}
+            {manipulator.to_delayed_action && (
+              <Badge variant='outline' className='text-xs'>
+                delayed
+              </Badge>
+            )}
+            {manipulator.parameters && (
+              <Badge variant='outline' className='text-xs'>
+                timing override
               </Badge>
             )}
             {manipulator.conditions && manipulator.conditions.length > 0 && (
@@ -172,6 +252,26 @@ export function SortableMappingSummary({
     </div>
   );
 }
+
+function formatIdentity(
+  identity: KeyIdentity,
+  keyboardType: 'ansi' | 'iso' | 'jis',
+): string {
+  const keyLabel = getCharacterWithKeyCodeLabel(identity.value, keyboardType);
+  if (identity.field === 'key_code') return keyLabel;
+  return `${keyLabel} · ${IDENTITY_FIELD_LABELS[identity.field]}`;
+}
+
+const IDENTITY_FIELD_LABELS: Record<
+  Exclude<KeyIdentity['field'], 'key_code'>,
+  string
+> = {
+  consumer_key_code: 'consumer',
+  pointing_button: 'pointing',
+  apple_vendor_top_case_key_code: 'top case',
+  apple_vendor_keyboard_key_code: 'Apple keyboard',
+  generic_desktop: 'generic desktop',
+};
 
 function getModifierSymbols(mods: string[]): string {
   const symbols: Record<string, string> = {

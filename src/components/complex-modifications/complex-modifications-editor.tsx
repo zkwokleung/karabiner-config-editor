@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import type { Rule, Manipulator } from '@/types/karabiner';
+import type { Rule, Manipulator, Profile } from '@/types/karabiner';
 import { useToast } from '@/hooks/use-toast';
 import { findConflictingManipulators } from '@/lib/validation';
 import {
@@ -31,13 +31,17 @@ import { RuleDetailPanel } from './rule-detail-panel';
 import { getEventKeyValue } from '@/lib/karabiner-keycodes';
 
 interface ComplexModificationsEditorProps {
+  profile: Profile;
   rules: Rule[];
   onRulesChange: (rules: Rule[]) => void;
+  deviceLabelLookup: Map<number, string>;
 }
 
 export function ComplexModificationsEditor({
+  profile,
   rules,
   onRulesChange,
+  deviceLabelLookup,
 }: ComplexModificationsEditorProps) {
   const { toast } = useToast();
   const [selectedRuleIndex, setSelectedRuleIndex] = useState<number | null>(
@@ -296,7 +300,9 @@ export function ComplexModificationsEditor({
         <div className='pr-2'>
           {selectedRule ? (
             <RuleDetailPanel
+              profile={profile}
               rule={selectedRule}
+              deviceLabelLookup={deviceLabelLookup}
               onDelete={() => handleDeleteRule(selectedRuleIndex!)}
               onUpdateDescription={(desc) =>
                 handleUpdateDescription(selectedRuleIndex!, desc)
