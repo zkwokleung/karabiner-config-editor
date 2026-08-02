@@ -4,6 +4,9 @@
 import { ANSI_LAYOUT } from './layouts/ansi';
 import { ISO_DISPLAY_OVERRIDES, ISO_LAYOUT } from './layouts/iso';
 import { JIS_DISPLAY_OVERRIDES, JIS_LAYOUT } from './layouts/jis';
+import { getLogicalLegend, type KeyboardLegendType } from './legends';
+
+export { KEYBOARD_LEGEND_OPTIONS, type KeyboardLegendType } from './legends';
 
 export type KeyboardLayoutType = 'ansi' | 'iso' | 'jis';
 
@@ -238,7 +241,11 @@ export interface LayoutAwareKeyLabel {
 export function getLayoutOutputForKeyCode(
   keyCode: string,
   layoutType: KeyboardLayoutType,
+  legendType: KeyboardLegendType = 'qwerty',
 ): string | null {
+  const logicalLegend = getLogicalLegend(keyCode, legendType);
+  if (logicalLegend) return logicalLegend;
+
   const simpleButton = toSimpleKeyboardButton(keyCode);
   if (!simpleButton || simpleButton.startsWith('{')) {
     return null;
@@ -256,8 +263,9 @@ export function getLayoutOutputForKeyCode(
 export function getLayoutAwareKeyLabel(
   keyCode: string,
   layoutType: KeyboardLayoutType,
+  legendType: KeyboardLegendType = 'qwerty',
 ): LayoutAwareKeyLabel {
-  const output = getLayoutOutputForKeyCode(keyCode, layoutType);
+  const output = getLayoutOutputForKeyCode(keyCode, layoutType, legendType);
   const keyCodeLabel = getKeyLabel(keyCode);
 
   if (!output || output === keyCodeLabel) {
@@ -295,8 +303,9 @@ export function formatDisplayWithKeyCode(
 export function getCharacterWithKeyCodeLabel(
   keyCode: string,
   layoutType: KeyboardLayoutType,
+  legendType: KeyboardLegendType = 'qwerty',
 ): string {
-  const output = getLayoutOutputForKeyCode(keyCode, layoutType);
+  const output = getLayoutOutputForKeyCode(keyCode, layoutType, legendType);
   const character = output && output !== ' ' ? output : getKeyLabel(keyCode);
 
   return formatDisplayWithKeyCode(character, keyCode);
@@ -357,12 +366,23 @@ export const KEYBOARD_DISPLAY: Record<string, string> = {
 
 export function getKeyboardDisplay(
   layoutType: KeyboardLayoutType,
+  legendType: KeyboardLegendType = 'qwerty',
 ): Record<string, string> {
-  if (layoutType === 'jis') {
-    return { ...KEYBOARD_DISPLAY, ...JIS_DISPLAY_OVERRIDES };
+  const geometryDisplay =
+    layoutType === 'jis'
+      ? { ...KEYBOARD_DISPLAY, ...JIS_DISPLAY_OVERRIDES }
+      : layoutType === 'iso'
+        ? { ...KEYBOARD_DISPLAY, ...ISO_DISPLAY_OVERRIDES }
+        : { ...KEYBOARD_DISPLAY };
+
+  if (legendType !== 'qwerty') {
+    Object.entries(SIMPLE_KEYBOARD_TO_KARABINER).forEach(
+      ([button, keyCode]) => {
+        const logicalLegend = getLogicalLegend(keyCode, legendType);
+        if (logicalLegend) geometryDisplay[button] = logicalLegend;
+      },
+    );
   }
-  if (layoutType === 'iso') {
-    return { ...KEYBOARD_DISPLAY, ...ISO_DISPLAY_OVERRIDES };
-  }
-  return KEYBOARD_DISPLAY;
+
+  return geometryDisplay;
 }
