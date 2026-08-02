@@ -33,6 +33,7 @@ import {
   getLayoutAwareKeyLabel,
   type KeyboardLayoutType,
 } from '@/lib/keyboard-layout';
+import { useKeyboardLayout } from '@/components/keyboard/keyboard-layout-context';
 import {
   getKeySelectionFromKeyboardCode,
   isModifierKeyboardCode,
@@ -68,6 +69,7 @@ export function KeyCodeSelector({
   layoutAware = false,
   layoutType,
 }: KeyCodeSelectorProps) {
+  const { legendType } = useKeyboardLayout();
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
@@ -87,10 +89,18 @@ export function KeyCodeSelector({
       const keyValue = getKeyCodeValue(item);
 
       if (layoutAware && layoutType && item.key_code) {
-        const layoutLabel = getLayoutAwareKeyLabel(item.key_code, layoutType);
+        const layoutLabel = getLayoutAwareKeyLabel(
+          item.key_code,
+          layoutType,
+          legendType,
+        );
         return {
           keyValue,
-          label: getCharacterWithKeyCodeLabel(item.key_code, layoutType),
+          label: getCharacterWithKeyCodeLabel(
+            item.key_code,
+            layoutType,
+            legendType,
+          ),
           output: layoutLabel.output,
         };
       }
@@ -101,7 +111,7 @@ export function KeyCodeSelector({
         output: null,
       };
     };
-  }, [layoutAware, layoutType]);
+  }, [layoutAware, layoutType, legendType]);
 
   // Find the selected item to display its label
   const selectedItem = valueField

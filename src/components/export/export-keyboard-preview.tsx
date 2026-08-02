@@ -48,7 +48,8 @@ export function ExportKeyboardPreview({
   onConfigChange,
 }: ExportKeyboardPreviewProps) {
   const { toast } = useToast();
-  const { layoutType, setLayoutType, keyboardTypeV2 } = useKeyboardLayout();
+  const { layoutType, setLayoutType, keyboardTypeV2, legendType } =
+    useKeyboardLayout();
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [directionFilter, setDirectionFilter] =
     useState<MappingDirectionFilter>('both');
@@ -60,8 +61,9 @@ export function ExportKeyboardPreview({
   const [editorValue, setEditorValue] = useState('');
 
   const formatKeyCode = useCallback(
-    (keyCode: string) => getCharacterWithKeyCodeLabel(keyCode, keyboardTypeV2),
-    [keyboardTypeV2],
+    (keyCode: string) =>
+      getCharacterWithKeyCodeLabel(keyCode, keyboardTypeV2, legendType),
+    [keyboardTypeV2, legendType],
   );
 
   const entries = useMemo(() => normalizeConfigMappings(config), [config]);

@@ -33,6 +33,7 @@ import { VisualKeyboard } from '@/components/keyboard/visual-keyboard';
 import {
   formatDisplayWithKeyCode,
   getCharacterWithKeyCodeLabel,
+  type KeyboardLegendType,
   type KeyboardLayoutType,
 } from '@/lib/keyboard-layout';
 import { useKeyboardLayout } from '@/components/keyboard/keyboard-layout-context';
@@ -73,10 +74,10 @@ export function SimpleModificationsEditor({
   const [editToKey, setEditToKey] = useState<string>('');
   const [editToField, setEditToField] = useState<KeyCodeField | null>(null);
   const { toast } = useToast();
-  const { keyboardTypeV2 } = useKeyboardLayout();
+  const { keyboardTypeV2, legendType } = useKeyboardLayout();
 
   const formatKeyCode = (keyCode: string) =>
-    getCharacterWithKeyCodeLabel(keyCode, keyboardTypeV2);
+    getCharacterWithKeyCodeLabel(keyCode, keyboardTypeV2, legendType);
 
   const duplicates = useMemo<SimpleModificationDuplicate[]>(() => {
     return findDuplicateSimpleModifications(profile);
@@ -613,11 +614,19 @@ export function SimpleModificationsEditor({
                         <div className='flex items-center justify-between gap-4'>
                           <div className='flex items-center gap-3'>
                             <code className='px-3 py-1 rounded bg-muted text-sm font-mono'>
-                              {formatKeyLabel(mod.from, keyboardTypeV2)}
+                              {formatKeyLabel(
+                                mod.from,
+                                keyboardTypeV2,
+                                legendType,
+                              )}
                             </code>
                             <span className='text-muted-foreground'>→</span>
                             <code className='px-3 py-1 rounded bg-muted text-sm font-mono'>
-                              {formatKeyLabel(toValue, keyboardTypeV2)}
+                              {formatKeyLabel(
+                                toValue,
+                                keyboardTypeV2,
+                                legendType,
+                              )}
                             </code>
                           </div>
                           <Button
@@ -703,13 +712,14 @@ export function SimpleModificationsEditor({
 function formatKeyLabel(
   key: KeyCode | null | undefined,
   layoutType: KeyboardLayoutType,
+  legendType: KeyboardLegendType,
 ): string {
   if (!key) {
     return '-';
   }
 
   if (key.key_code) {
-    return getCharacterWithKeyCodeLabel(key.key_code, layoutType);
+    return getCharacterWithKeyCodeLabel(key.key_code, layoutType, legendType);
   }
 
   if (key.consumer_key_code) {

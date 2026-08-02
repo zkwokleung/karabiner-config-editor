@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, ArrowRight } from 'lucide-react';
 import {
   getCharacterWithKeyCodeLabel,
   getKeyLabel,
+  getLayoutOutputForKeyCode,
   toKarabinerKeyCode,
   toSimpleKeyboardButton,
 } from '@/lib/keyboard-layout';
@@ -39,7 +40,8 @@ export function VisualKeyboard({
   onEditMapping,
   onDeleteMapping,
 }: VisualKeyboardProps) {
-  const { layoutType, setLayoutType, keyboardTypeV2 } = useKeyboardLayout();
+  const { layoutType, setLayoutType, keyboardTypeV2, legendType } =
+    useKeyboardLayout();
   const [popoverKey, setPopoverKey] = useState<string | null>(null);
   const [popoverPosition, setPopoverPosition] = useState<{
     x: number;
@@ -79,11 +81,13 @@ export function VisualKeyboard({
     const overrides: Record<string, string> = {};
     mappingMap.forEach((toKeyCode, fromKeyCode) => {
       const simpleKeyboardButton = toSimpleKeyboardButton(fromKeyCode);
-      const toLabel = getKeyLabel(toKeyCode);
+      const toLabel =
+        getLayoutOutputForKeyCode(toKeyCode, keyboardTypeV2, legendType) ??
+        getKeyLabel(toKeyCode);
       overrides[simpleKeyboardButton] = toLabel;
     });
     return overrides;
-  }, [mappingMap]);
+  }, [keyboardTypeV2, legendType, mappingMap]);
 
   const highlightLayers = useMemo(() => {
     const selectedHighlightKeys = Array.from(
@@ -232,15 +236,26 @@ export function VisualKeyboard({
 
     return {
       key: popoverKey,
-      label: getCharacterWithKeyCodeLabel(popoverKey, keyboardTypeV2),
+      label: getCharacterWithKeyCodeLabel(
+        popoverKey,
+        keyboardTypeV2,
+        legendType,
+      ),
       mapsTo,
       mapsToLabel: mapsTo
-        ? getCharacterWithKeyCodeLabel(mapsTo, keyboardTypeV2)
+        ? getCharacterWithKeyCodeLabel(mapsTo, keyboardTypeV2, legendType)
         : null,
       receivesFrom,
       hasConflict,
     };
-  }, [popoverKey, mappingMap, reverseMap, conflictingKeys, keyboardTypeV2]);
+  }, [
+    popoverKey,
+    mappingMap,
+    reverseMap,
+    conflictingKeys,
+    keyboardTypeV2,
+    legendType,
+  ]);
 
   const legend = (
     <div className='flex items-center gap-3 text-xs text-muted-foreground'>
@@ -312,7 +327,11 @@ export function VisualKeyboard({
                     key={fromKey}
                     className='px-1.5 py-0.5 rounded bg-background font-mono text-xs'
                   >
-                    {getCharacterWithKeyCodeLabel(fromKey, keyboardTypeV2)}
+                    {getCharacterWithKeyCodeLabel(
+                      fromKey,
+                      keyboardTypeV2,
+                      legendType,
+                    )}
                   </code>
                 ))}
               </div>
