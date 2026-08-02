@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import type { Manipulator } from '@/types/karabiner';
+import type { Manipulator, Profile } from '@/types/karabiner';
 import { getCharacterWithKeyCodeLabel } from '@/lib/keyboard-layout';
 import { useKeyboardLayout } from '@/components/keyboard/keyboard-layout-context';
 import {
@@ -27,8 +27,10 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { getEventKeyValue } from '@/lib/karabiner-keycodes';
+import { SimpleLineageSummary } from '../simple-lineage-summary';
 
 interface KeyMappingListProps {
+  profile: Profile;
   selectedKey: string;
   manipulators: Manipulator[];
   manipulatorIndices: number[];
@@ -37,9 +39,11 @@ interface KeyMappingListProps {
   onDeleteManipulator: (index: number) => void;
   onReorderManipulators: (manipulators: Manipulator[]) => void;
   onClearSelection: () => void;
+  deviceLabelLookup: Map<number, string>;
 }
 
 export function KeyMappingList({
+  profile,
   selectedKey,
   manipulators,
   manipulatorIndices,
@@ -48,6 +52,7 @@ export function KeyMappingList({
   onDeleteManipulator,
   onReorderManipulators,
   onClearSelection,
+  deviceLabelLookup,
 }: KeyMappingListProps) {
   const { keyboardTypeV2 } = useKeyboardLayout();
 
@@ -112,7 +117,10 @@ export function KeyMappingList({
     return Boolean(
       manipulator.to_if_alone ||
         manipulator.to_if_held_down ||
+        manipulator.to_if_other_key_pressed ||
         manipulator.to_after_key_up ||
+        manipulator.to_delayed_action ||
+        manipulator.parameters ||
         manipulator.conditions,
     );
   };
@@ -194,6 +202,8 @@ export function KeyMappingList({
                     key={index}
                     index={index}
                     manipulator={manipulator}
+                    profile={profile}
+                    deviceLabelLookup={deviceLabelLookup}
                     selectedKeyLabel={formatKeyCode(selectedKey)}
                     onEditManipulator={onEditManipulator}
                     onDeleteManipulator={onDeleteManipulator}
@@ -213,7 +223,9 @@ export function KeyMappingList({
 
 interface SortableKeyMappingItemProps {
   index: number;
+  profile: Profile;
   manipulator: Manipulator;
+  deviceLabelLookup: Map<number, string>;
   selectedKeyLabel: string;
   onEditManipulator: (index: number) => void;
   onDeleteManipulator: (index: number) => void;
@@ -224,7 +236,9 @@ interface SortableKeyMappingItemProps {
 
 function SortableKeyMappingItem({
   index,
+  profile,
   manipulator,
+  deviceLabelLookup,
   selectedKeyLabel,
   onEditManipulator,
   onDeleteManipulator,
@@ -289,6 +303,13 @@ function SortableKeyMappingItem({
           </p>
         )}
 
+        <SimpleLineageSummary
+          profile={profile}
+          manipulator={manipulator}
+          deviceLabelLookup={deviceLabelLookup}
+          className='mt-2'
+        />
+
         {hasAdvancedOptions(manipulator) && (
           <div className='flex items-center gap-2 mt-1.5 flex-wrap'>
             {manipulator.to_if_alone && (
@@ -307,12 +328,27 @@ function SortableKeyMappingItem({
                 if held
               </Badge>
             )}
+            {manipulator.to_if_other_key_pressed && (
+              <Badge variant='outline' className='text-xs'>
+                if other key
+              </Badge>
+            )}
             {manipulator.to_after_key_up && (
               <Badge
                 variant='outline'
                 className='text-xs bg-purple-500/10 text-purple-600 border-purple-200'
               >
                 after key up
+              </Badge>
+            )}
+            {manipulator.to_delayed_action && (
+              <Badge variant='outline' className='text-xs'>
+                delayed
+              </Badge>
+            )}
+            {manipulator.parameters && (
+              <Badge variant='outline' className='text-xs'>
+                timing override
               </Badge>
             )}
             {manipulator.conditions && manipulator.conditions.length > 0 && (

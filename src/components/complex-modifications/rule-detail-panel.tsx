@@ -262,6 +262,7 @@ export function RuleDetailPanel({
 
             {showMappingList && (
               <KeyMappingList
+                profile={profile}
                 selectedKey={selectedFromKey}
                 manipulators={rule.manipulators}
                 manipulatorIndices={selectedKeyIndices}
@@ -270,6 +271,7 @@ export function RuleDetailPanel({
                 onDeleteManipulator={handleDeleteManipulatorByIndex}
                 onReorderManipulators={onReorderManipulators}
                 onClearSelection={handleClearSelection}
+                deviceLabelLookup={deviceLabelLookup}
               />
             )}
           </TabsContent>
