@@ -42,6 +42,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { useTheme } from 'next-themes';
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ??
@@ -128,7 +129,7 @@ function getSelectedProfileKeyboardType(
 }
 
 export default function KarabinerEditor() {
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const { resolvedTheme, setTheme } = useTheme();
   const {
     config,
     setConfig,
@@ -174,9 +175,7 @@ export default function KarabinerEditor() {
   };
 
   const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    document.documentElement.classList.toggle('dark');
+    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -375,13 +374,10 @@ export default function KarabinerEditor() {
               size='icon'
               onClick={toggleTheme}
               className='rounded-xl bg-background/70'
-              aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}
+              aria-label='Toggle color theme'
             >
-              {theme === 'light' ? (
-                <Moon className='h-5 w-5' />
-              ) : (
-                <Sun className='h-5 w-5' />
-              )}
+              <Moon className='h-5 w-5 dark:hidden' />
+              <Sun className='hidden h-5 w-5 dark:block' />
             </Button>
           </div>
         </div>
