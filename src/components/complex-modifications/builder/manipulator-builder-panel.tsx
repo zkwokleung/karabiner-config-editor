@@ -49,7 +49,7 @@ export function ManipulatorBuilderPanel({
   onSelectFromKey,
 }: ManipulatorBuilderPanelProps) {
   const { toast } = useToast();
-  const { keyboardTypeV2 } = useKeyboardLayout();
+  const { keyboardTypeV2, legendType } = useKeyboardLayout();
   const isEditing = existingManipulators.length > 0;
   const [validationError, setValidationError] = useState<string | null>(null);
   const [fromKeyError, setFromKeyError] = useState(false);
@@ -262,7 +262,7 @@ export function ManipulatorBuilderPanel({
   const getMandatoryModifiers = () =>
     currentManipulator.from.modifiers?.mandatory || [];
   const formatKeyCode = (keyCode: string) =>
-    getCharacterWithKeyCodeLabel(keyCode, keyboardTypeV2);
+    getCharacterWithKeyCodeLabel(keyCode, keyboardTypeV2, legendType);
 
   const handleOpenFromKeyDialog = useCallback(() => {
     setPendingFromKey(fromKey || null);
@@ -360,6 +360,7 @@ export function ManipulatorBuilderPanel({
             fromKey={fromKey}
             fromKeyError={fromKeyError}
             layoutType={keyboardTypeV2}
+            legendType={legendType}
             onUpdate={updateCurrentManipulator}
             onSelectFromKey={onSelectFromKey}
             onOpenKeyboard={handleOpenFromKeyDialog}

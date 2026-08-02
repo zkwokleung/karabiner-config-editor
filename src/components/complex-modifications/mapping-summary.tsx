@@ -28,7 +28,7 @@ export function SortableMappingSummary({
   onEdit,
   onDelete,
 }: MappingSummaryProps) {
-  const { keyboardTypeV2 } = useKeyboardLayout();
+  const { keyboardTypeV2, legendType } = useKeyboardLayout();
 
   const {
     attributes,
@@ -60,7 +60,7 @@ export function SortableMappingSummary({
     (manipulator.conditions && manipulator.conditions.length > 0);
 
   const formatKeyCode = (keyCode: string) =>
-    getCharacterWithKeyCodeLabel(keyCode, keyboardTypeV2);
+    getCharacterWithKeyCodeLabel(keyCode, keyboardTypeV2, legendType);
 
   return (
     <div

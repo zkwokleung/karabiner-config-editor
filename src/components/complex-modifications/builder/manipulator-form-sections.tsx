@@ -23,6 +23,7 @@ import type {
 import {
   getCharacterWithKeyCodeLabel,
   type KeyboardLayoutType,
+  type KeyboardLegendType,
 } from '@/lib/keyboard-layout';
 import { setEventKeyValue } from '@/lib/karabiner-keycodes';
 import { cn } from '@/lib/utils';
@@ -40,6 +41,7 @@ interface ManipulatorInputSectionProps {
   fromKey: string;
   fromKeyError: boolean;
   layoutType: KeyboardLayoutType;
+  legendType: KeyboardLegendType;
   onUpdate: (updates: Partial<Manipulator>) => void;
   onSelectFromKey: (keyCode: string) => void;
   onOpenKeyboard: () => void;
@@ -51,6 +53,7 @@ export function ManipulatorInputSection({
   fromKey,
   fromKeyError,
   layoutType,
+  legendType,
   onUpdate,
   onSelectFromKey,
   onOpenKeyboard,
@@ -74,7 +77,7 @@ export function ManipulatorInputSection({
       title='Description & From'
       summary={
         fromKey
-          ? getCharacterWithKeyCodeLabel(fromKey, layoutType)
+          ? getCharacterWithKeyCodeLabel(fromKey, layoutType, legendType)
           : 'Key required'
       }
       defaultOpen

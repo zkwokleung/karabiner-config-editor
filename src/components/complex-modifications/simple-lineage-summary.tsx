@@ -3,7 +3,10 @@
 import { Route } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { Manipulator, Profile } from '@/types/karabiner';
-import { getCharacterWithKeyCodeLabel } from '@/lib/keyboard-layout';
+import {
+  getCharacterWithKeyCodeLabel,
+  type KeyboardLegendType,
+} from '@/lib/keyboard-layout';
 import { useKeyboardLayout } from '@/components/keyboard/keyboard-layout-context';
 import {
   resolveSimpleModificationLineage,
@@ -24,7 +27,7 @@ export function SimpleLineageSummary({
   deviceLabelLookup,
   className,
 }: SimpleLineageSummaryProps) {
-  const { keyboardTypeV2 } = useKeyboardLayout();
+  const { keyboardTypeV2, legendType } = useKeyboardLayout();
   const lineage = resolveSimpleModificationLineage(profile, manipulator);
   const affectedScopes =
     lineage?.scopes.filter((scope) => scope.affected) || [];
@@ -64,7 +67,7 @@ export function SimpleLineageSummary({
                   variant='outline'
                   className='font-mono text-[11px]'
                 >
-                  {formatIdentity(source, keyboardTypeV2)}
+                  {formatIdentity(source, keyboardTypeV2, legendType)}
                 </Badge>
               ))
             ) : (
@@ -74,7 +77,11 @@ export function SimpleLineageSummary({
             )}
             <span className='text-muted-foreground'>→ post-simple</span>
             <Badge variant='secondary' className='font-mono text-[11px]'>
-              {formatIdentity(lineage.postSimpleInput, keyboardTypeV2)}
+              {formatIdentity(
+                lineage.postSimpleInput,
+                keyboardTypeV2,
+                legendType,
+              )}
             </Badge>
           </div>
         );
@@ -89,8 +96,13 @@ export function SimpleLineageSummary({
 function formatIdentity(
   identity: KeyIdentity,
   keyboardType: 'ansi' | 'iso' | 'jis',
+  legendType: KeyboardLegendType,
 ): string {
-  const keyLabel = getCharacterWithKeyCodeLabel(identity.value, keyboardType);
+  const keyLabel = getCharacterWithKeyCodeLabel(
+    identity.value,
+    keyboardType,
+    legendType,
+  );
   if (identity.field === 'key_code') return keyLabel;
   return `${keyLabel} · ${IDENTITY_FIELD_LABELS[identity.field]}`;
 }

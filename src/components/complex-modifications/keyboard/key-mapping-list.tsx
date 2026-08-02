@@ -54,7 +54,7 @@ export function KeyMappingList({
   onClearSelection,
   deviceLabelLookup,
 }: KeyMappingListProps) {
-  const { keyboardTypeV2 } = useKeyboardLayout();
+  const { keyboardTypeV2, legendType } = useKeyboardLayout();
 
   const selectedManipulators = useMemo(() => {
     return manipulatorIndices.map((i) => ({
@@ -64,7 +64,7 @@ export function KeyMappingList({
   }, [manipulators, manipulatorIndices]);
 
   const formatKeyCode = (keyCode: string) =>
-    getCharacterWithKeyCodeLabel(keyCode, keyboardTypeV2);
+    getCharacterWithKeyCodeLabel(keyCode, keyboardTypeV2, legendType);
 
   const getModifierDisplay = (manipulator: Manipulator) => {
     const mandatory = manipulator.from.modifiers?.mandatory || [];
