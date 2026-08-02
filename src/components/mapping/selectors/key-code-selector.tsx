@@ -1,7 +1,14 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
-import { Check, ChevronsUpDown, ChevronRight } from 'lucide-react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { Check, ChevronsUpDown, ChevronRight, Keyboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -26,6 +33,17 @@ import {
   getLayoutAwareKeyLabel,
   type KeyboardLayoutType,
 } from '@/lib/keyboard-layout';
+import {
+  getKeySelectionFromKeyboardCode,
+  isModifierKeyboardCode,
+} from '@/lib/keyboard-event-keycodes';
+
+const RECORDING_TIMEOUT_MS = 10_000;
+
+type RecordingStatus = {
+  kind: 'error' | 'info' | 'success';
+  message: string;
+};
 
 interface KeyCodeSelectorProps {
   value: string;
@@ -54,7 +72,15 @@ export function KeyCodeSelector({
   const [searchValue, setSearchValue] = useState('');
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const [menuHeight, setMenuHeight] = useState(400);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingStatus, setRecordingStatus] = useState<RecordingStatus>({
+    kind: 'info',
+    message: '',
+  });
+  const controlRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const recordButtonRef = useRef<HTMLButtonElement>(null);
+  const recordingStatusId = useId();
 
   const getItemPresentation = useMemo(() => {
     return (item: KeyCodeItem) => {
@@ -102,6 +128,99 @@ export function KeyCodeSelector({
     }
   }, [open]);
 
+  const finishRecording = useCallback(
+    (status: RecordingStatus, restoreFocus = true) => {
+      setIsRecording(false);
+      setRecordingStatus(status);
+
+      if (restoreFocus) {
+        window.requestAnimationFrame(() => recordButtonRef.current?.focus());
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!isRecording) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Recording owns the keystroke so global shortcuts and focused controls
+      // cannot act on it as well.
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+
+      if (event.repeat) {
+        return;
+      }
+
+      if (event.code === 'Escape') {
+        finishRecording({
+          kind: 'info',
+          message: 'Key recording cancelled.',
+        });
+        return;
+      }
+
+      if (
+        isModifierKeyboardCode(event.code) ||
+        ['Alt', 'Control', 'Meta', 'Shift'].includes(event.key)
+      ) {
+        setRecordingStatus({
+          kind: 'error',
+          message: 'Modifier keys cannot be recorded alone. Press another key.',
+        });
+        return;
+      }
+
+      const selection = getKeySelectionFromKeyboardCode(event.code);
+      if (!selection) {
+        const keyName = event.code || event.key || 'Unidentified key';
+        setRecordingStatus({
+          kind: 'error',
+          message: `${keyName} is not supported. Press another key.`,
+        });
+        return;
+      }
+
+      onChange(selection);
+      finishRecording({
+        kind: 'success',
+        message: `Recorded ${selection.value}.`,
+      });
+    };
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (target instanceof Node && controlRef.current?.contains(target)) {
+        return;
+      }
+
+      finishRecording({
+        kind: 'info',
+        message: 'Key recording cancelled.',
+      });
+    };
+
+    const timeoutId = window.setTimeout(() => {
+      finishRecording({
+        kind: 'info',
+        message: 'Key recording timed out. No key was changed.',
+      });
+    }, RECORDING_TIMEOUT_MS);
+
+    window.addEventListener('keydown', handleKeyDown, true);
+    document.addEventListener('pointerdown', handlePointerDown, true);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.removeEventListener('keydown', handleKeyDown, true);
+      document.removeEventListener('pointerdown', handlePointerDown, true);
+    };
+  }, [finishRecording, isRecording, onChange]);
+
   // Filter categories and items based on search
   const filteredCategories = KARABINER_KEYCODES.map((category) => ({
     ...category,
@@ -147,141 +266,196 @@ export function KeyCodeSelector({
     setHoveredCategory(null);
   };
 
+  const handleRecordingToggle = () => {
+    if (isRecording) {
+      finishRecording({
+        kind: 'info',
+        message: 'Key recording cancelled.',
+      });
+      return;
+    }
+
+    setOpen(false);
+    setSearchValue('');
+    setHoveredCategory(null);
+    setRecordingStatus({
+      kind: 'info',
+      message: 'Listening for a physical key. Press Escape to cancel.',
+    });
+    setIsRecording(true);
+  };
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          ref={triggerRef}
-          variant='outline'
-          role='combobox'
-          aria-expanded={open}
-          className='w-full justify-between font-mono text-xs bg-transparent cursor-pointer'
-        >
-          <span className='truncate'>{displayValue}</span>
-          <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className='w-[600px] p-0' align='start'>
-        <div className='p-2 border-b'>
-          <Input
-            placeholder='Search key codes...'
-            value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
-            className='h-8 text-sm'
-          />
-        </div>
-        <div className='flex' style={{ height: `${menuHeight}px` }}>
-          {/* Left panel: Categories */}
-          <ScrollArea className='w-[250px] border-r'>
-            <div className='p-1'>
-              {filteredCategories.length === 0 ? (
-                <div className='p-4 text-sm text-center text-muted-foreground'>
-                  No keys found
-                  {searchValue && (
-                    <div className='mt-2'>
-                      <Button
-                        size='sm'
-                        variant='secondary'
-                        onClick={() => {
-                          onChange({
-                            value: searchValue,
-                            field: 'key_code',
-                          });
-                          setOpen(false);
-                          setSearchValue('');
-                        }}
-                      >
-                        Use &quot;{searchValue}&quot;
-                      </Button>
+    <div ref={controlRef} className='space-y-1.5'>
+      <div className='flex items-stretch gap-2'>
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              ref={triggerRef}
+              variant='outline'
+              role='combobox'
+              aria-expanded={open}
+              disabled={isRecording}
+              className='min-w-0 flex-1 justify-between bg-transparent font-mono text-xs'
+            >
+              <span className='truncate'>{displayValue}</span>
+              <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className='w-[600px] p-0' align='start'>
+            <div className='border-b p-2'>
+              <Input
+                placeholder='Search key codes...'
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+                className='h-8 text-sm'
+              />
+            </div>
+            <div className='flex' style={{ height: `${menuHeight}px` }}>
+              {/* Left panel: Categories */}
+              <ScrollArea className='w-[250px] border-r'>
+                <div className='p-1'>
+                  {filteredCategories.length === 0 ? (
+                    <div className='p-4 text-center text-sm text-muted-foreground'>
+                      No keys found
+                      {searchValue && (
+                        <div className='mt-2'>
+                          <Button
+                            size='sm'
+                            variant='secondary'
+                            onClick={() => {
+                              onChange({
+                                value: searchValue,
+                                field: 'key_code',
+                              });
+                              setOpen(false);
+                              setSearchValue('');
+                            }}
+                          >
+                            Use &quot;{searchValue}&quot;
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    filteredCategories.map((category) => {
+                      const isSelected = isCategorySelected(category.category);
+                      const isHovered = hoveredCategory === category.category;
+
+                      return (
+                        <div
+                          key={category.category}
+                          onMouseEnter={() =>
+                            setHoveredCategory(category.category)
+                          }
+                          className={cn(
+                            'flex cursor-pointer items-center gap-2 rounded px-2 py-2 text-xs font-medium transition-colors',
+                            isHovered ? 'bg-accent' : 'hover:bg-accent/50',
+                          )}
+                        >
+                          <Check
+                            className={cn(
+                              'h-3 w-3 shrink-0',
+                              isSelected ? 'opacity-100' : 'opacity-0',
+                            )}
+                          />
+                          <span className='flex-1 truncate'>
+                            {category.category}
+                          </span>
+                          <span className='text-[10px] text-muted-foreground'>
+                            ({category.items.length})
+                          </span>
+                          <ChevronRight className='h-3 w-3 shrink-0 text-muted-foreground' />
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </ScrollArea>
+
+              {/* Right panel: Key codes for hovered category */}
+              <ScrollArea className='flex-1'>
+                <div className='p-1'>
+                  {hoveredCategory ? (
+                    (() => {
+                      const category = filteredCategories.find(
+                        (c) => c.category === hoveredCategory,
+                      );
+                      if (!category) return null;
+
+                      return (
+                        <div className='space-y-0.5'>
+                          {category.items.map((item, index) => {
+                            const presentation = getItemPresentation(item);
+                            const keyValue = presentation.keyValue;
+                            const isSelected =
+                              value === keyValue &&
+                              (!valueField ||
+                                getKeyCodeField(item) === valueField);
+
+                            return (
+                              <button
+                                key={`${item.label}-${index}`}
+                                onClick={() => handleSelect(item)}
+                                className={cn(
+                                  'flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs transition-colors',
+                                  isSelected
+                                    ? 'bg-accent'
+                                    : 'hover:bg-accent/50',
+                                )}
+                              >
+                                <Check
+                                  className={cn(
+                                    'h-3 w-3 shrink-0',
+                                    isSelected ? 'opacity-100' : 'opacity-0',
+                                  )}
+                                />
+                                <span className='truncate font-mono'>
+                                  {presentation.label}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <div className='flex h-full items-center justify-center p-4 text-center text-xs text-muted-foreground'>
+                      Hover over a category to view key codes
                     </div>
                   )}
                 </div>
-              ) : (
-                filteredCategories.map((category) => {
-                  const isSelected = isCategorySelected(category.category);
-                  const isHovered = hoveredCategory === category.category;
-
-                  return (
-                    <div
-                      key={category.category}
-                      onMouseEnter={() => setHoveredCategory(category.category)}
-                      className={cn(
-                        'flex items-center gap-2 px-2 py-2 text-xs font-medium rounded cursor-pointer transition-colors',
-                        isHovered ? 'bg-accent' : 'hover:bg-accent/50',
-                      )}
-                    >
-                      <Check
-                        className={cn(
-                          'h-3 w-3 shrink-0',
-                          isSelected ? 'opacity-100' : 'opacity-0',
-                        )}
-                      />
-                      <span className='flex-1 truncate'>
-                        {category.category}
-                      </span>
-                      <span className='text-[10px] text-muted-foreground'>
-                        ({category.items.length})
-                      </span>
-                      <ChevronRight className='h-3 w-3 shrink-0 text-muted-foreground' />
-                    </div>
-                  );
-                })
-              )}
+              </ScrollArea>
             </div>
-          </ScrollArea>
-
-          {/* Right panel: Key codes for hovered category */}
-          <ScrollArea className='flex-1'>
-            <div className='p-1'>
-              {hoveredCategory ? (
-                (() => {
-                  const category = filteredCategories.find(
-                    (c) => c.category === hoveredCategory,
-                  );
-                  if (!category) return null;
-
-                  return (
-                    <div className='space-y-0.5'>
-                      {category.items.map((item, index) => {
-                        const presentation = getItemPresentation(item);
-                        const keyValue = presentation.keyValue;
-                        const isSelected =
-                          value === keyValue &&
-                          (!valueField || getKeyCodeField(item) === valueField);
-
-                        return (
-                          <button
-                            key={`${item.label}-${index}`}
-                            onClick={() => handleSelect(item)}
-                            className={cn(
-                              'w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded cursor-pointer transition-colors',
-                              isSelected ? 'bg-accent' : 'hover:bg-accent/50',
-                            )}
-                          >
-                            <Check
-                              className={cn(
-                                'h-3 w-3 shrink-0',
-                                isSelected ? 'opacity-100' : 'opacity-0',
-                              )}
-                            />
-                            <span className='font-mono truncate'>
-                              {presentation.label}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  );
-                })()
-              ) : (
-                <div className='flex items-center justify-center h-full text-xs text-muted-foreground p-4 text-center'>
-                  Hover over a category to view key codes
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-        </div>
-      </PopoverContent>
-    </Popover>
+          </PopoverContent>
+        </Popover>
+        <Button
+          ref={recordButtonRef}
+          type='button'
+          variant={isRecording ? 'secondary' : 'outline'}
+          aria-pressed={isRecording}
+          aria-describedby={recordingStatusId}
+          onClick={handleRecordingToggle}
+          className='px-3'
+        >
+          <Keyboard aria-hidden='true' />
+          {isRecording ? 'Cancel' : 'Record key'}
+        </Button>
+      </div>
+      <p
+        id={recordingStatusId}
+        role='status'
+        aria-live={recordingStatus.kind === 'error' ? 'assertive' : 'polite'}
+        className={cn(
+          'text-xs',
+          recordingStatus.kind === 'error'
+            ? 'text-destructive'
+            : 'text-muted-foreground',
+          !recordingStatus.message && 'sr-only',
+        )}
+      >
+        {recordingStatus.message}
+      </p>
+    </div>
   );
 }
