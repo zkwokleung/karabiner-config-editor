@@ -288,9 +288,9 @@ export function VisualKeyboard({
     >
       {popoverKey && popoverPosition && popoverInfo && (
         <div
-          className='key-popover fixed z-50 bg-popover border rounded-lg shadow-lg p-3 min-w-[200px]'
+          className='key-popover fixed z-50 w-[240px] max-w-[calc(100vw-16px)] rounded-lg border bg-popover p-3 shadow-lg'
           style={{
-            left: `${popoverPosition.x}px`,
+            left: `clamp(128px, ${popoverPosition.x}px, calc(100vw - 128px))`,
             top: `${popoverPosition.y}px`,
             transform: 'translateX(-50%)',
           }}

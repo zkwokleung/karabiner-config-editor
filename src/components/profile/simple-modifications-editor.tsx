@@ -519,7 +519,7 @@ export function SimpleModificationsEditor({
   };
 
   return (
-    <div className='grid gap-6 lg:grid-cols-[250px_1fr]'>
+    <div className='grid min-w-0 gap-6 lg:grid-cols-[250px_minmax(0,1fr)]'>
       <DeviceTargetPanel
         title='Device'
         options={deviceOptions}
@@ -529,7 +529,7 @@ export function SimpleModificationsEditor({
         addControl={<AddDeviceDialog onAdd={addDevice} />}
       />
 
-      <div className='space-y-4'>
+      <div className='min-w-0 space-y-4'>
         <div className='flex items-center justify-between'>
           <h3 className='text-lg font-semibold'>
             {selectedOption?.label || 'Modifications'}
@@ -560,7 +560,7 @@ export function SimpleModificationsEditor({
         )}
 
         {editorMode === 'visual' ? (
-          <Card className='p-4'>
+          <Card className='min-w-0 overflow-hidden p-3 sm:p-4'>
             <VisualKeyboard
               mappings={currentModifications}
               conflictingKeys={conflictingKeysSet}

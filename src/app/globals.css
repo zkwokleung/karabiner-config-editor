@@ -227,7 +227,12 @@
   font-size: 12px;
   font-weight: var(--kb-key-font-weight);
   box-shadow: var(--kb-key-shadow);
-  transition: all 0.1s ease;
+  transition:
+    background-color 0.1s ease,
+    border-color 0.1s ease,
+    color 0.1s ease,
+    box-shadow 0.1s ease,
+    transform 0.1s ease;
 }
 
 .keyboard-theme.hg-theme-default button.hg-button:hover {
@@ -238,6 +243,13 @@
 .keyboard-theme.hg-theme-default button.hg-button:active {
   transform: translateY(1px);
   box-shadow: none;
+}
+
+.keyboard-theme.hg-theme-default button.hg-button:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+  position: relative;
+  z-index: 1;
 }
 
 .keyboard-theme.hg-theme-default button.hg-button.kb-mapped {

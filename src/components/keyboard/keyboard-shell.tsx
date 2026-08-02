@@ -141,7 +141,7 @@ export function KeyboardShell({
   }, [layout, buttonTheme, resolvedDisplay]);
 
   return (
-    <div className={cn('select-none relative', className)}>
+    <div className={cn('relative min-w-0 select-none', className)}>
       <div className='flex items-center justify-between mb-3 flex-wrap gap-2'>
         <div className='flex items-center gap-2 flex-wrap'>
           <span className='text-xs text-muted-foreground'>Geometry</span>
@@ -211,7 +211,7 @@ export function KeyboardShell({
 
       <div
         className={cn(
-          'bg-muted/50 rounded-lg border p-2',
+          'max-w-full overflow-x-auto rounded-lg border bg-muted/50 p-2 [&_.keyboard-theme]:min-w-[640px]',
           keyboardWrapperClassName,
         )}
       >
