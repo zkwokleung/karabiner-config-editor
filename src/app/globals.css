@@ -227,7 +227,12 @@
   font-size: 12px;
   font-weight: var(--kb-key-font-weight);
   box-shadow: var(--kb-key-shadow);
-  transition: all 0.1s ease;
+  transition:
+    background-color 0.1s ease,
+    border-color 0.1s ease,
+    color 0.1s ease,
+    box-shadow 0.1s ease,
+    transform 0.1s ease;
 }
 
 .keyboard-theme.hg-theme-default button.hg-button:hover {
@@ -238,6 +243,13 @@
 .keyboard-theme.hg-theme-default button.hg-button:active {
   transform: translateY(1px);
   box-shadow: none;
+}
+
+.keyboard-theme.hg-theme-default button.hg-button:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+  position: relative;
+  z-index: 1;
 }
 
 .keyboard-theme.hg-theme-default button.hg-button.kb-mapped {
@@ -255,6 +267,12 @@
     var(--color-primary) 25%,
     var(--color-background)
   );
+}
+
+.keyboard-theme.hg-theme-default button.hg-button.kb-lineage-physical {
+  --kb-key-shadow: inset 0 0 0 2px color-mix(in srgb, #d97706 80%, transparent);
+  outline: 1px dashed #d97706;
+  outline-offset: -3px;
 }
 
 .keyboard-theme.hg-theme-default button.hg-button.kb-selected {

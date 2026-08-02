@@ -165,19 +165,73 @@ function validateManipulator(
     }
   }
 
-  // Validate at least one to event exists
-  const hasToEvent =
-    manipulator.to ||
-    manipulator.to_if_alone ||
-    manipulator.to_if_held_down ||
-    manipulator.to_after_key_up;
+  const hasToEvent = Boolean(
+    manipulator.to?.length ||
+      manipulator.to_if_alone?.length ||
+      manipulator.to_if_held_down?.length ||
+      manipulator.to_if_other_key_pressed?.length ||
+      manipulator.to_after_key_up?.length ||
+      manipulator.to_delayed_action?.to_if_invoked?.length ||
+      manipulator.to_delayed_action?.to_if_canceled?.length,
+  );
 
   if (!hasToEvent) {
     errors.push({
       path: `${path}`,
       message:
-        "Manipulator should have at least one 'to' event (to, to_if_alone, to_if_held_down, or to_after_key_up)",
+        'Manipulator should have at least one standard, conditional, delayed, or other-key output event',
       severity: 'warning',
+    });
+  }
+
+  const otherKeyActions = manipulator.to_if_other_key_pressed;
+  if (otherKeyActions !== undefined && !Array.isArray(otherKeyActions)) {
+    errors.push({
+      path: `${path}.to_if_other_key_pressed`,
+      message: 'Other-key actions must be an array',
+      severity: 'error',
+    });
+  } else {
+    otherKeyActions?.forEach((entry, entryIndex) => {
+      const entryPath = `${path}.to_if_other_key_pressed[${entryIndex}]`;
+      if (!isRecord(entry)) {
+        errors.push({
+          path: entryPath,
+          message: 'Other-key action must be an object',
+          severity: 'error',
+        });
+        return;
+      }
+
+      const otherKeys = Array.isArray(entry.other_keys)
+        ? entry.other_keys
+        : null;
+      if (!otherKeys || otherKeys.length === 0) {
+        errors.push({
+          path: `${entryPath}.other_keys`,
+          message: 'Other-key action must specify at least one matching key',
+          severity: 'error',
+        });
+      } else {
+        otherKeys.forEach((otherKey, keyIndex) => {
+          if (!isRecord(otherKey) || !getEventKeyValue(otherKey)) {
+            errors.push({
+              path: `${entryPath}.other_keys[${keyIndex}]`,
+              message: 'Other-key match must specify a valid key field',
+              severity: 'error',
+            });
+          }
+        });
+      }
+
+      const toEvents = Array.isArray(entry.to) ? entry.to : null;
+      if (!toEvents || toEvents.length === 0) {
+        errors.push({
+          path: `${entryPath}.to`,
+          message: 'Other-key action must specify at least one output event',
+          severity: 'error',
+        });
+      }
     });
   }
 
@@ -195,6 +249,10 @@ function validateManipulator(
   }
 
   return errors;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
 }
 
 /**

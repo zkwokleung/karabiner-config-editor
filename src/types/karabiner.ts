@@ -69,6 +69,7 @@ export interface Manipulator {
   to?: ToEvent[];
   to_if_alone?: ToEvent[];
   to_if_held_down?: ToEvent[];
+  to_if_other_key_pressed?: OtherKeyPressedEvent[];
   to_after_key_up?: ToEvent[];
   to_delayed_action?: DelayedAction;
   conditions?: Condition[];
@@ -123,10 +124,15 @@ export interface DelayedAction {
   to_if_canceled?: ToEvent[];
 }
 
+export interface OtherKeyPressedEvent {
+  other_keys: FromEvent[];
+  to: ToEvent[];
+}
+
 export interface Condition {
   type: string;
   name?: string;
-  value?: number | string;
+  value?: VariableValue;
   bundle_identifiers?: string[];
   file_paths?: string[];
   description?: string;
@@ -143,8 +149,10 @@ export interface InputSource {
 
 export interface Variable {
   name: string;
-  value: number | string;
+  value: VariableValue;
 }
+
+export type VariableValue = number | boolean | string;
 
 export interface MouseKey {
   x?: number;

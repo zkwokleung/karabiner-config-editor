@@ -2,13 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toKarabinerKeyCode } from '@/lib/keyboard-layout';
-import type { Manipulator } from '@/types/karabiner';
+import type { Manipulator, Profile } from '@/types/karabiner';
 import { KeyboardShell } from '@/components/keyboard/keyboard-shell';
 import { useKeyboardLayout } from '@/components/keyboard/keyboard-layout-context';
 import { getEventKeyValue } from '@/lib/karabiner-keycodes';
+import { resolveSimpleModificationLineage } from '@/lib/simple-modification-lineage';
 
 export interface ComplexModificationKeyboardProps {
   manipulators: Manipulator[];
+  profile?: Profile;
   className?: string;
   onKeyClick?: (keyCode: string) => void;
   selectedFromKey?: string | null;
@@ -21,6 +23,7 @@ export interface ComplexModificationKeyboardProps {
 
 export function ComplexModificationKeyboard({
   manipulators,
+  profile,
   className,
   onKeyClick,
   selectedFromKey,
@@ -77,6 +80,23 @@ export function ComplexModificationKeyboard({
     return Array.from(keySet);
   }, [manipulators, showMappedKeys]);
 
+  const lineagePhysicalKeys = useMemo(() => {
+    if (!profile || !showMappedKeys) return [];
+    const keys = new Set<string>();
+
+    manipulators.forEach((manipulator) => {
+      const lineage = resolveSimpleModificationLineage(profile, manipulator);
+      lineage?.scopes.forEach((scope) => {
+        if (!scope.affected) return;
+        scope.physicalSources.forEach((source) => {
+          if (source.field === 'key_code') keys.add(source.value);
+        });
+      });
+    });
+
+    return Array.from(keys);
+  }, [manipulators, profile, showMappedKeys]);
+
   const highlightLayers = useMemo(() => {
     const dedupedSelectedKeys = Array.from(
       new Set([...externalSelectedKeys, ...transientSelectedKeys]),
@@ -87,13 +107,20 @@ export function ComplexModificationKeyboard({
     }
 
     return [
+      { className: 'kb-lineage-physical', keys: lineagePhysicalKeys },
       { className: 'kb-mapped', keys: mappedKeys },
       {
         className: 'kb-selected',
         keys: dedupedSelectedKeys,
       },
     ];
-  }, [mappedKeys, mode, externalSelectedKeys, transientSelectedKeys]);
+  }, [
+    lineagePhysicalKeys,
+    mappedKeys,
+    mode,
+    externalSelectedKeys,
+    transientSelectedKeys,
+  ]);
 
   const handleKeyPress = useCallback(
     (button: string) => {
@@ -120,8 +147,14 @@ export function ComplexModificationKeyboard({
       <div className='flex items-center gap-3 text-xs text-muted-foreground'>
         <div className='flex items-center gap-1'>
           <div className='w-2.5 h-2.5 rounded-sm bg-primary/20 border border-primary' />
-          <span>Mapped</span>
+          <span>Post-simple input</span>
         </div>
+        {lineagePhysicalKeys.length > 0 && (
+          <div className='flex items-center gap-1'>
+            <div className='h-2.5 w-2.5 rounded-sm border-2 border-dashed border-amber-600' />
+            <span>Physical source</span>
+          </div>
+        )}
       </div>
     ) : null;
 

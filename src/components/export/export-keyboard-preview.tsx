@@ -48,7 +48,8 @@ export function ExportKeyboardPreview({
   onConfigChange,
 }: ExportKeyboardPreviewProps) {
   const { toast } = useToast();
-  const { layoutType, setLayoutType, keyboardTypeV2 } = useKeyboardLayout();
+  const { layoutType, setLayoutType, keyboardTypeV2, legendType } =
+    useKeyboardLayout();
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [directionFilter, setDirectionFilter] =
     useState<MappingDirectionFilter>('both');
@@ -60,8 +61,9 @@ export function ExportKeyboardPreview({
   const [editorValue, setEditorValue] = useState('');
 
   const formatKeyCode = useCallback(
-    (keyCode: string) => getCharacterWithKeyCodeLabel(keyCode, keyboardTypeV2),
-    [keyboardTypeV2],
+    (keyCode: string) =>
+      getCharacterWithKeyCodeLabel(keyCode, keyboardTypeV2, legendType),
+    [keyboardTypeV2, legendType],
   );
 
   const entries = useMemo(() => normalizeConfigMappings(config), [config]);
@@ -149,7 +151,7 @@ export function ExportKeyboardPreview({
 
   const selectedHighlight = selectedKey ? [selectedKey] : [];
   const highlightLayers = [
-    { className: 'kb-mapped', keys: Array.from(mappingIndex.mappedKeys) },
+    { className: 'kb-mapped', keys: Array.from(mappingIndex.byFromKey.keys()) },
     { className: 'kb-selected', keys: selectedHighlight },
   ];
 
@@ -160,14 +162,14 @@ export function ExportKeyboardPreview({
     <div className='flex items-center gap-3 text-xs text-muted-foreground'>
       <div className='flex items-center gap-1'>
         <div className='w-2.5 h-2.5 rounded-sm bg-primary/20 border border-primary' />
-        <span>Has mappings</span>
+        <span>Mapped source key</span>
       </div>
     </div>
   );
 
   return (
-    <div className='grid gap-4 xl:grid-cols-[1.4fr_1fr]'>
-      <div className='space-y-3'>
+    <div className='grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]'>
+      <div className='min-w-0 space-y-3'>
         <KeyboardShell
           layoutType={layoutType}
           displayLayoutType={keyboardTypeV2}
@@ -180,7 +182,7 @@ export function ExportKeyboardPreview({
         />
       </div>
 
-      <div className='rounded-lg border p-3 bg-card'>
+      <div className='min-w-0 rounded-lg border bg-card p-3'>
         <div className='flex items-center justify-between gap-2 mb-3'>
           <h3 className='text-sm font-semibold'>Key Mapping Details</h3>
           <Button

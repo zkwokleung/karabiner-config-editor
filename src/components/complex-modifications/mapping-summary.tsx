@@ -5,25 +5,30 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { Manipulator } from '@/types/karabiner';
+import type { Manipulator, Profile } from '@/types/karabiner';
 import { getCharacterWithKeyCodeLabel } from '@/lib/keyboard-layout';
 import { useKeyboardLayout } from '@/components/keyboard/keyboard-layout-context';
 import { getEventKeyValue } from '@/lib/karabiner-keycodes';
+import { SimpleLineageSummary } from './simple-lineage-summary';
 
 interface MappingSummaryProps {
+  profile: Profile;
   manipulator: Manipulator;
   manipulatorIndex: number;
+  deviceLabelLookup: Map<number, string>;
   onEdit: () => void;
   onDelete: () => void;
 }
 
 export function SortableMappingSummary({
+  profile,
   manipulator,
   manipulatorIndex,
+  deviceLabelLookup,
   onEdit,
   onDelete,
 }: MappingSummaryProps) {
-  const { keyboardTypeV2 } = useKeyboardLayout();
+  const { keyboardTypeV2, legendType } = useKeyboardLayout();
 
   const {
     attributes,
@@ -45,15 +50,17 @@ export function SortableMappingSummary({
   const fromKey = getEventKeyValue(manipulator.from);
   const mandatory = manipulator.from.modifiers?.mandatory || [];
   const toEvents = manipulator.to || [];
-
   const hasAdvanced =
     manipulator.to_if_alone ||
     manipulator.to_if_held_down ||
+    manipulator.to_if_other_key_pressed ||
     manipulator.to_after_key_up ||
+    manipulator.to_delayed_action ||
+    manipulator.parameters ||
     (manipulator.conditions && manipulator.conditions.length > 0);
 
   const formatKeyCode = (keyCode: string) =>
-    getCharacterWithKeyCodeLabel(keyCode, keyboardTypeV2);
+    getCharacterWithKeyCodeLabel(keyCode, keyboardTypeV2, legendType);
 
   return (
     <div
@@ -117,6 +124,13 @@ export function SortableMappingSummary({
           </p>
         )}
 
+        <SimpleLineageSummary
+          profile={profile}
+          manipulator={manipulator}
+          deviceLabelLookup={deviceLabelLookup}
+          className='mt-2'
+        />
+
         {hasAdvanced && (
           <div className='flex items-center gap-1.5 mt-1.5 flex-wrap'>
             {manipulator.to_if_alone && (
@@ -135,12 +149,27 @@ export function SortableMappingSummary({
                 if held
               </Badge>
             )}
+            {manipulator.to_if_other_key_pressed && (
+              <Badge variant='outline' className='text-xs'>
+                if other key
+              </Badge>
+            )}
             {manipulator.to_after_key_up && (
               <Badge
                 variant='outline'
                 className='text-xs bg-purple-500/10 text-purple-600 border-purple-200'
               >
                 after key up
+              </Badge>
+            )}
+            {manipulator.to_delayed_action && (
+              <Badge variant='outline' className='text-xs'>
+                delayed
+              </Badge>
+            )}
+            {manipulator.parameters && (
+              <Badge variant='outline' className='text-xs'>
+                timing override
               </Badge>
             )}
             {manipulator.conditions && manipulator.conditions.length > 0 && (

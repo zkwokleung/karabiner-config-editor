@@ -39,7 +39,13 @@ Implemented in `src/lib/validation.ts`:
 - Validation is intentionally lightweight and does not fully model every
   Karabiner schema edge case.
 - Some advanced Karabiner constructs may require manual JSON review.
-- No automated test suite is currently included.
+- Visual keyboard geometry follows Karabiner-Elements' ANSI, ISO, and JIS
+  keyboard types. QWERTY, Dvorak, and Colemak are supported as independent
+  logical legends; arbitrary split, ortholinear, gaming, and other custom
+  physical geometries are not rendered.
+- Legend selection is display-only. Karabiner `key_code` identities remain
+  physical positions, so exported mappings do not change when the legend
+  preference changes.
 - TypeScript errors are not enforced by Next build unless type-check is run
   explicitly (`pnpm exec tsc --noEmit`).
 
@@ -48,6 +54,7 @@ Implemented in `src/lib/validation.ts`:
 1. Run local checks:
    - `pnpm lint`
    - `pnpm format:check`
+   - `pnpm test`
    - `pnpm exec tsc --noEmit`
    - `pnpm build`
 2. Export JSON from UI.

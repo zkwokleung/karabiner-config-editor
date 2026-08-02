@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { Rule, Manipulator } from '@/types/karabiner';
+import type { Rule, Manipulator, Profile } from '@/types/karabiner';
 import {
   DndContext,
   closestCenter,
@@ -31,7 +31,9 @@ import { SortableMappingSummary } from './mapping-summary';
 import { getEventKeyValue } from '@/lib/karabiner-keycodes';
 
 interface RuleDetailPanelProps {
+  profile: Profile;
   rule: Rule;
+  deviceLabelLookup: Map<number, string>;
   onDelete: () => void;
   onUpdateDescription: (desc: string) => void;
   onDeleteManipulator: (index: number) => void;
@@ -40,7 +42,9 @@ interface RuleDetailPanelProps {
 }
 
 export function RuleDetailPanel({
+  profile,
   rule,
+  deviceLabelLookup,
   onDelete,
   onUpdateDescription,
   onDeleteManipulator,
@@ -251,6 +255,7 @@ export function RuleDetailPanel({
 
           <TabsContent value='keyboard' className='mt-0 space-y-4'>
             <ComplexModificationKeyboard
+              profile={profile}
               manipulators={rule.manipulators}
               onKeyClick={handleKeyboardKeyClick}
               selectedFromKey={selectedFromKey}
@@ -258,6 +263,7 @@ export function RuleDetailPanel({
 
             {showMappingList && (
               <KeyMappingList
+                profile={profile}
                 selectedKey={selectedFromKey}
                 manipulators={rule.manipulators}
                 manipulatorIndices={selectedKeyIndices}
@@ -266,6 +272,7 @@ export function RuleDetailPanel({
                 onDeleteManipulator={handleDeleteManipulatorByIndex}
                 onReorderManipulators={onReorderManipulators}
                 onClearSelection={handleClearSelection}
+                deviceLabelLookup={deviceLabelLookup}
               />
             )}
           </TabsContent>
@@ -304,8 +311,10 @@ export function RuleDetailPanel({
                           (manipulator, manipulatorIndex) => (
                             <SortableMappingSummary
                               key={manipulatorIndex}
+                              profile={profile}
                               manipulator={manipulator}
                               manipulatorIndex={manipulatorIndex}
+                              deviceLabelLookup={deviceLabelLookup}
                               onEdit={() =>
                                 handleEditFromList(manipulatorIndex)
                               }

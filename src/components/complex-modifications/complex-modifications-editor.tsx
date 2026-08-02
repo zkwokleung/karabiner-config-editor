@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import type { Rule, Manipulator } from '@/types/karabiner';
+import type { Rule, Manipulator, Profile } from '@/types/karabiner';
 import { useToast } from '@/hooks/use-toast';
 import { findConflictingManipulators } from '@/lib/validation';
 import {
@@ -31,13 +31,17 @@ import { RuleDetailPanel } from './rule-detail-panel';
 import { getEventKeyValue } from '@/lib/karabiner-keycodes';
 
 interface ComplexModificationsEditorProps {
+  profile: Profile;
   rules: Rule[];
   onRulesChange: (rules: Rule[]) => void;
+  deviceLabelLookup: Map<number, string>;
 }
 
 export function ComplexModificationsEditor({
+  profile,
   rules,
   onRulesChange,
+  deviceLabelLookup,
 }: ComplexModificationsEditorProps) {
   const { toast } = useToast();
   const [selectedRuleIndex, setSelectedRuleIndex] = useState<number | null>(
@@ -209,8 +213,8 @@ export function ComplexModificationsEditor({
   }
 
   return (
-    <div className='space-y-4'>
-      <div className='flex items-center justify-between'>
+    <div className='min-w-0 space-y-4'>
+      <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
         <div>
           <h3 className='text-lg font-semibold'>Complex Modifications</h3>
           <p className='text-sm text-muted-foreground'>
@@ -254,7 +258,7 @@ export function ComplexModificationsEditor({
         </Alert>
       )}
 
-      <div className='grid gap-6 lg:grid-cols-[280px_1fr]'>
+      <div className='grid min-w-0 gap-6 lg:grid-cols-[280px_minmax(0,1fr)]'>
         <Card className='p-3'>
           <ScrollArea className='h-[600px] pr-2'>
             <div className='space-y-2'>
@@ -293,10 +297,12 @@ export function ComplexModificationsEditor({
           </ScrollArea>
         </Card>
 
-        <div className='pr-2'>
+        <div className='min-w-0 pr-2'>
           {selectedRule ? (
             <RuleDetailPanel
+              profile={profile}
               rule={selectedRule}
+              deviceLabelLookup={deviceLabelLookup}
               onDelete={() => handleDeleteRule(selectedRuleIndex!)}
               onUpdateDescription={(desc) =>
                 handleUpdateDescription(selectedRuleIndex!, desc)

@@ -3,19 +3,21 @@
 import type React from 'react';
 
 import Image from 'next/image';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
+  AlertCircle,
   ArrowRight,
   Braces,
   Command,
   FilePlus,
   Github,
+  HardDrive,
   Moon,
   ShieldCheck,
   Sun,
   Upload,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
@@ -28,6 +30,19 @@ import type { KeyboardLayoutType } from '@/lib/keyboard-layout';
 import { validateConfig, type ValidationError } from '@/lib/validation';
 import { createMinimalKarabinerConfig } from '@/lib/default-config';
 import { ExportPanel } from '@/components/export/export-panel';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { usePersistedConfig } from '@/hooks/use-persisted-config';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useTheme } from 'next-themes';
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ??
@@ -114,26 +129,55 @@ function getSelectedProfileKeyboardType(
 }
 
 export default function KarabinerEditor() {
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [config, setConfig] = useState<KarabinerConfig | null>(null);
+  const { resolvedTheme, setTheme } = useTheme();
+  const {
+    config,
+    setConfig,
+    discardDraft,
+    hasStoredDraft,
+    isHydrated,
+    recoveredFromStorage,
+    savedAt,
+    storageError,
+  } = usePersistedConfig(normalizeConfigShape);
   const [jsonInput, setJsonInput] = useState('');
   const [activeTab, setActiveTab] = useState('import');
-  const [validationErrors, setValidationErrors] = useState<ValidationError[]>(
-    [],
+  const [isDefaultConfirmationOpen, setIsDefaultConfirmationOpen] =
+    useState(false);
+  const [isDiscardConfirmationOpen, setIsDiscardConfirmationOpen] =
+    useState(false);
+  const validationErrors = useMemo<ValidationError[]>(
+    () => (config ? validateConfig(config) : []),
+    [config],
   );
   const { toast } = useToast();
   const selectedProfileKeyboardType = getSelectedProfileKeyboardType(config);
 
+  useEffect(() => {
+    if (recoveredFromStorage) {
+      setActiveTab('edit');
+    }
+  }, [recoveredFromStorage]);
+
   const updateConfig = (newConfig: KarabinerConfig) => {
     setConfig(newConfig);
-    const errors = validateConfig(newConfig);
-    setValidationErrors(errors);
+  };
+
+  const handleDiscardDraft = () => {
+    if (!discardDraft()) {
+      return;
+    }
+
+    setJsonInput('');
+    setActiveTab('import');
+    toast({
+      title: 'Local draft discarded',
+      description: 'The saved config was removed from this browser.',
+    });
   };
 
   const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    document.documentElement.classList.toggle('dark');
+    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -163,7 +207,7 @@ export default function KarabinerEditor() {
     reader.readAsText(file);
   };
 
-  const handleStartWithDefault = () => {
+  const applyDefaultConfig = () => {
     const minimalConfig = createMinimalKarabinerConfig();
     updateConfig(minimalConfig);
     setJsonInput(JSON.stringify(minimalConfig, null, 2));
@@ -172,6 +216,15 @@ export default function KarabinerEditor() {
       title: 'Default config ready',
       description: 'Loaded a minimal Karabiner config to get you started.',
     });
+  };
+
+  const handleStartWithDefault = () => {
+    if (config) {
+      setIsDefaultConfirmationOpen(true);
+      return;
+    }
+
+    applyDefaultConfig();
   };
 
   const handleJsonPaste = () => {
@@ -257,6 +310,56 @@ export default function KarabinerEditor() {
       />
       <Toaster />
 
+      <AlertDialog
+        open={isDefaultConfirmationOpen}
+        onOpenChange={setIsDefaultConfirmationOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Replace the current config?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Starting with the default config will replace the config open in
+              the editor and its saved local draft. This cannot be undone after
+              the replacement is saved.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep current config</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: 'destructive' })}
+              onClick={applyDefaultConfig}
+            >
+              Replace with default
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={isDiscardConfirmationOpen}
+        onOpenChange={setIsDiscardConfirmationOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard the local draft?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes the saved draft and closes the configuration that is
+              currently open in the editor. Export it first if you may need it
+              again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep draft</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: 'destructive' })}
+              onClick={handleDiscardDraft}
+            >
+              Discard draft
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <header className='sticky top-0 z-50 border-b border-border/70 bg-background/85 backdrop-blur-xl'>
         <div className='container mx-auto flex items-center justify-between px-4 py-3'>
           <div className='flex items-center gap-3'>
@@ -298,13 +401,10 @@ export default function KarabinerEditor() {
               size='icon'
               onClick={toggleTheme}
               className='rounded-xl bg-background/70'
-              aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}
+              aria-label='Toggle color theme'
             >
-              {theme === 'light' ? (
-                <Moon className='h-5 w-5' />
-              ) : (
-                <Sun className='h-5 w-5' />
-              )}
+              <Moon className='h-5 w-5 dark:hidden' />
+              <Sun className='hidden h-5 w-5 dark:block' />
             </Button>
           </div>
         </div>
@@ -352,22 +452,74 @@ export default function KarabinerEditor() {
           </div>
         </section>
 
+        {isHydrated && storageError && (
+          <Alert variant='destructive' className='mb-4'>
+            <AlertCircle className='h-4 w-4' />
+            <AlertDescription className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+              <span>{storageError}</span>
+              {!config && hasStoredDraft && (
+                <Button
+                  type='button'
+                  size='sm'
+                  variant='outline'
+                  className='shrink-0'
+                  onClick={handleDiscardDraft}
+                >
+                  Remove unreadable draft
+                </Button>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {isHydrated && config && hasStoredDraft && (
+          <div className='mb-4 flex flex-col gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between'>
+            <div className='flex items-start gap-3'>
+              <HardDrive className='mt-0.5 h-4 w-4 shrink-0 text-primary' />
+              <div>
+                <p className='text-sm font-medium text-foreground'>
+                  {recoveredFromStorage
+                    ? 'Local draft restored'
+                    : 'Config saved locally'}
+                </p>
+                <p className='text-xs text-muted-foreground'>
+                  {savedAt
+                    ? `Saved ${new Date(savedAt).toLocaleString()}`
+                    : 'Changes are kept in this browser for your next visit.'}
+                </p>
+              </div>
+            </div>
+            <Button
+              type='button'
+              size='sm'
+              variant='outline'
+              className='shrink-0'
+              onClick={() => setIsDiscardConfirmationOpen(true)}
+            >
+              Discard local draft
+            </Button>
+          </div>
+        )}
+
         <Tabs value={activeTab} onValueChange={setActiveTab} className='w-full'>
-          <TabsList className='mx-auto mb-8 grid w-full max-w-xl grid-cols-3 rounded-2xl border border-border/70 bg-card/80 p-1.5 shadow-sm'>
-            <TabsTrigger value='import' className='cursor-pointer'>
+          <TabsList className='mx-auto mb-8 grid h-10 w-full max-w-xl grid-cols-3 rounded-2xl border border-border/70 bg-card/80 p-1 shadow-sm'>
+            <TabsTrigger
+              value='import'
+              className='h-full cursor-pointer rounded-xl py-0 leading-none'
+            >
               Import
             </TabsTrigger>
             <TabsTrigger
               value='edit'
               disabled={!config}
-              className='cursor-pointer'
+              className='h-full cursor-pointer rounded-xl py-0 leading-none'
             >
               Edit
             </TabsTrigger>
             <TabsTrigger
               value='export'
               disabled={!config}
-              className='cursor-pointer'
+              className='h-full cursor-pointer rounded-xl py-0 leading-none'
             >
               Export
             </TabsTrigger>

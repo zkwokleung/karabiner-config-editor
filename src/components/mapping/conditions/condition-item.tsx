@@ -19,6 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { VariableValueEditor } from '@/components/mapping/variable-value-editor';
 import type { Condition } from '@/types/karabiner';
 import { CONDITION_TYPES, KEYBOARD_TYPES } from '@/lib/constants';
 
@@ -149,7 +150,7 @@ export function ConditionItem({
         )}
 
         {condition.type.includes('variable') && (
-          <div className='grid grid-cols-2 gap-2'>
+          <div className='grid gap-2 sm:grid-cols-3'>
             <div className='space-y-1'>
               <Label className='text-xs'>Variable Name</Label>
               <Input
@@ -161,20 +162,10 @@ export function ConditionItem({
                 className='text-xs'
               />
             </div>
-            <div className='space-y-1'>
-              <Label className='text-xs'>Value</Label>
-              <Input
-                type='number'
-                value={condition.value || 0}
-                onChange={(e) =>
-                  onUpdate({
-                    ...condition,
-                    value: Number.parseInt(e.target.value) || 0,
-                  })
-                }
-                className='text-xs'
-              />
-            </div>
+            <VariableValueEditor
+              value={condition.value ?? 0}
+              onChange={(value) => onUpdate({ ...condition, value })}
+            />
           </div>
         )}
 

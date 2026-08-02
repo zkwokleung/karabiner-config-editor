@@ -289,8 +289,10 @@ export function ProfileManager({ config, setConfig }: ProfileManagerProps) {
 
         <TabsContent value='complex'>
           <ComplexModificationsEditor
+            profile={selectedProfile}
             rules={selectedProfile.complex_modifications?.rules || []}
             onRulesChange={updateComplexModifications}
+            deviceLabelLookup={deviceLabelLookup}
           />
         </TabsContent>
 

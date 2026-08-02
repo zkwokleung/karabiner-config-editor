@@ -7,11 +7,14 @@ import 'react-simple-keyboard/build/css/index.css';
 import { cn } from '@/lib/utils';
 import {
   KEYBOARD_LAYOUT_OPTIONS,
+  KEYBOARD_LEGEND_OPTIONS,
   getKeyboardDisplay,
   getLayoutForType,
   toSimpleKeyboardButton,
   type KeyboardLayoutType,
+  type KeyboardLegendType,
 } from '@/lib/keyboard-layout';
+import { useKeyboardLayout } from '@/components/keyboard/keyboard-layout-context';
 import {
   Select,
   SelectContent,
@@ -94,13 +97,14 @@ export function KeyboardShell({
 }: KeyboardShellProps) {
   const internalKeyboardRef = useRef<KeyboardShellInstance | null>(null);
   const keyboardName = useId();
+  const { legendType, setLegendType } = useKeyboardLayout();
 
   const resolvedDisplayLayoutType = displayLayoutType ?? layoutType;
 
   const layout = useMemo(() => getLayoutForType(layoutType), [layoutType]);
   const baseDisplay = useMemo(
-    () => getKeyboardDisplay(resolvedDisplayLayoutType),
-    [resolvedDisplayLayoutType],
+    () => getKeyboardDisplay(resolvedDisplayLayoutType, legendType),
+    [resolvedDisplayLayoutType, legendType],
   );
   const resolvedDisplay = useMemo(() => {
     return display ? { ...baseDisplay, ...display } : baseDisplay;
@@ -137,9 +141,10 @@ export function KeyboardShell({
   }, [layout, buttonTheme, resolvedDisplay]);
 
   return (
-    <div className={cn('select-none relative', className)}>
+    <div className={cn('relative min-w-0 select-none', className)}>
       <div className='flex items-center justify-between mb-3 flex-wrap gap-2'>
-        <div className='flex items-center gap-1'>
+        <div className='flex items-center gap-2 flex-wrap'>
+          <span className='text-xs text-muted-foreground'>Geometry</span>
           <Select
             value={layoutType}
             onValueChange={(value) =>
@@ -151,6 +156,25 @@ export function KeyboardShell({
             </SelectTrigger>
             <SelectContent>
               {KEYBOARD_LAYOUT_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label} ({option.description})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <span className='ml-1 text-xs text-muted-foreground'>Legends</span>
+          <Select
+            value={legendType}
+            onValueChange={(value) =>
+              setLegendType(value as KeyboardLegendType)
+            }
+          >
+            <SelectTrigger className='h-8 w-auto cursor-pointer bg-transparent text-xs'>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {KEYBOARD_LEGEND_OPTIONS.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label} ({option.description})
                 </SelectItem>
@@ -187,7 +211,7 @@ export function KeyboardShell({
 
       <div
         className={cn(
-          'bg-muted/50 rounded-lg border p-2',
+          'max-w-full overflow-x-auto rounded-lg border bg-muted/50 p-2 [&_.keyboard-theme]:min-w-[640px]',
           keyboardWrapperClassName,
         )}
       >

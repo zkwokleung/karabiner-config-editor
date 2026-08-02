@@ -1,41 +1,21 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import {
-  X,
-  Plus,
-  Trash2,
-  Settings,
-  AlertCircle,
-  CircleHelp,
-} from 'lucide-react';
+import { X, Plus, Trash2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import type {
-  Manipulator,
-  ToEvent,
-  Condition,
-  Modifiers,
-} from '@/types/karabiner';
+import type { Manipulator } from '@/types/karabiner';
 import { getCharacterWithKeyCodeLabel } from '@/lib/keyboard-layout';
-import { ConditionEditor } from '@/components/mapping/conditions/condition-editor';
-import { ToEventEditor } from '@/components/mapping/to-events/to-event-editor';
-import { ModifierSelector as FormModifierSelector } from '@/components/mapping/selectors/modifier-selector';
-import { KeyCodeSelector } from '@/components/mapping/selectors/key-code-selector';
 import { KeyboardSelectDialog } from './keyboard-select-dialog';
+import {
+  ManipulatorInputSection,
+  ManipulatorOutputSections,
+  type DirectToEventField,
+} from './manipulator-form-sections';
 import { useToast } from '@/hooks/use-toast';
 import { useKeyboardLayout } from '@/components/keyboard/keyboard-layout-context';
-import { cn } from '@/lib/utils';
 import {
   clearEventKeyFields,
   getEventKeyField,
@@ -53,13 +33,7 @@ interface ManipulatorBuilderPanelProps {
   onSelectFromKey: (keyCode: string) => void;
 }
 
-type ToEventField =
-  | 'to'
-  | 'to_if_alone'
-  | 'to_if_held_down'
-  | 'to_after_key_up';
-
-const TO_EVENT_FIELD_LABEL: Record<ToEventField, string> = {
+const TO_EVENT_FIELD_LABEL: Record<DirectToEventField, string> = {
   to: 'To Event',
   to_if_alone: 'To If Alone',
   to_if_held_down: 'To If Held Down',
@@ -75,7 +49,7 @@ export function ManipulatorBuilderPanel({
   onSelectFromKey,
 }: ManipulatorBuilderPanelProps) {
   const { toast } = useToast();
-  const { keyboardTypeV2 } = useKeyboardLayout();
+  const { keyboardTypeV2, legendType } = useKeyboardLayout();
   const isEditing = existingManipulators.length > 0;
   const [validationError, setValidationError] = useState<string | null>(null);
   const [fromKeyError, setFromKeyError] = useState(false);
@@ -108,9 +82,8 @@ export function ManipulatorBuilderPanel({
   });
 
   const [selectedManipulatorIndex, setSelectedManipulatorIndex] = useState(0);
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [selectingToEvent, setSelectingToEvent] = useState<{
-    field: ToEventField;
+    field: DirectToEventField;
     index: number;
   } | null>(null);
   const [pendingToKey, setPendingToKey] = useState<string | null>(null);
@@ -149,32 +122,12 @@ export function ManipulatorBuilderPanel({
     [selectedManipulatorIndex],
   );
 
-  const updateFromModifiers = (
-    type: 'mandatory' | 'optional',
-    modifiers: string[],
-  ) => {
-    const newModifiers: Modifiers = { ...currentManipulator.from.modifiers };
-    if (modifiers.length === 0) {
-      delete newModifiers[type];
-    } else {
-      newModifiers[type] = modifiers;
-    }
-
-    updateCurrentManipulator({
-      from: {
-        ...currentManipulator.from,
-        modifiers:
-          Object.keys(newModifiers).length > 0 ? newModifiers : undefined,
-      },
-    });
-  };
-
   const handleSelectToKey = useCallback((keyCode: string) => {
     setPendingToKey(keyCode);
   }, []);
 
   const openToKeyDialog = useCallback(
-    (field: ToEventField, index: number) => {
+    (field: DirectToEventField, index: number) => {
       const events = currentManipulator[field] || [];
       const event = events[index];
       const currentKey = getEventKeyValue(event) || null;
@@ -220,47 +173,10 @@ export function ManipulatorBuilderPanel({
     updateCurrentManipulator,
   ]);
 
-  const updateToEvents = (events: ToEvent[]) => {
-    updateCurrentManipulator({ to: events });
-  };
-
-  const renderToEventKeySelectButton = useCallback(
-    (field: ToEventField, index: number) => (
-      <Button
-        size='sm'
-        variant={
-          selectingToEvent?.field === field && selectingToEvent.index === index
-            ? 'default'
-            : 'outline'
-        }
-        className='shrink-0'
-        onClick={() => openToKeyDialog(field, index)}
-      >
-        Select from Keyboard
-      </Button>
-    ),
-    [openToKeyDialog, selectingToEvent],
-  );
-
   const toEventDialogTitle =
     selectingToEvent === null
       ? 'Select To Event Key'
       : `Select ${TO_EVENT_FIELD_LABEL[selectingToEvent.field]} Key`;
-
-  const addToEvent = () => {
-    const currentTo = currentManipulator.to || [];
-    updateCurrentManipulator({
-      to: [...currentTo, setEventKeyValue({}, 'a', 'key_code')],
-    });
-  };
-
-  const updateConditions = (conditions: Condition[]) => {
-    if (conditions.length === 0) {
-      updateCurrentManipulator({ conditions: undefined });
-    } else {
-      updateCurrentManipulator({ conditions });
-    }
-  };
 
   const addManipulator = () => {
     const field = fromKey ? resolveFieldForKeyValue(fromKey) : null;
@@ -301,14 +217,31 @@ export function ManipulatorBuilderPanel({
       return;
     }
 
-    // Filter out manipulators with no "to" events
-    const validManipulators = manipulators.filter(
-      (m) => m.to && m.to.length > 0,
+    const hasIncompleteOtherKeyAction = manipulators.some((manipulator) =>
+      manipulator.to_if_other_key_pressed?.some(
+        (entry) => entry.other_keys.length === 0 || entry.to.length === 0,
+      ),
     );
+
+    if (hasIncompleteOtherKeyAction) {
+      const errorMsg =
+        'Each other-key action needs at least one matching key and one event to send.';
+      setValidationError(errorMsg);
+      toast({
+        title: 'Validation Error',
+        description: errorMsg,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const validManipulators = manipulators
+      .map(normalizeManipulator)
+      .filter(hasManipulatorAction);
 
     if (validManipulators.length === 0) {
       const errorMsg =
-        'At least one manipulator must have a "to" action. Add a target key or action.';
+        'At least one manipulator must have an output action. Add a standard, conditional, delayed, or other-key event.';
       setValidationError(errorMsg);
       toast({
         title: 'Validation Error',
@@ -328,11 +261,8 @@ export function ManipulatorBuilderPanel({
 
   const getMandatoryModifiers = () =>
     currentManipulator.from.modifiers?.mandatory || [];
-  const getOptionalModifiers = () =>
-    currentManipulator.from.modifiers?.optional || [];
-
   const formatKeyCode = (keyCode: string) =>
-    getCharacterWithKeyCodeLabel(keyCode, keyboardTypeV2);
+    getCharacterWithKeyCodeLabel(keyCode, keyboardTypeV2, legendType);
 
   const handleOpenFromKeyDialog = useCallback(() => {
     setPendingFromKey(fromKey || null);
@@ -424,240 +354,43 @@ export function ManipulatorBuilderPanel({
       )}
 
       <div className='max-h-[500px] overflow-y-auto pr-2'>
-        <div className='space-y-4'>
-          {/* From section */}
-          <div className='space-y-3'>
-            <div className='space-y-2'>
-              <Label className='text-sm font-semibold'>Description</Label>
-              <Input
-                value={currentManipulator.description || ''}
-                onChange={(event) => {
-                  const nextDescription = event.target.value.trim();
-                  updateCurrentManipulator({
-                    description:
-                      nextDescription.length > 0
-                        ? event.target.value
-                        : undefined,
-                  });
-                }}
-                placeholder='Optional description for this manipulator'
-              />
-            </div>
-
-            <Label className='text-sm font-semibold'>From Key</Label>
-            <div
-              className={cn(
-                'flex items-center gap-2 rounded-lg',
-                fromKeyError && 'bg-destructive/10 border-2 border-destructive',
-              )}
-            >
-              <div className='w-48'>
-                <KeyCodeSelector
-                  value={fromKey}
-                  onChange={({ value }) => {
-                    onSelectFromKey(value);
-                    setFromKeyError(false);
-                    setValidationError(null);
-                  }}
-                  placeholder='No key selected'
-                  excludeNotFrom
-                  layoutAware
-                  layoutType={keyboardTypeV2}
-                />
-              </div>
-              <Button
-                size='sm'
-                variant='outline'
-                className='shrink-0'
-                onClick={handleOpenFromKeyDialog}
-              >
-                Select from Keyboard
-              </Button>
-            </div>
-
-            <div className='grid grid-cols-2 gap-3'>
-              <div className='space-y-2'>
-                <div className='flex items-center gap-1'>
-                  <Label className='text-xs'>Mandatory Modifiers</Label>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type='button'
-                          variant='ghost'
-                          size='icon-sm'
-                          className='h-5 w-5 text-muted-foreground'
-                          aria-label='Mandatory modifiers help'
-                        >
-                          <CircleHelp className='h-3.5 w-3.5' />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side='top' align='start'>
-                        These modifiers must be held for this manipulator to
-                        trigger.
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <FormModifierSelector
-                  selected={getMandatoryModifiers()}
-                  onChange={(mods) => updateFromModifiers('mandatory', mods)}
-                  label='Required with key'
-                  showInlineLabel={false}
-                />
-              </div>
-              <div className='space-y-2'>
-                <div className='flex items-center gap-1'>
-                  <Label className='text-xs'>Optional Modifiers</Label>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type='button'
-                          variant='ghost'
-                          size='icon-sm'
-                          className='h-5 w-5 text-muted-foreground'
-                          aria-label='Optional modifiers help'
-                        >
-                          <CircleHelp className='h-3.5 w-3.5' />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side='top' align='start'>
-                        These modifiers are optional: the manipulator works with
-                        or without them held.
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <FormModifierSelector
-                  selected={getOptionalModifiers()}
-                  onChange={(mods) => updateFromModifiers('optional', mods)}
-                  label='Allowed but not required'
-                  showInlineLabel={false}
-                />
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* To section with keyboard */}
-          <div className='space-y-3'>
-            <div className='flex items-center justify-between gap-2'>
-              <Label className='text-sm font-semibold'>To Events</Label>
-              <Button size='sm' variant='outline' onClick={addToEvent}>
-                <Plus className='mr-2 h-3 w-3' />
-                Add Event
-              </Button>
-            </div>
-
-            <ToEventEditor
-              events={currentManipulator.to || []}
-              onChange={updateToEvents}
-              label=''
-              showHeader={false}
-              keyCodeAction={(index) =>
-                renderToEventKeySelectButton('to', index)
-              }
-            />
-
-            <KeyboardSelectDialog
-              open={selectingToEvent !== null}
-              title={toEventDialogTitle}
-              selectedKey={pendingToKey}
-              onSelectKey={handleSelectToKey}
-              onConfirm={handleConfirmToKeySelect}
-              onOpenChange={(open) => {
-                if (!open) {
-                  setSelectingToEvent(null);
-                  setPendingToKey(null);
-                }
-              }}
-            />
-          </div>
-
-          <Separator />
-
-          {/* Conditions */}
-          <ConditionEditor
-            conditions={currentManipulator.conditions || []}
-            onChange={updateConditions}
+        <div className='space-y-3'>
+          <ManipulatorInputSection
+            manipulator={currentManipulator}
+            fromKey={fromKey}
+            fromKeyError={fromKeyError}
+            layoutType={keyboardTypeV2}
+            legendType={legendType}
+            onUpdate={updateCurrentManipulator}
+            onSelectFromKey={onSelectFromKey}
+            onOpenKeyboard={handleOpenFromKeyDialog}
+            onClearErrors={() => {
+              setFromKeyError(false);
+              setValidationError(null);
+            }}
           />
 
-          <Separator />
+          <ManipulatorOutputSections
+            manipulator={currentManipulator}
+            layoutType={keyboardTypeV2}
+            selectedToEvent={selectingToEvent}
+            onUpdate={updateCurrentManipulator}
+            onSelectToEvent={openToKeyDialog}
+          />
 
-          {/* Advanced options toggle */}
-          <Button
-            variant='ghost'
-            size='sm'
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className='w-full'
-          >
-            <Settings className='mr-2 h-4 w-4' />
-            {showAdvanced ? 'Hide' : 'Show'} Advanced Options
-          </Button>
-
-          {showAdvanced && (
-            <div className='space-y-4 pt-2'>
-              <div className='space-y-2'>
-                <ToEventEditor
-                  events={currentManipulator.to_if_alone || []}
-                  onChange={(events) => {
-                    if (events.length === 0) {
-                      // Signal that the field should be removed by setting it to
-                      // undefined. updateCurrentManipulator merges partial
-                      // updates, so passing an object without the key will not
-                      // remove it. Use explicit undefined to clear the field.
-                      updateCurrentManipulator({ to_if_alone: undefined });
-                    } else {
-                      updateCurrentManipulator({ to_if_alone: events });
-                    }
-                  }}
-                  label='To If Alone'
-                  helpText='Triggered when the key is pressed and released alone.'
-                  keyCodeAction={(index) =>
-                    renderToEventKeySelectButton('to_if_alone', index)
-                  }
-                />
-              </div>
-
-              <div className='space-y-2'>
-                <ToEventEditor
-                  events={currentManipulator.to_if_held_down || []}
-                  onChange={(events) => {
-                    if (events.length === 0) {
-                      updateCurrentManipulator({ to_if_held_down: undefined });
-                    } else {
-                      updateCurrentManipulator({ to_if_held_down: events });
-                    }
-                  }}
-                  label='To If Held Down'
-                  helpText='Triggered when the key is held past the hold threshold.'
-                  keyCodeAction={(index) =>
-                    renderToEventKeySelectButton('to_if_held_down', index)
-                  }
-                />
-              </div>
-
-              <div className='space-y-2'>
-                <ToEventEditor
-                  events={currentManipulator.to_after_key_up || []}
-                  onChange={(events) => {
-                    if (events.length === 0) {
-                      updateCurrentManipulator({ to_after_key_up: undefined });
-                    } else {
-                      updateCurrentManipulator({ to_after_key_up: events });
-                    }
-                  }}
-                  label='To After Key Up'
-                  helpText='Triggered after the original key is released.'
-                  keyCodeAction={(index) =>
-                    renderToEventKeySelectButton('to_after_key_up', index)
-                  }
-                />
-              </div>
-            </div>
-          )}
+          <KeyboardSelectDialog
+            open={selectingToEvent !== null}
+            title={toEventDialogTitle}
+            selectedKey={pendingToKey}
+            onSelectKey={handleSelectToKey}
+            onConfirm={handleConfirmToKeySelect}
+            onOpenChange={(open) => {
+              if (!open) {
+                setSelectingToEvent(null);
+                setPendingToKey(null);
+              }
+            }}
+          />
         </div>
       </div>
 
@@ -711,6 +444,42 @@ export function ManipulatorBuilderPanel({
 
 function omitFromKeyCode(from: Manipulator['from']): Manipulator['from'] {
   return clearEventKeyFields(from);
+}
+
+function normalizeManipulator(manipulator: Manipulator): Manipulator {
+  return {
+    ...manipulator,
+    to: manipulator.to?.length ? manipulator.to : undefined,
+    to_if_alone: manipulator.to_if_alone?.length
+      ? manipulator.to_if_alone
+      : undefined,
+    to_if_held_down: manipulator.to_if_held_down?.length
+      ? manipulator.to_if_held_down
+      : undefined,
+    to_if_other_key_pressed: manipulator.to_if_other_key_pressed?.length
+      ? manipulator.to_if_other_key_pressed
+      : undefined,
+    to_after_key_up: manipulator.to_after_key_up?.length
+      ? manipulator.to_after_key_up
+      : undefined,
+    to_delayed_action:
+      manipulator.to_delayed_action?.to_if_invoked?.length ||
+      manipulator.to_delayed_action?.to_if_canceled?.length
+        ? manipulator.to_delayed_action
+        : undefined,
+  };
+}
+
+function hasManipulatorAction(manipulator: Manipulator): boolean {
+  return Boolean(
+    manipulator.to?.length ||
+      manipulator.to_if_alone?.length ||
+      manipulator.to_if_held_down?.length ||
+      manipulator.to_if_other_key_pressed?.length ||
+      manipulator.to_after_key_up?.length ||
+      manipulator.to_delayed_action?.to_if_invoked?.length ||
+      manipulator.to_delayed_action?.to_if_canceled?.length,
+  );
 }
 
 function getModifierSymbol(modifier: string): string {
