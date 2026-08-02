@@ -2,8 +2,19 @@
 
 import type React from 'react';
 
+import Image from 'next/image';
 import { useState } from 'react';
-import { Moon, Sun, Github, Upload, FileJson, FilePlus } from 'lucide-react';
+import {
+  ArrowRight,
+  Braces,
+  Command,
+  FilePlus,
+  Github,
+  Moon,
+  ShieldCheck,
+  Sun,
+  Upload,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -233,7 +244,7 @@ export default function KarabinerEditor() {
   };
 
   return (
-    <div className='min-h-screen bg-background'>
+    <div className='min-h-screen bg-background bg-[radial-gradient(circle_at_top_left,color-mix(in_srgb,var(--color-primary)_10%,transparent),transparent_32rem)]'>
       <script
         type='application/ld+json'
         dangerouslySetInnerHTML={{
@@ -246,20 +257,32 @@ export default function KarabinerEditor() {
       />
       <Toaster />
 
-      <header className='border-b border-border bg-card'>
-        <div className='container mx-auto flex items-center justify-between px-4 py-4'>
+      <header className='sticky top-0 z-50 border-b border-border/70 bg-background/85 backdrop-blur-xl'>
+        <div className='container mx-auto flex items-center justify-between px-4 py-3'>
           <div className='flex items-center gap-3'>
-            <FileJson className='h-6 w-6 text-primary' />
-            <h1 className='text-xl font-semibold text-foreground'>
-              Karabiner Config Editor
-            </h1>
+            <Image
+              src='/app-icon.png'
+              alt=''
+              width={48}
+              height={48}
+              priority
+              className='h-11 w-11 rounded-[14px] shadow-md ring-1 ring-black/10 dark:ring-white/10'
+            />
+            <div>
+              <h1 className='text-base font-semibold tracking-tight text-foreground sm:text-lg'>
+                Karabiner Config Editor
+              </h1>
+              <p className='hidden text-xs text-muted-foreground sm:block'>
+                See every remap before it reaches your keyboard.
+              </p>
+            </div>
           </div>
           <div className='flex items-center gap-2'>
             <Button
               asChild
               variant='outline'
               size='icon'
-              className='rounded-lg bg-transparent'
+              className='rounded-xl bg-background/70'
             >
               <a
                 href='https://github.com/zkwokleung/karabiner-config-editor'
@@ -274,7 +297,8 @@ export default function KarabinerEditor() {
               variant='outline'
               size='icon'
               onClick={toggleTheme}
-              className='rounded-lg bg-transparent'
+              className='rounded-xl bg-background/70'
+              aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}
             >
               {theme === 'light' ? (
                 <Moon className='h-5 w-5' />
@@ -286,9 +310,50 @@ export default function KarabinerEditor() {
         </div>
       </header>
 
-      <main className='container mx-auto px-4 py-8'>
+      <main className='container mx-auto max-w-7xl px-4 py-8 sm:py-10'>
+        <section className='mb-8 grid items-center gap-8 overflow-hidden rounded-3xl border border-border/70 bg-card/75 p-6 shadow-sm backdrop-blur-sm md:grid-cols-[1.25fr_0.75fr] md:p-10'>
+          <div className='max-w-2xl'>
+            <div className='mb-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary'>
+              <ShieldCheck className='h-3.5 w-3.5' />
+              Visual, validated, reversible
+            </div>
+            <h2 className='text-balance text-3xl font-semibold tracking-[-0.035em] text-foreground sm:text-4xl'>
+              Remap with confidence,
+              <span className='text-primary'> not guesswork.</span>
+            </h2>
+            <p className='mt-4 max-w-xl text-pretty text-sm leading-6 text-muted-foreground sm:text-base'>
+              Turn Karabiner’s JSON into a workspace you can see. Build
+              profiles, trace complex rules, catch conflicts, and export a clean
+              config.
+            </p>
+          </div>
+
+          <div className='relative mx-auto flex w-full max-w-sm items-center justify-center gap-3 rounded-2xl border border-border/70 bg-background/80 p-6 shadow-inner'>
+            <div className='absolute inset-x-8 top-1/2 h-px bg-gradient-to-r from-primary/10 via-primary/50 to-emerald-400/50' />
+            <div className='relative grid h-20 w-24 place-items-center rounded-2xl border border-primary/30 bg-primary/10 shadow-sm'>
+              <div className='text-center'>
+                <Command className='mx-auto mb-1 h-5 w-5 text-primary' />
+                <span className='font-mono text-[10px] font-semibold uppercase tracking-wider text-primary'>
+                  caps lock
+                </span>
+              </div>
+            </div>
+            <div className='relative z-10 grid h-9 w-9 shrink-0 place-items-center rounded-full border border-primary/20 bg-background shadow-sm'>
+              <ArrowRight className='h-4 w-4 text-primary' />
+            </div>
+            <div className='relative grid h-20 w-24 place-items-center rounded-2xl border border-emerald-400/40 bg-emerald-400/10 shadow-sm'>
+              <div className='text-center'>
+                <Braces className='mx-auto mb-1 h-5 w-5 text-emerald-500' />
+                <span className='font-mono text-[10px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400'>
+                  hyper
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <Tabs value={activeTab} onValueChange={setActiveTab} className='w-full'>
-          <TabsList className='grid w-full grid-cols-3 mb-6'>
+          <TabsList className='mx-auto mb-8 grid w-full max-w-xl grid-cols-3 rounded-2xl border border-border/70 bg-card/80 p-1.5 shadow-sm'>
             <TabsTrigger value='import' className='cursor-pointer'>
               Import
             </TabsTrigger>
@@ -309,22 +374,25 @@ export default function KarabinerEditor() {
           </TabsList>
 
           <TabsContent value='import' className='space-y-6'>
-            <Card className='p-6'>
+            <Card className='border-primary/15 bg-card/90 p-6 shadow-sm'>
               <div className='flex items-start justify-between gap-4'>
                 <div className='space-y-2'>
                   <h2 className='text-lg font-semibold flex items-center gap-2'>
                     <FilePlus className='h-5 w-5 text-primary' />
-                    Start from a default config
+                    Start with a clean config
                   </h2>
                 </div>
                 <Button onClick={handleStartWithDefault} className='shrink-0'>
-                  Use Default Config
+                  Start editing
                 </Button>
               </div>
             </Card>
 
-            <Card className='p-6'>
-              <h2 className='text-lg font-semibold mb-4'>Upload Config File</h2>
+            <Card className='bg-card/90 p-6 shadow-sm'>
+              <h2 className='mb-1 text-lg font-semibold'>Open your config</h2>
+              <p className='mb-4 text-sm text-muted-foreground'>
+                Import your existing file and keep every profile intact.
+              </p>
               <div className='flex flex-col gap-4'>
                 <div className='flex items-center gap-4'>
                   <input
@@ -349,8 +417,11 @@ export default function KarabinerEditor() {
               </div>
             </Card>
 
-            <Card className='p-6'>
-              <h2 className='text-lg font-semibold mb-4'>Paste JSON Config</h2>
+            <Card className='bg-card/90 p-6 shadow-sm'>
+              <h2 className='mb-1 text-lg font-semibold'>Paste JSON</h2>
+              <p className='mb-4 text-sm text-muted-foreground'>
+                Useful for quick edits, reviews, and config snippets.
+              </p>
               <div className='space-y-4'>
                 <Textarea
                   placeholder='Paste your Karabiner config JSON here...'

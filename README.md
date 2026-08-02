@@ -1,61 +1,54 @@
-# Karabiner Config Editor
+<p align="center">
+  <img src="./public/app-icon.png" width="112" alt="Karabiner Config Editor app icon" />
+</p>
 
-A visual editor for [Karabiner-Elements](https://karabiner-elements.pqrs.org/)
-configuration files.
+<h1 align="center">Karabiner Config Editor</h1>
 
-Instead of manually editing `karabiner.json`, you can import, edit, validate,
-and export configurations with a structured UI.
+<p align="center">
+  A visual workspace for building, validating, and exporting
+  <a href="https://karabiner-elements.pqrs.org/">Karabiner-Elements</a> configurations.
+</p>
 
-## Table of Contents
+<p align="center">
+  <a href="https://karabiner-config-editor.vercel.app/"><img alt="Open the editor" src="https://img.shields.io/badge/open_the_editor-6C7CFF?style=for-the-badge&logo=apple&logoColor=white" /></a>
+  <img alt="Next.js 16" src="https://img.shields.io/badge/Next.js_16-111827?style=for-the-badge&logo=next.js&logoColor=white" />
+  <img alt="MIT licensed" src="https://img.shields.io/badge/license-MIT-4DE2C5?style=for-the-badge&logoColor=111827" />
+</p>
 
-- [Overview](#overview)
-- [Features](#features)
-- [Documentation](#documentation)
-- [Quick Start](#quick-start)
-- [Usage Workflow](#usage-workflow)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Scripts](#scripts)
-- [Quality Checks](#quality-checks)
-- [Contributing](#contributing)
-- [License](#license)
+<p align="center">
+  <img src="./docs/images/editor-overview.jpg" alt="Karabiner Config Editor showing the remapping workspace and profile editor" width="880" />
+</p>
 
-## Overview
+## See your configuration, not just its JSON
 
-Karabiner-Elements is powerful, but direct JSON editing becomes difficult as
-rules grow. This project provides:
+Karabiner-Elements is wonderfully powerful, but a growing `karabiner.json`
+quickly becomes difficult to reason about. Karabiner Config Editor turns that
+file into a visual workflow: import what you have, make changes with context,
+catch conflicts, and export a clean configuration.
 
-- a profile-oriented editor for simple, fn, and complex manipulators
-- keyboard-first visual manipulator tools
-- validation and conflict checks before export
+|                         |                                                                                     |
+| ----------------------- | ----------------------------------------------------------------------------------- |
+| ⌨️ **Visual mappings**  | Work directly with ANSI, ISO, and JIS keyboard layouts.                             |
+| 🧩 **Complex rules**    | Build manipulators, conditions, and ordered actions without losing the big picture. |
+| 🎯 **Scoped changes**   | Edit simple and fn-key mappings globally, by profile, or for a specific device.     |
+| 🛡️ **Safe exports**     | Validate in real time and resolve blocking issues before downloading your config.   |
+| ⚡ **Useful templates** | Start quickly with Hyper key, Vim navigation, and other common rule patterns.       |
+| 🌗 **Focused UI**       | Use the editor in light or dark mode with a keyboard-first interface.               |
 
-## Features
+## From file to finished config
 
-- Complex modification builder with drag-and-drop ordering
-- Optional per-manipulator descriptions for clearer rule intent
-- Rule templates for common setups (Hyper key, Vim-style navigation, and more)
-- Profile-level and device-level simple modifications
-- Profile-level and device-level fn key mapping
-- Configurations section for Devices, Virtual Keyboard, and UI settings
-- Real-time config validation and export safeguards
-- JSON import, preview, copy, and download
-- Keyboard layout support (ANSI, ISO, JIS)
+1. **Import** an existing `karabiner.json`, paste JSON, or begin with a clean
+   default.
+2. **Edit** profiles, device mappings, fn keys, complex rules, and Karabiner
+   settings.
+3. **Review** validation messages and resolve conflicts before they reach your
+   keyboard.
+4. **Export** the finished JSON as a download or copy it directly to your
+   clipboard.
 
-## Documentation
+## Quick start
 
-- `docs/ARCHITECTURE.md`: system design, data flow, and module boundaries
-- `docs/DEVELOPMENT.md`: local setup, workflow, and coding standards
-- `docs/USER_GUIDE.md`: end-user workflow for import/edit/export
-- `docs/VALIDATION_AND_LIMITATIONS.md`: validation rules and current limits
-
-## Quick Start
-
-### Prerequisites
-
-- Node.js 18+
-- pnpm 9+
-
-### Install and Run
+You will need Node.js 18+ and pnpm 9+.
 
 ```bash
 git clone https://github.com/zkwokleung/karabiner-config-editor.git
@@ -64,77 +57,70 @@ pnpm install
 pnpm dev
 ```
 
-Open `http://localhost:3000`.
+Then open [http://localhost:3000](http://localhost:3000).
 
-## Usage Workflow
+## Documentation
 
-1. Import an existing `karabiner.json`, paste JSON, or start from default.
-2. Edit profiles, device mappings, fn keys, and complex rules.
-3. Resolve warnings/errors shown by validation.
-4. Export as `karabiner.json` or copy JSON to clipboard.
+- 📘 [User guide](./docs/USER_GUIDE.md) — import, edit, validate, and export a
+  configuration.
+- 🧭 [Architecture](./docs/ARCHITECTURE.md) — data flow, module boundaries, and
+  design decisions.
+- 🛠️ [Development](./docs/DEVELOPMENT.md) — local setup, conventions, and
+  contributor workflow.
+- ⚠️ [Validation and limitations](./docs/VALIDATION_AND_LIMITATIONS.md) — rules,
+  safeguards, and current constraints.
 
-## Tech Stack
+## Built with
 
-- Next.js 16 (App Router)
-- React 19 + TypeScript
-- Tailwind CSS v4 + shadcn/ui
-- `@dnd-kit` for drag and drop
-- `react-simple-keyboard` for visual keyboard interactions
+- [Next.js 16](https://nextjs.org/) and React 19
+- TypeScript and Tailwind CSS v4
+- shadcn/ui and Radix UI primitives
+- `@dnd-kit` for drag-and-drop rule ordering
+- `react-simple-keyboard` for the visual keyboard
 
-## Project Structure
+## Project map
 
 ```text
 src/
-  app/                          # App entry, layout, global styles
+  app/                          # App entry, layout, and global styles
   components/
     complex-modifications/      # Complex rule editor and builder
     keyboard/                   # Shared keyboard rendering shell
     mapping/                    # To-event and condition editors
-    profile/                    # Profile/device/simple/fn editors
+    profile/                    # Profile, device, simple, and fn editors
     ui/                         # UI primitives
-  hooks/                        # Shared hooks (toast)
-  lib/                          # Constants, validation, keyboard mappings
-  types/                        # Domain type definitions
-docs/                           # Project documentation
+  hooks/                        # Shared React hooks
+  lib/                          # Validation, constants, and keyboard mappings
+  types/                        # Karabiner domain types
+docs/                           # Guides and technical documentation
 ```
 
 ## Scripts
 
-| Command             | Description                              |
-| ------------------- | ---------------------------------------- |
-| `pnpm dev`          | Start development server                 |
-| `pnpm build`        | Build for production                     |
-| `pnpm start`        | Start production server                  |
-| `pnpm lint`         | Run ESLint                               |
-| `pnpm format`       | Format code with Prettier                |
-| `pnpm format:check` | Check formatting without writing changes |
+| Command             | Description                      |
+| ------------------- | -------------------------------- |
+| `pnpm dev`          | Start the development server     |
+| `pnpm build`        | Create a production build        |
+| `pnpm start`        | Run the production server        |
+| `pnpm lint`         | Run ESLint                       |
+| `pnpm format`       | Format the project with Prettier |
+| `pnpm format:check` | Check formatting                 |
 
-## Quality Checks
-
-Run these before opening a PR:
+Before opening a pull request, run:
 
 ```bash
+pnpm exec tsc --noEmit
 pnpm lint
 pnpm format:check
-pnpm exec tsc --noEmit
 pnpm build
 ```
 
 ## Contributing
 
-Please read `docs/DEVELOPMENT.md` before contributing.
-
-Recommended flow:
-
-1. Create a branch (`feature/<name>` or `fix/<name>`).
-2. Make focused changes with clear commit messages.
-3. Run quality checks locally.
-4. Open a pull request with:
-   - problem statement
-   - scope of changes
-   - screenshots (for UI changes)
-   - validation steps
+Contributions are welcome. Read the [development guide](./docs/DEVELOPMENT.md),
+make a focused change, run the quality checks above, and include screenshots for
+visible UI changes.
 
 ## License
 
-This project is licensed under the MIT License. See `LICENSE` for details.
+Released under the [MIT License](./LICENSE).

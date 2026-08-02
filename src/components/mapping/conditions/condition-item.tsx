@@ -43,7 +43,9 @@ export function ConditionItem({
     } else if (type.includes('keyboard_type')) {
       newCondition.keyboard_types = ['ansi'];
     } else if (type.includes('input_source')) {
-      newCondition.input_source_id = ['^com\\.apple\\.keylayout\\.US$'];
+      newCondition.input_sources = [
+        { input_source_id: '^com\\.apple\\.keylayout\\.US$' },
+      ];
     } else if (type.includes('variable')) {
       newCondition.name = 'variable_name';
       newCondition.value = 1;
@@ -224,10 +226,15 @@ export function ConditionItem({
               </TooltipProvider>
             </div>
             <Input
-              value={condition.input_source_id?.[0] || ''}
-              onChange={(e) =>
-                onUpdate({ ...condition, input_source_id: [e.target.value] })
-              }
+              value={condition.input_sources?.[0]?.input_source_id || ''}
+              onChange={(e) => {
+                const inputSources = [...(condition.input_sources ?? [{}])];
+                inputSources[0] = {
+                  ...inputSources[0],
+                  input_source_id: e.target.value,
+                };
+                onUpdate({ ...condition, input_sources: inputSources });
+              }}
               placeholder='^com\\.apple\\.keylayout\\.US$'
               className='font-mono text-xs'
             />

@@ -8,19 +8,16 @@ import { defineConfig } from 'eslint/config';
 const reactRecommended = pluginReact.configs.flat.recommended;
 const reactJsxRuntime = pluginReact.configs.flat['jsx-runtime'];
 const jsRecommended = js.configs.recommended;
-const tsRecommended = tseslint.configs.recommended.map((config) =>
-  config.files ? config : { ...config, files: ['**/*.{ts,mts,cts,tsx}'] },
-);
+const tsRecommended = tseslint.configs.recommended.map((config) => ({
+  ...config,
+  files: ['**/*.{ts,mts,cts,tsx}'],
+}));
 
 const jsConfig = {
   ...jsRecommended,
   files: ['**/*.{js,mjs,cjs,jsx}'],
   languageOptions: {
-    ...(jsRecommended.languageOptions ?? {}),
-    globals: {
-      ...(jsRecommended.languageOptions?.globals ?? {}),
-      ...globals.browser,
-    },
+    globals: globals.browser,
   },
 };
 
@@ -54,9 +51,7 @@ export default defineConfig([
       'react/jsx-uses-react': 'off',
     },
     settings: {
-      ...(reactRecommended?.settings ?? {}),
       react: {
-        ...(reactRecommended?.settings?.react ?? {}),
         version: 'detect',
       },
     },
