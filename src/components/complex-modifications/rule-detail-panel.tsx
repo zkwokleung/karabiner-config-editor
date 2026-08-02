@@ -255,6 +255,7 @@ export function RuleDetailPanel({
 
           <TabsContent value='keyboard' className='mt-0 space-y-4'>
             <ComplexModificationKeyboard
+              profile={profile}
               manipulators={rule.manipulators}
               onKeyClick={handleKeyboardKeyClick}
               selectedFromKey={selectedFromKey}

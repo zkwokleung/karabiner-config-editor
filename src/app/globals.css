@@ -257,6 +257,12 @@
   );
 }
 
+.keyboard-theme.hg-theme-default button.hg-button.kb-lineage-physical {
+  --kb-key-shadow: inset 0 0 0 2px color-mix(in srgb, #d97706 80%, transparent);
+  outline: 1px dashed #d97706;
+  outline-offset: -3px;
+}
+
 .keyboard-theme.hg-theme-default button.hg-button.kb-selected {
   --kb-key-bg: color-mix(
     in srgb,
