@@ -3,13 +3,15 @@
 import type React from 'react';
 
 import Image from 'next/image';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
+  AlertCircle,
   ArrowRight,
   Braces,
   Command,
   FilePlus,
   Github,
+  HardDrive,
   Moon,
   ShieldCheck,
   Sun,
@@ -28,6 +30,8 @@ import type { KeyboardLayoutType } from '@/lib/keyboard-layout';
 import { validateConfig, type ValidationError } from '@/lib/validation';
 import { createMinimalKarabinerConfig } from '@/lib/default-config';
 import { ExportPanel } from '@/components/export/export-panel';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { usePersistedConfig } from '@/hooks/use-persisted-config';
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ??
@@ -115,19 +119,46 @@ function getSelectedProfileKeyboardType(
 
 export default function KarabinerEditor() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [config, setConfig] = useState<KarabinerConfig | null>(null);
+  const {
+    config,
+    setConfig,
+    discardDraft,
+    hasStoredDraft,
+    isHydrated,
+    recoveredFromStorage,
+    savedAt,
+    storageError,
+  } = usePersistedConfig(normalizeConfigShape);
   const [jsonInput, setJsonInput] = useState('');
   const [activeTab, setActiveTab] = useState('import');
-  const [validationErrors, setValidationErrors] = useState<ValidationError[]>(
-    [],
+  const validationErrors = useMemo<ValidationError[]>(
+    () => (config ? validateConfig(config) : []),
+    [config],
   );
   const { toast } = useToast();
   const selectedProfileKeyboardType = getSelectedProfileKeyboardType(config);
 
+  useEffect(() => {
+    if (recoveredFromStorage) {
+      setActiveTab('edit');
+    }
+  }, [recoveredFromStorage]);
+
   const updateConfig = (newConfig: KarabinerConfig) => {
     setConfig(newConfig);
-    const errors = validateConfig(newConfig);
-    setValidationErrors(errors);
+  };
+
+  const handleDiscardDraft = () => {
+    if (!discardDraft()) {
+      return;
+    }
+
+    setJsonInput('');
+    setActiveTab('import');
+    toast({
+      title: 'Local draft discarded',
+      description: 'The saved config was removed from this browser.',
+    });
   };
 
   const toggleTheme = () => {
@@ -351,6 +382,55 @@ export default function KarabinerEditor() {
             </div>
           </div>
         </section>
+
+        {isHydrated && storageError && (
+          <Alert variant='destructive' className='mb-4'>
+            <AlertCircle className='h-4 w-4' />
+            <AlertDescription className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+              <span>{storageError}</span>
+              {!config && hasStoredDraft && (
+                <Button
+                  type='button'
+                  size='sm'
+                  variant='outline'
+                  className='shrink-0'
+                  onClick={handleDiscardDraft}
+                >
+                  Remove unreadable draft
+                </Button>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {isHydrated && config && hasStoredDraft && (
+          <div className='mb-4 flex flex-col gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between'>
+            <div className='flex items-start gap-3'>
+              <HardDrive className='mt-0.5 h-4 w-4 shrink-0 text-primary' />
+              <div>
+                <p className='text-sm font-medium text-foreground'>
+                  {recoveredFromStorage
+                    ? 'Local draft restored'
+                    : 'Config saved locally'}
+                </p>
+                <p className='text-xs text-muted-foreground'>
+                  {savedAt
+                    ? `Saved ${new Date(savedAt).toLocaleString()}`
+                    : 'Changes are kept in this browser for your next visit.'}
+                </p>
+              </div>
+            </div>
+            <Button
+              type='button'
+              size='sm'
+              variant='outline'
+              className='shrink-0'
+              onClick={handleDiscardDraft}
+            >
+              Discard local draft
+            </Button>
+          </div>
+        )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className='w-full'>
           <TabsList className='mx-auto mb-8 grid w-full max-w-xl grid-cols-3 rounded-2xl border border-border/70 bg-card/80 p-1.5 shadow-sm'>
