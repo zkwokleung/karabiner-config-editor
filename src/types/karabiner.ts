@@ -69,6 +69,7 @@ export interface Manipulator {
   to?: ToEvent[];
   to_if_alone?: ToEvent[];
   to_if_held_down?: ToEvent[];
+  to_if_other_key_pressed?: OtherKeyPressedEvent[];
   to_after_key_up?: ToEvent[];
   to_delayed_action?: DelayedAction;
   conditions?: Condition[];
@@ -121,6 +122,11 @@ export interface SimultaneousOptions {
 export interface DelayedAction {
   to_if_invoked?: ToEvent[];
   to_if_canceled?: ToEvent[];
+}
+
+export interface OtherKeyPressedEvent {
+  other_keys: FromEvent[];
+  to: ToEvent[];
 }
 
 export interface Condition {

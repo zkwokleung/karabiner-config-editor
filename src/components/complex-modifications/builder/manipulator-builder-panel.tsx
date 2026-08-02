@@ -1,14 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import {
-  X,
-  Plus,
-  Trash2,
-  Settings,
-  AlertCircle,
-  CircleHelp,
-} from 'lucide-react';
+import { X, Plus, Trash2, AlertCircle, CircleHelp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,6 +19,7 @@ import type {
   ToEvent,
   Condition,
   Modifiers,
+  Parameters,
 } from '@/types/karabiner';
 import { getCharacterWithKeyCodeLabel } from '@/lib/keyboard-layout';
 import { ConditionEditor } from '@/components/mapping/conditions/condition-editor';
@@ -33,6 +27,8 @@ import { ToEventEditor } from '@/components/mapping/to-events/to-event-editor';
 import { ModifierSelector as FormModifierSelector } from '@/components/mapping/selectors/modifier-selector';
 import { KeyCodeSelector } from '@/components/mapping/selectors/key-code-selector';
 import { KeyboardSelectDialog } from './keyboard-select-dialog';
+import { ManipulatorSection } from './manipulator-section';
+import { OtherKeyPressedEditor } from './other-key-pressed-editor';
 import { useToast } from '@/hooks/use-toast';
 import { useKeyboardLayout } from '@/components/keyboard/keyboard-layout-context';
 import { cn } from '@/lib/utils';
@@ -108,7 +104,6 @@ export function ManipulatorBuilderPanel({
   });
 
   const [selectedManipulatorIndex, setSelectedManipulatorIndex] = useState(0);
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [selectingToEvent, setSelectingToEvent] = useState<{
     field: ToEventField;
     index: number;
@@ -221,7 +216,25 @@ export function ManipulatorBuilderPanel({
   ]);
 
   const updateToEvents = (events: ToEvent[]) => {
-    updateCurrentManipulator({ to: events });
+    updateCurrentManipulator({ to: events.length > 0 ? events : undefined });
+  };
+
+  const updateOptionalToEvents = (
+    field: Exclude<ToEventField, 'to'>,
+    events: ToEvent[],
+  ) => {
+    updateCurrentManipulator({
+      [field]: events.length > 0 ? events : undefined,
+    });
+  };
+
+  const updateParameter = (key: keyof Parameters, rawValue: string) => {
+    const parameters = { ...currentManipulator.parameters };
+    if (rawValue === '') delete parameters[key];
+    else parameters[key] = Number(rawValue);
+    updateCurrentManipulator({
+      parameters: Object.keys(parameters).length > 0 ? parameters : undefined,
+    });
   };
 
   const renderToEventKeySelectButton = useCallback(
@@ -301,14 +314,31 @@ export function ManipulatorBuilderPanel({
       return;
     }
 
-    // Filter out manipulators with no "to" events
-    const validManipulators = manipulators.filter(
-      (m) => m.to && m.to.length > 0,
+    const hasIncompleteOtherKeyAction = manipulators.some((manipulator) =>
+      manipulator.to_if_other_key_pressed?.some(
+        (entry) => entry.other_keys.length === 0 || entry.to.length === 0,
+      ),
     );
+
+    if (hasIncompleteOtherKeyAction) {
+      const errorMsg =
+        'Each other-key action needs at least one matching key and one event to send.';
+      setValidationError(errorMsg);
+      toast({
+        title: 'Validation Error',
+        description: errorMsg,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const validManipulators = manipulators
+      .map(normalizeManipulator)
+      .filter(hasManipulatorAction);
 
     if (validManipulators.length === 0) {
       const errorMsg =
-        'At least one manipulator must have a "to" action. Add a target key or action.';
+        'At least one manipulator must have an output action. Add a standard, conditional, delayed, or other-key event.';
       setValidationError(errorMsg);
       toast({
         title: 'Validation Error',
@@ -424,9 +454,12 @@ export function ManipulatorBuilderPanel({
       )}
 
       <div className='max-h-[500px] overflow-y-auto pr-2'>
-        <div className='space-y-4'>
-          {/* From section */}
-          <div className='space-y-3'>
+        <div className='space-y-3'>
+          <ManipulatorSection
+            title='Description & From'
+            summary={fromKey ? formatKeyCode(fromKey) : 'Key required'}
+            defaultOpen
+          >
             <div className='space-y-2'>
               <Label className='text-sm font-semibold'>Description</Label>
               <Input
@@ -475,7 +508,7 @@ export function ManipulatorBuilderPanel({
               </Button>
             </div>
 
-            <div className='grid grid-cols-2 gap-3'>
+            <div className='grid gap-3 sm:grid-cols-2'>
               <div className='space-y-2'>
                 <div className='flex items-center gap-1'>
                   <Label className='text-xs'>Mandatory Modifiers</Label>
@@ -537,20 +570,19 @@ export function ManipulatorBuilderPanel({
                 />
               </div>
             </div>
-          </div>
+          </ManipulatorSection>
 
-          <Separator />
-
-          {/* To section with keyboard */}
-          <div className='space-y-3'>
-            <div className='flex items-center justify-between gap-2'>
-              <Label className='text-sm font-semibold'>To Events</Label>
+          <ManipulatorSection
+            title='To'
+            summary={`${currentManipulator.to?.length || 0} events`}
+            defaultOpen
+            action={
               <Button size='sm' variant='outline' onClick={addToEvent}>
                 <Plus className='mr-2 h-3 w-3' />
                 Add Event
               </Button>
-            </div>
-
+            }
+          >
             <ToEventEditor
               events={currentManipulator.to || []}
               onChange={updateToEvents}
@@ -560,104 +592,168 @@ export function ManipulatorBuilderPanel({
                 renderToEventKeySelectButton('to', index)
               }
             />
+          </ManipulatorSection>
 
-            <KeyboardSelectDialog
-              open={selectingToEvent !== null}
-              title={toEventDialogTitle}
-              selectedKey={pendingToKey}
-              onSelectKey={handleSelectToKey}
-              onConfirm={handleConfirmToKeySelect}
-              onOpenChange={(open) => {
-                if (!open) {
-                  setSelectingToEvent(null);
-                  setPendingToKey(null);
-                }
-              }}
-            />
-          </div>
-
-          <Separator />
-
-          {/* Conditions */}
-          <ConditionEditor
-            conditions={currentManipulator.conditions || []}
-            onChange={updateConditions}
-          />
-
-          <Separator />
-
-          {/* Advanced options toggle */}
-          <Button
-            variant='ghost'
-            size='sm'
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className='w-full'
+          <ManipulatorSection
+            title='Alone action'
+            summary={`${currentManipulator.to_if_alone?.length || 0} events`}
+            defaultOpen={(currentManipulator.to_if_alone?.length || 0) > 0}
+            description='Sent when the key is pressed and released without another event.'
           >
-            <Settings className='mr-2 h-4 w-4' />
-            {showAdvanced ? 'Hide' : 'Show'} Advanced Options
-          </Button>
+            <ToEventEditor
+              events={currentManipulator.to_if_alone || []}
+              onChange={(events) =>
+                updateOptionalToEvents('to_if_alone', events)
+              }
+              label='To If Alone'
+              keyCodeAction={(index) =>
+                renderToEventKeySelectButton('to_if_alone', index)
+              }
+            />
+          </ManipulatorSection>
 
-          {showAdvanced && (
-            <div className='space-y-4 pt-2'>
-              <div className='space-y-2'>
-                <ToEventEditor
-                  events={currentManipulator.to_if_alone || []}
-                  onChange={(events) => {
-                    if (events.length === 0) {
-                      // Signal that the field should be removed by setting it to
-                      // undefined. updateCurrentManipulator merges partial
-                      // updates, so passing an object without the key will not
-                      // remove it. Use explicit undefined to clear the field.
-                      updateCurrentManipulator({ to_if_alone: undefined });
-                    } else {
-                      updateCurrentManipulator({ to_if_alone: events });
-                    }
-                  }}
-                  label='To If Alone'
-                  helpText='Triggered when the key is pressed and released alone.'
-                  keyCodeAction={(index) =>
-                    renderToEventKeySelectButton('to_if_alone', index)
-                  }
-                />
-              </div>
+          <ManipulatorSection
+            title='Held-down action'
+            summary={`${currentManipulator.to_if_held_down?.length || 0} events`}
+            defaultOpen={(currentManipulator.to_if_held_down?.length || 0) > 0}
+            description='Sent after the key is held past the configured threshold.'
+          >
+            <ToEventEditor
+              events={currentManipulator.to_if_held_down || []}
+              onChange={(events) =>
+                updateOptionalToEvents('to_if_held_down', events)
+              }
+              label='To If Held Down'
+              keyCodeAction={(index) =>
+                renderToEventKeySelectButton('to_if_held_down', index)
+              }
+            />
+          </ManipulatorSection>
 
-              <div className='space-y-2'>
-                <ToEventEditor
-                  events={currentManipulator.to_if_held_down || []}
-                  onChange={(events) => {
-                    if (events.length === 0) {
-                      updateCurrentManipulator({ to_if_held_down: undefined });
-                    } else {
-                      updateCurrentManipulator({ to_if_held_down: events });
-                    }
-                  }}
-                  label='To If Held Down'
-                  helpText='Triggered when the key is held past the hold threshold.'
-                  keyCodeAction={(index) =>
-                    renderToEventKeySelectButton('to_if_held_down', index)
-                  }
-                />
-              </div>
+          <ManipulatorSection
+            title='Other-key action'
+            summary={`${currentManipulator.to_if_other_key_pressed?.length || 0} actions`}
+            defaultOpen={
+              (currentManipulator.to_if_other_key_pressed?.length || 0) > 0
+            }
+            description='Changes the held key output when one of the configured other keys is pressed.'
+          >
+            <OtherKeyPressedEditor
+              entries={currentManipulator.to_if_other_key_pressed || []}
+              onChange={(entries) =>
+                updateCurrentManipulator({
+                  to_if_other_key_pressed:
+                    entries.length > 0 ? entries : undefined,
+                })
+              }
+              layoutType={keyboardTypeV2}
+            />
+          </ManipulatorSection>
 
-              <div className='space-y-2'>
-                <ToEventEditor
-                  events={currentManipulator.to_after_key_up || []}
-                  onChange={(events) => {
-                    if (events.length === 0) {
-                      updateCurrentManipulator({ to_after_key_up: undefined });
-                    } else {
-                      updateCurrentManipulator({ to_after_key_up: events });
+          <ManipulatorSection
+            title='After key-up action'
+            summary={`${currentManipulator.to_after_key_up?.length || 0} events`}
+            defaultOpen={(currentManipulator.to_after_key_up?.length || 0) > 0}
+            description='Sent after the original key is released.'
+          >
+            <ToEventEditor
+              events={currentManipulator.to_after_key_up || []}
+              onChange={(events) =>
+                updateOptionalToEvents('to_after_key_up', events)
+              }
+              label='To After Key Up'
+              keyCodeAction={(index) =>
+                renderToEventKeySelectButton('to_after_key_up', index)
+              }
+            />
+          </ManipulatorSection>
+
+          <ManipulatorSection
+            title='Delayed action'
+            summary={`${(currentManipulator.to_delayed_action?.to_if_invoked?.length || 0) + (currentManipulator.to_delayed_action?.to_if_canceled?.length || 0)} events`}
+            defaultOpen={Boolean(currentManipulator.to_delayed_action)}
+            description='Invoked events run after the delay; canceled events run if another key interrupts the delay.'
+          >
+            <ToEventEditor
+              events={currentManipulator.to_delayed_action?.to_if_invoked || []}
+              onChange={(events) =>
+                updateCurrentManipulator({
+                  to_delayed_action: normalizeDelayedAction({
+                    ...currentManipulator.to_delayed_action,
+                    to_if_invoked: events.length > 0 ? events : undefined,
+                  }),
+                })
+              }
+              label='To If Invoked'
+            />
+            <ToEventEditor
+              events={
+                currentManipulator.to_delayed_action?.to_if_canceled || []
+              }
+              onChange={(events) =>
+                updateCurrentManipulator({
+                  to_delayed_action: normalizeDelayedAction({
+                    ...currentManipulator.to_delayed_action,
+                    to_if_canceled: events.length > 0 ? events : undefined,
+                  }),
+                })
+              }
+              label='To If Canceled'
+            />
+          </ManipulatorSection>
+
+          <ManipulatorSection
+            title='Conditions & Context'
+            summary={`${currentManipulator.conditions?.length || 0} conditions`}
+            defaultOpen={(currentManipulator.conditions?.length || 0) > 0}
+          >
+            <ConditionEditor
+              conditions={currentManipulator.conditions || []}
+              onChange={updateConditions}
+            />
+          </ManipulatorSection>
+
+          <ManipulatorSection
+            title='Timing parameters'
+            summary={`${Object.keys(currentManipulator.parameters || {}).length} overrides`}
+            defaultOpen={Boolean(currentManipulator.parameters)}
+            description='Optional per-manipulator overrides in milliseconds.'
+          >
+            <div className='grid gap-3 sm:grid-cols-2'>
+              {MANIPULATOR_PARAMETER_FIELDS.map(({ key, label }) => (
+                <div key={key} className='space-y-1.5'>
+                  <Label className='text-xs' htmlFor={key}>
+                    {label}
+                  </Label>
+                  <Input
+                    id={key}
+                    type='number'
+                    min={0}
+                    step={1}
+                    value={currentManipulator.parameters?.[key] ?? ''}
+                    placeholder='Default'
+                    onChange={(event) =>
+                      updateParameter(key, event.target.value)
                     }
-                  }}
-                  label='To After Key Up'
-                  helpText='Triggered after the original key is released.'
-                  keyCodeAction={(index) =>
-                    renderToEventKeySelectButton('to_after_key_up', index)
-                  }
-                />
-              </div>
+                  />
+                </div>
+              ))}
             </div>
-          )}
+          </ManipulatorSection>
+
+          <KeyboardSelectDialog
+            open={selectingToEvent !== null}
+            title={toEventDialogTitle}
+            selectedKey={pendingToKey}
+            onSelectKey={handleSelectToKey}
+            onConfirm={handleConfirmToKeySelect}
+            onOpenChange={(open) => {
+              if (!open) {
+                setSelectingToEvent(null);
+                setPendingToKey(null);
+              }
+            }}
+          />
         </div>
       </div>
 
@@ -711,6 +807,72 @@ export function ManipulatorBuilderPanel({
 
 function omitFromKeyCode(from: Manipulator['from']): Manipulator['from'] {
   return clearEventKeyFields(from);
+}
+
+const MANIPULATOR_PARAMETER_FIELDS = [
+  {
+    key: 'basic.simultaneous_threshold_milliseconds',
+    label: 'Simultaneous threshold',
+  },
+  {
+    key: 'basic.to_delayed_action_delay_milliseconds',
+    label: 'Delayed-action delay',
+  },
+  {
+    key: 'basic.to_if_alone_timeout_milliseconds',
+    label: 'Alone timeout',
+  },
+  {
+    key: 'basic.to_if_held_down_threshold_milliseconds',
+    label: 'Held-down threshold',
+  },
+] as const satisfies ReadonlyArray<{
+  key: keyof Parameters;
+  label: string;
+}>;
+
+function normalizeDelayedAction(
+  delayedAction: Manipulator['to_delayed_action'],
+): Manipulator['to_delayed_action'] {
+  if (
+    !delayedAction?.to_if_invoked?.length &&
+    !delayedAction?.to_if_canceled?.length
+  ) {
+    return undefined;
+  }
+  return delayedAction;
+}
+
+function normalizeManipulator(manipulator: Manipulator): Manipulator {
+  return {
+    ...manipulator,
+    to: manipulator.to?.length ? manipulator.to : undefined,
+    to_if_alone: manipulator.to_if_alone?.length
+      ? manipulator.to_if_alone
+      : undefined,
+    to_if_held_down: manipulator.to_if_held_down?.length
+      ? manipulator.to_if_held_down
+      : undefined,
+    to_if_other_key_pressed: manipulator.to_if_other_key_pressed?.length
+      ? manipulator.to_if_other_key_pressed
+      : undefined,
+    to_after_key_up: manipulator.to_after_key_up?.length
+      ? manipulator.to_after_key_up
+      : undefined,
+    to_delayed_action: normalizeDelayedAction(manipulator.to_delayed_action),
+  };
+}
+
+function hasManipulatorAction(manipulator: Manipulator): boolean {
+  return Boolean(
+    manipulator.to?.length ||
+      manipulator.to_if_alone?.length ||
+      manipulator.to_if_held_down?.length ||
+      manipulator.to_if_other_key_pressed?.length ||
+      manipulator.to_after_key_up?.length ||
+      manipulator.to_delayed_action?.to_if_invoked?.length ||
+      manipulator.to_delayed_action?.to_if_canceled?.length,
+  );
 }
 
 function getModifierSymbol(modifier: string): string {

@@ -165,21 +165,52 @@ function validateManipulator(
     }
   }
 
-  // Validate at least one to event exists
-  const hasToEvent =
-    manipulator.to ||
-    manipulator.to_if_alone ||
-    manipulator.to_if_held_down ||
-    manipulator.to_after_key_up;
+  const hasToEvent = Boolean(
+    manipulator.to?.length ||
+      manipulator.to_if_alone?.length ||
+      manipulator.to_if_held_down?.length ||
+      manipulator.to_if_other_key_pressed?.length ||
+      manipulator.to_after_key_up?.length ||
+      manipulator.to_delayed_action?.to_if_invoked?.length ||
+      manipulator.to_delayed_action?.to_if_canceled?.length,
+  );
 
   if (!hasToEvent) {
     errors.push({
       path: `${path}`,
       message:
-        "Manipulator should have at least one 'to' event (to, to_if_alone, to_if_held_down, or to_after_key_up)",
+        'Manipulator should have at least one standard, conditional, delayed, or other-key output event',
       severity: 'warning',
     });
   }
+
+  manipulator.to_if_other_key_pressed?.forEach((entry, entryIndex) => {
+    if (entry.other_keys.length === 0) {
+      errors.push({
+        path: `${path}.to_if_other_key_pressed[${entryIndex}].other_keys`,
+        message: 'Other-key action must specify at least one matching key',
+        severity: 'error',
+      });
+    } else {
+      entry.other_keys.forEach((otherKey, keyIndex) => {
+        if (!getEventKeyValue(otherKey)) {
+          errors.push({
+            path: `${path}.to_if_other_key_pressed[${entryIndex}].other_keys[${keyIndex}]`,
+            message: 'Other-key match must specify a valid key field',
+            severity: 'error',
+          });
+        }
+      });
+    }
+
+    if (entry.to.length === 0) {
+      errors.push({
+        path: `${path}.to_if_other_key_pressed[${entryIndex}].to`,
+        message: 'Other-key action must specify at least one output event',
+        severity: 'error',
+      });
+    }
+  });
 
   // Validate conditions
   if (manipulator.conditions) {
