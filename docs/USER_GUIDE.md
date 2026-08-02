@@ -47,14 +47,16 @@ You can also start from built-in rule templates.
 
 Keyboard previews expose two independent preferences:
 
-- **Geometry** selects the physical ANSI, ISO, or JIS key arrangement used by
-  Karabiner-Elements.
+- **Geometry** selects the physical ANSI, ISO, or JIS arrangement shown by the
+  editor's keyboard previews.
 - **Legends** selects the logical QWERTY, Dvorak, or Colemak characters printed
   on those physical keys.
 
-Both preferences are saved in the browser. Changing legends updates keyboard
-previews, key pickers, mapping summaries, lineage details, and export review,
-but it never changes the `key_code` values written to `karabiner.json`.
+Both preferences are saved in the browser. Changing geometry does not update the
+exported Virtual Keyboard setting; configure that separately in the
+**Configurations** tab. Changing legends updates keyboard previews, complex-rule
+key pickers, mapping summaries, lineage details, and export review, but it never
+changes the `key_code` values written to `karabiner.json`.
 
 For split, ortholinear, or other ergonomic hardware, choose the Karabiner
 geometry that matches the device's key identities. The editor does not draw

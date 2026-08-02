@@ -46,7 +46,6 @@ Implemented in `src/lib/validation.ts`:
 - Legend selection is display-only. Karabiner `key_code` identities remain
   physical positions, so exported mappings do not change when the legend
   preference changes.
-- No automated test suite is currently included.
 - TypeScript errors are not enforced by Next build unless type-check is run
   explicitly (`pnpm exec tsc --noEmit`).
 
@@ -55,6 +54,7 @@ Implemented in `src/lib/validation.ts`:
 1. Run local checks:
    - `pnpm lint`
    - `pnpm format:check`
+   - `pnpm test`
    - `pnpm exec tsc --noEmit`
    - `pnpm build`
 2. Export JSON from UI.

@@ -13,6 +13,7 @@ import type {
 } from '@/types/karabiner';
 import {
   clearEventKeyFields,
+  getEventKeyField,
   getEventKeyValue,
   resolveFieldForKeyValue,
   setEventKeyValue,
@@ -49,15 +50,34 @@ export function OtherKeyPressedEditor({
   onChange,
   layoutType,
 }: OtherKeyPressedEditorProps) {
+  const editableEntries = isEditableEntryList(entries) ? entries : null;
+
+  if (!editableEntries) {
+    return (
+      <div
+        role='alert'
+        className='space-y-2 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm'
+      >
+        <p>
+          These other-key actions have an invalid structure and cannot be edited
+          safely.
+        </p>
+        <Button type='button' size='sm' onClick={() => onChange([])}>
+          Remove invalid actions
+        </Button>
+      </div>
+    );
+  }
+
   const updateEntry = (index: number, entry: OtherKeyPressedEvent) => {
-    const next = [...entries];
+    const next = [...editableEntries];
     next[index] = entry;
     onChange(next);
   };
 
   return (
     <div className='space-y-3'>
-      {entries.map((entry, entryIndex) => (
+      {editableEntries.map((entry, entryIndex) => (
         <div
           key={entryIndex}
           className='space-y-3 rounded-md border bg-muted/20 p-3'
@@ -72,7 +92,9 @@ export function OtherKeyPressedEditor({
               variant='ghost'
               aria-label={`Delete other-key action ${entryIndex + 1}`}
               onClick={() =>
-                onChange(entries.filter((_, index) => index !== entryIndex))
+                onChange(
+                  editableEntries.filter((_, index) => index !== entryIndex),
+                )
               }
             >
               <Trash2 className='h-3.5 w-3.5' />
@@ -89,6 +111,7 @@ export function OtherKeyPressedEditor({
                   <div className='min-w-0 flex-1'>
                     <KeyCodeSelector
                       value={getEventKeyValue(otherKey) || ''}
+                      valueField={getEventKeyField(otherKey) ?? undefined}
                       onChange={({ value, field }) => {
                         const otherKeys = [...entry.other_keys];
                         otherKeys[keyIndex] = setEventKeyValue(
@@ -190,7 +213,7 @@ export function OtherKeyPressedEditor({
         variant='outline'
         onClick={() =>
           onChange([
-            ...entries,
+            ...editableEntries,
             {
               other_keys: [createFromEvent()],
               to: [setEventKeyValue({}, 'a', 'key_code')],
@@ -203,4 +226,24 @@ export function OtherKeyPressedEditor({
       </Button>
     </div>
   );
+}
+
+function isEditableEntryList(
+  entries: unknown,
+): entries is OtherKeyPressedEvent[] {
+  return (
+    Array.isArray(entries) &&
+    entries.every(
+      (entry) =>
+        isRecord(entry) &&
+        Array.isArray(entry.other_keys) &&
+        entry.other_keys.every(isRecord) &&
+        Array.isArray(entry.to) &&
+        entry.to.every(isRecord),
+    )
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
 }

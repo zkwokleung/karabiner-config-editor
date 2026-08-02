@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useId, useState } from 'react';
 import { CircleHelp, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -218,10 +219,13 @@ export function ManipulatorOutputSections({
     </Button>
   );
 
-  const updateParameter = (key: keyof Parameters, rawValue: string) => {
+  const updateParameter = (
+    key: keyof Parameters,
+    value: number | undefined,
+  ) => {
     const parameters = { ...manipulator.parameters };
-    if (rawValue === '') delete parameters[key];
-    else parameters[key] = Number(rawValue);
+    if (value === undefined) delete parameters[key];
+    else parameters[key] = value;
     onUpdate({
       parameters: Object.keys(parameters).length > 0 ? parameters : undefined,
     });
@@ -380,20 +384,12 @@ export function ManipulatorOutputSections({
       >
         <div className='grid gap-3 sm:grid-cols-2'>
           {MANIPULATOR_PARAMETER_FIELDS.map(({ key, label }) => (
-            <div key={key} className='space-y-1.5'>
-              <Label className='text-xs' htmlFor={key}>
-                {label}
-              </Label>
-              <Input
-                id={key}
-                type='number'
-                min={0}
-                step={1}
-                value={manipulator.parameters?.[key] ?? ''}
-                placeholder='Default'
-                onChange={(event) => updateParameter(key, event.target.value)}
-              />
-            </div>
+            <TimingParameterInput
+              key={key}
+              label={label}
+              value={manipulator.parameters?.[key]}
+              onChange={(value) => updateParameter(key, value)}
+            />
           ))}
         </div>
       </ManipulatorSection>
@@ -422,6 +418,73 @@ const MANIPULATOR_PARAMETER_FIELDS = [
   key: keyof Parameters;
   label: string;
 }>;
+
+interface TimingParameterInputProps {
+  label: string;
+  value: number | undefined;
+  onChange: (value: number | undefined) => void;
+}
+
+function TimingParameterInput({
+  label,
+  value,
+  onChange,
+}: TimingParameterInputProps) {
+  const id = useId();
+  const [draft, setDraft] = useState(() =>
+    value === undefined ? '' : String(value),
+  );
+
+  useEffect(() => {
+    setDraft(value === undefined ? '' : String(value));
+  }, [value]);
+
+  const parsedValue = parseTimingParameter(draft);
+  const isValid = parsedValue !== null;
+
+  return (
+    <div className='space-y-1.5'>
+      <Label className='text-xs' htmlFor={id}>
+        {label}
+      </Label>
+      <Input
+        id={id}
+        type='number'
+        min={0}
+        max={Number.MAX_SAFE_INTEGER}
+        step={1}
+        value={draft}
+        placeholder='Default'
+        aria-invalid={!isValid}
+        aria-describedby={isValid ? undefined : `${id}-error`}
+        onChange={(event) => {
+          const nextDraft = event.target.value;
+          const nextValue = parseTimingParameter(nextDraft);
+          setDraft(nextDraft);
+          if (nextValue !== null) onChange(nextValue);
+        }}
+        onBlur={(event) => {
+          if (parseTimingParameter(event.currentTarget.value) === null) {
+            setDraft(value === undefined ? '' : String(value));
+          }
+        }}
+      />
+      {!isValid ? (
+        <p id={`${id}-error`} className='text-xs text-destructive'>
+          Enter a whole number from 0 to 9,007,199,254,740,991.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function parseTimingParameter(value: string): number | undefined | null {
+  if (value === '') return undefined;
+  if (!/^\d+$/u.test(value)) return null;
+
+  const parsedValue = Number(value);
+  return Number.isSafeInteger(parsedValue) ? parsedValue : null;
+}
 
 function normalizeDelayedAction(
   delayedAction: Manipulator['to_delayed_action'],

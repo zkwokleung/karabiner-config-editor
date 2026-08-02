@@ -52,6 +52,19 @@ function parseDraft(rawDraft: string): ConfigDraftEnvelope {
   return value as unknown as ConfigDraftEnvelope;
 }
 
+function assertRestorableConfig(config: KarabinerConfig): KarabinerConfig {
+  if (
+    !Array.isArray(config.profiles) ||
+    config.profiles.some(
+      (profile) => !isRecord(profile) || typeof profile.name !== 'string',
+    )
+  ) {
+    throw new Error('The saved local draft contains invalid profile data.');
+  }
+
+  return config;
+}
+
 function getStorageErrorMessage(
   error: unknown,
   action: 'load' | 'save' | 'remove',
@@ -89,8 +102,9 @@ export function usePersistedConfig(
 
       if (rawDraft) {
         const draft = parseDraft(rawDraft);
+        const restoredConfig = assertRestorableConfig(normalize(draft.config));
         skipNextWriteRef.current = true;
-        setConfig(normalize(draft.config));
+        setConfig(restoredConfig);
         setSavedAt(draft.savedAt);
         setRecoveredFromStorage(true);
       }
