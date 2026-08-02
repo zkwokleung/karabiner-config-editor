@@ -475,21 +475,24 @@ export default function KarabinerEditor() {
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className='w-full'>
-          <TabsList className='mx-auto mb-8 grid w-full max-w-xl grid-cols-3 rounded-2xl border border-border/70 bg-card/80 p-1.5 shadow-sm'>
-            <TabsTrigger value='import' className='cursor-pointer'>
+          <TabsList className='mx-auto mb-8 grid h-10 w-full max-w-xl grid-cols-3 rounded-2xl border border-border/70 bg-card/80 p-1 shadow-sm'>
+            <TabsTrigger
+              value='import'
+              className='h-full cursor-pointer rounded-xl py-0 leading-none'
+            >
               Import
             </TabsTrigger>
             <TabsTrigger
               value='edit'
               disabled={!config}
-              className='cursor-pointer'
+              className='h-full cursor-pointer rounded-xl py-0 leading-none'
             >
               Edit
             </TabsTrigger>
             <TabsTrigger
               value='export'
               disabled={!config}
-              className='cursor-pointer'
+              className='h-full cursor-pointer rounded-xl py-0 leading-none'
             >
               Export
             </TabsTrigger>
