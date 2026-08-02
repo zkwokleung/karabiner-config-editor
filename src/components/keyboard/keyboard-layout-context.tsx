@@ -16,6 +16,7 @@ import type {
 } from '@/lib/keyboard-layout';
 
 const LEGEND_STORAGE_KEY = 'karabiner-config-editor:keyboard-legend:v1';
+const LAYOUT_STORAGE_KEY = 'karabiner-config-editor:keyboard-layout:v1';
 
 interface KeyboardLayoutContextValue {
   layoutType: KeyboardLayoutType;
@@ -38,31 +39,34 @@ export function KeyboardLayoutProvider({
   children,
   keyboardTypeV2,
 }: KeyboardLayoutProviderProps) {
-  const [layoutType, setLayoutType] = useState<KeyboardLayoutType>('ansi');
+  const [layoutType, setLayoutType] = useState<KeyboardLayoutType>(
+    () => keyboardTypeV2 ?? 'ansi',
+  );
   const [legendType, setLegendType] = useState<KeyboardLegendType>('qwerty');
-  const [legendPreferenceLoaded, setLegendPreferenceLoaded] = useState(false);
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false);
 
   useEffect(() => {
     try {
-      const stored = window.localStorage.getItem(LEGEND_STORAGE_KEY);
-      if (stored === 'qwerty' || stored === 'dvorak' || stored === 'colemak') {
-        setLegendType(stored);
-      }
+      const storedLayout = window.localStorage.getItem(LAYOUT_STORAGE_KEY);
+      const storedLegend = window.localStorage.getItem(LEGEND_STORAGE_KEY);
+      if (isKeyboardLayoutType(storedLayout)) setLayoutType(storedLayout);
+      if (isKeyboardLegendType(storedLegend)) setLegendType(storedLegend);
     } catch {
       // Storage may be unavailable in privacy-restricted browser contexts.
     } finally {
-      setLegendPreferenceLoaded(true);
+      setPreferencesLoaded(true);
     }
   }, []);
 
   useEffect(() => {
-    if (!legendPreferenceLoaded) return;
+    if (!preferencesLoaded) return;
     try {
+      window.localStorage.setItem(LAYOUT_STORAGE_KEY, layoutType);
       window.localStorage.setItem(LEGEND_STORAGE_KEY, legendType);
     } catch {
-      // Keep the in-memory preference when storage is unavailable.
+      // Keep the in-memory preferences when storage is unavailable.
     }
-  }, [legendPreferenceLoaded, legendType]);
+  }, [layoutType, legendType, preferencesLoaded]);
 
   const value = useMemo(() => {
     return {
@@ -79,6 +83,18 @@ export function KeyboardLayoutProvider({
       {children}
     </KeyboardLayoutContext.Provider>
   );
+}
+
+function isKeyboardLayoutType(
+  value: string | null,
+): value is KeyboardLayoutType {
+  return value === 'ansi' || value === 'iso' || value === 'jis';
+}
+
+function isKeyboardLegendType(
+  value: string | null,
+): value is KeyboardLegendType {
+  return value === 'qwerty' || value === 'dvorak' || value === 'colemak';
 }
 
 export function useKeyboardLayout() {

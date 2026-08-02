@@ -51,6 +51,12 @@ function rememberValue(values: ValuesByType, value: VariableValue) {
   else values.string = value;
 }
 
+function parseSafeInteger(value: string): number | null {
+  if (!INTEGER_PATTERN.test(value)) return null;
+  const parsedValue = Number(value);
+  return Number.isSafeInteger(parsedValue) ? parsedValue : null;
+}
+
 export function VariableValueEditor({
   value,
   onChange,
@@ -81,13 +87,11 @@ export function VariableValueEditor({
 
   const updateInteger = (rawValue: string) => {
     setIntegerDraft(rawValue);
-    if (!INTEGER_PATTERN.test(rawValue)) return;
-
-    const nextValue = Number(rawValue);
-    if (Number.isSafeInteger(nextValue)) updateValue(nextValue);
+    const nextValue = parseSafeInteger(rawValue);
+    if (nextValue !== null) updateValue(nextValue);
   };
 
-  const integerIsValid = INTEGER_PATTERN.test(integerDraft);
+  const integerIsValid = parseSafeInteger(integerDraft) !== null;
 
   return (
     <div className='grid grid-cols-2 gap-2 sm:col-span-2'>
@@ -118,6 +122,7 @@ export function VariableValueEditor({
             step={1}
             value={integerDraft}
             aria-invalid={!integerIsValid}
+            aria-describedby={integerIsValid ? undefined : `${id}-value-error`}
             onChange={(event) => updateInteger(event.target.value)}
             onBlur={() => {
               if (!integerIsValid) setIntegerDraft(String(value));
@@ -147,6 +152,12 @@ export function VariableValueEditor({
             className='text-xs'
           />
         )}
+        {!integerIsValid && valueType === 'integer' ? (
+          <p id={`${id}-value-error`} className='text-xs text-destructive'>
+            Enter a whole number from -9,007,199,254,740,991 to
+            9,007,199,254,740,991.
+          </p>
+        ) : null}
       </div>
     </div>
   );
