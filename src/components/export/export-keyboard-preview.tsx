@@ -168,8 +168,8 @@ export function ExportKeyboardPreview({
   );
 
   return (
-    <div className='grid gap-4 xl:grid-cols-[1.4fr_1fr]'>
-      <div className='space-y-3'>
+    <div className='grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]'>
+      <div className='min-w-0 space-y-3'>
         <KeyboardShell
           layoutType={layoutType}
           displayLayoutType={keyboardTypeV2}
@@ -182,7 +182,7 @@ export function ExportKeyboardPreview({
         />
       </div>
 
-      <div className='rounded-lg border p-3 bg-card'>
+      <div className='min-w-0 rounded-lg border bg-card p-3'>
         <div className='flex items-center justify-between gap-2 mb-3'>
           <h3 className='text-sm font-semibold'>Key Mapping Details</h3>
           <Button

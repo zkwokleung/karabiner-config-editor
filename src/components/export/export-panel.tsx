@@ -30,7 +30,7 @@ export function ExportPanel({
   );
 
   return (
-    <div className='space-y-6'>
+    <div className='min-w-0 space-y-6'>
       {validationErrors.length > 0 && (
         <Card className='p-4'>
           <h3 className='font-semibold mb-3 flex items-center gap-2'>
@@ -68,12 +68,20 @@ export function ExportPanel({
 
       <Card className='p-6'>
         <h2 className='text-lg font-semibold mb-4'>Export Config</h2>
-        <div className='flex gap-4'>
-          <Button onClick={onExport} disabled={hasCriticalErrors}>
+        <div className='flex flex-col gap-3 sm:flex-row sm:gap-4'>
+          <Button
+            onClick={onExport}
+            disabled={hasCriticalErrors}
+            className='w-full sm:w-auto'
+          >
             <Download className='mr-2 h-4 w-4' />
             Download JSON
           </Button>
-          <Button onClick={onCopy} variant='outline'>
+          <Button
+            onClick={onCopy}
+            variant='outline'
+            className='w-full sm:w-auto'
+          >
             <Copy className='mr-2 h-4 w-4' />
             Copy to Clipboard
           </Button>
