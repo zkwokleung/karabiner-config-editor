@@ -6,14 +6,14 @@ Contributors who want to run, debug, and extend this project locally.
 
 ## Prerequisites
 
-- Node.js 18+
-- pnpm 9+
+- Node.js 20.9+
+- Bun 1.3.11
 
 ## Local Setup
 
 ```bash
-pnpm install
-pnpm dev
+bun install
+bun run dev
 ```
 
 App URL: `http://localhost:3000`
@@ -30,10 +30,10 @@ git checkout -b feature/<short-name>
 3. Run quality checks:
 
 ```bash
-pnpm lint
-pnpm format:check
-pnpm exec tsc --noEmit
-pnpm build
+bun run lint
+bun run format:check
+bunx --bun tsc --noEmit
+bun run build
 ```
 
 4. Commit with clear scope in message.
@@ -61,7 +61,7 @@ When behavior changes:
 - Husky + lint-staged run on pre-commit.
 - ESLint and Prettier are expected to pass before merge.
 - Explicit TypeScript check is recommended in CI and local workflow:
-  `pnpm exec tsc --noEmit`.
+  `bunx --bun tsc --noEmit`.
 
 ## Recommended PR Template Content
 

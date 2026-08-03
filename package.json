@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "license": "MIT",
+  "packageManager": "bun@1.3.11",
   "scripts": {
     "build": "next build",
     "dev": "next dev",
@@ -15,12 +16,16 @@
   },
   "lint-staged": {
     "*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}": [
-      "pnpm exec prettier --write",
-      "pnpm exec eslint --max-warnings=0"
+      "bunx --bun prettier --write",
+      "bunx --bun eslint --max-warnings=0"
     ],
     "*.{json,md,mdx,css,scss,html,yml,yaml}": [
-      "pnpm exec prettier --write"
+      "bunx --bun prettier --write"
     ]
+  },
+  "overrides": {
+    "postcss": "8.5.25",
+    "sharp": "0.35.0"
   },
   "dependencies": {
     "@dnd-kit/core": "latest",

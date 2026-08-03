@@ -47,15 +47,15 @@ Implemented in `src/lib/validation.ts`:
   physical positions, so exported mappings do not change when the legend
   preference changes.
 - TypeScript errors are not enforced by Next build unless type-check is run
-  explicitly (`pnpm exec tsc --noEmit`).
+  explicitly (`bunx --bun tsc --noEmit`).
 
 ## Recommended Validation Procedure Before Applying Config
 
 1. Run local checks:
-   - `pnpm lint`
-   - `pnpm format:check`
-   - `pnpm test`
-   - `pnpm exec tsc --noEmit`
-   - `pnpm build`
+   - `bun run lint`
+   - `bun run format:check`
+   - `bun run test`
+   - `bunx --bun tsc --noEmit`
+   - `bun run build`
 2. Export JSON from UI.
 3. Validate and test behavior incrementally in Karabiner-Elements.

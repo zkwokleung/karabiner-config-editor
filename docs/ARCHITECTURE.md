@@ -94,4 +94,4 @@ When adding features:
 - Large feature components hold substantial UI + state logic.
 - Test coverage is not yet present (manual verification required).
 - Build is currently configured to ignore TypeScript errors unless
-  `pnpm exec tsc --noEmit` is run explicitly.
+  `bunx --bun tsc --noEmit` is run explicitly.

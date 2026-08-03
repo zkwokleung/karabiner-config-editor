@@ -1,5 +1,5 @@
 .next
 node_modules
-pnpm-lock.yaml
+bun.lock
 public/icons
 public/fonts

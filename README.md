@@ -48,13 +48,13 @@ catch conflicts, and export a clean configuration.
 
 ## Quick start
 
-You will need Node.js 18+ and pnpm 9+.
+You will need Node.js 20.9+ and Bun 1.3.11.
 
 ```bash
 git clone https://github.com/zkwokleung/karabiner-config-editor.git
 cd karabiner-config-editor
-pnpm install
-pnpm dev
+bun install
+bun run dev
 ```
 
 Then open [http://localhost:3000](http://localhost:3000).
@@ -97,22 +97,22 @@ docs/                           # Guides and technical documentation
 
 ## Scripts
 
-| Command             | Description                      |
-| ------------------- | -------------------------------- |
-| `pnpm dev`          | Start the development server     |
-| `pnpm build`        | Create a production build        |
-| `pnpm start`        | Run the production server        |
-| `pnpm lint`         | Run ESLint                       |
-| `pnpm format`       | Format the project with Prettier |
-| `pnpm format:check` | Check formatting                 |
+| Command                | Description                      |
+| ---------------------- | -------------------------------- |
+| `bun run dev`          | Start the development server     |
+| `bun run build`        | Create a production build        |
+| `bun run start`        | Run the production server        |
+| `bun run lint`         | Run ESLint                       |
+| `bun run format`       | Format the project with Prettier |
+| `bun run format:check` | Check formatting                 |
 
 Before opening a pull request, run:
 
 ```bash
-pnpm exec tsc --noEmit
-pnpm lint
-pnpm format:check
-pnpm build
+bunx --bun tsc --noEmit
+bun run lint
+bun run format:check
+bun run build
 ```
 
 ## Contributing
